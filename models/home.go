@@ -16,10 +16,10 @@ type Home struct {
 	Bedroom  string    `json:"bedroom" form:"bedroom"`
 	Square   string    `json:"square" form:"square"`
 
+	Reservation []Reservation `gorm:"Foreignkey:Home_ID;association_foreignkey:ID;" json:"reservation"`
+
 	CreatedAt time.Time `gorm:"not null" json:"created_at,omitempty"`
 	UpdatedAt time.Time `gorm:"not null" json:"updated_at,omitempty"`
-
-	// Restaurant_ID string `gorm:"column:restaurant_id"  json:"restaurant_id"`
 }
 
 type UpdateHome struct {
