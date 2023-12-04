@@ -32,6 +32,7 @@ func InitializeDb(config *utils.Config) {
 	db.AutoMigrate(
 		&models.Home{},
 		&models.Image{},
+		&models.Reservation{},
 	)
 
 	DB = db
