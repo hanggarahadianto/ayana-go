@@ -32,6 +32,7 @@ func main() {
 		c.JSON(200, gin.H{
 			"message": "Welcome to my Ayana application! 🚀",
 		})
+		fmt.Println("Welcome to my Ayana application! 🚀")
 	})
 	r.Use(cors.New(cors.Config{
 		AllowOrigins: []string{"*"}, // Replace with your allowed origins

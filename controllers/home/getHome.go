@@ -11,7 +11,7 @@ import (
 func GetHomes(c *gin.Context) {
 	var homeList []models.Home
 
-	result := db.DB.Debug().Find(&homeList)
+	result := db.DB.Debug().Order("created_at desc, updated_at desc").Find(&homeList)
 	if result.Error != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "error",

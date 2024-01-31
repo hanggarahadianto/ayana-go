@@ -1,16 +1,36 @@
-# Build stage
-FROM golang:1.14.2 as build
+# Use the official Golang base image with Alpine Linux
+FROM golang:alpine AS builder
 
-WORKDIR /go/src/ayana
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy go.mod and go.sum files to download dependencies
+COPY go.mod .
+COPY go.sum .
+
+# Download dependencies
+RUN go mod download
+
+# Copy the rest of the application source code into the container
 COPY . .
 
-ENV CGO_ENABLED=0
+# Build the Go application
+RUN go build -o main
 
-RUN go get -d -v ./...
-RUN go install -v ./...
-RUN go build -v -o ayana
+# Use a minimal Alpine Linux image for the final image
+FROM alpine:latest
 
-# Run stage
-FROM alpine:3.11
-COPY --from=build go/src/app/ app/
-CMD ["./app/ayana"]
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy only the built binary from the builder stage
+COPY --from=builder /app/main .
+
+# Expose the port that your application listens on
+EXPOSE 8080
+
+# Set the environment variable to use .env file
+ENV GIN_MODE=release
+
+# Command to run the application
+CMD ["./main"]
