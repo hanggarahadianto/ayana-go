@@ -33,6 +33,8 @@ func InitializeDb(config *utils.Config) {
 		&models.Home{},
 		&models.Image{},
 		&models.Reservation{},
+		&models.Marketing{},
+		&models.Info{},
 	)
 
 	DB = db

@@ -27,6 +27,7 @@ func main() {
 
 	routes.SetupHomeRouter(r)
 	routes.SetupReservationRouter(r)
+	routes.SetupMarketingRouter(r)
 
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{
