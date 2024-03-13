@@ -2,7 +2,7 @@ package db
 
 import (
 	"ayana/models"
-	"ayana/utils"
+	utilsEnv "ayana/utils/env"
 	"fmt"
 	"log"
 
@@ -12,7 +12,7 @@ import (
 
 var DB *gorm.DB
 
-func InitializeDb(config *utils.Config) {
+func InitializeDb(config *utilsEnv.Config) {
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		config.DBHost,
 		config.DBPort,
@@ -35,6 +35,7 @@ func InitializeDb(config *utils.Config) {
 		&models.Reservation{},
 		&models.Marketing{},
 		&models.Info{},
+		&models.User{},
 	)
 
 	DB = db

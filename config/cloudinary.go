@@ -1,12 +1,12 @@
 package config
 
 import (
-	"ayana/utils"
+	utilsEnv "ayana/utils/env"
 
 	"github.com/cloudinary/cloudinary-go/v2"
 )
 
-func SetupCloudinary(config *utils.Config) (*cloudinary.Cloudinary, error) {
+func SetupCloudinary(config *utilsEnv.Config) (*cloudinary.Cloudinary, error) {
 	cldSecret := config.CLOUDINARY_API_SECRET
 	cldName := config.CLOUDINARY_CLOUD_NAME
 	cldKey := config.CLOUDINARY_API_KEY
@@ -32,7 +32,7 @@ func SetupCloudinary(config *utils.Config) (*cloudinary.Cloudinary, error) {
 // 	return cld, nil
 // }
 
-func EnvCloudUploadFolderHome(config *utils.Config) string {
+func EnvCloudUploadFolderHome(config *utilsEnv.Config) string {
 	return config.CLOUDINARY_HOME_FOLDER
 
 	// return homeFolder, nil

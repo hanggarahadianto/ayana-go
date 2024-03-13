@@ -2,7 +2,7 @@ package utils
 
 import (
 	"ayana/config"
-	"ayana/utils"
+	utilsEnv "ayana/utils/env"
 	"context"
 	"log"
 	"mime/multipart"
@@ -11,7 +11,7 @@ import (
 )
 
 func UploadtoHomeFolder(file multipart.File, filePath string) (string, error) {
-	configure, err := utils.LoadConfig(".")
+	configure, err := utilsEnv.LoadConfig(".")
 	if err != nil {
 		log.Fatal("🚀 Could not load environment variables ", err)
 	}

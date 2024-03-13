@@ -3,7 +3,7 @@ package main
 import (
 	"ayana/db"
 	"ayana/routes"
-	"ayana/utils"
+	utilsEnv "ayana/utils/env"
 	"fmt"
 	"log"
 
@@ -13,7 +13,7 @@ import (
 
 func main() {
 
-	configure, err := utils.LoadConfig(".")
+	configure, err := utilsEnv.LoadConfig(".")
 	if err != nil {
 		log.Fatal("🚀 Could not load environment variables ", err)
 	}
@@ -28,6 +28,7 @@ func main() {
 	routes.SetupHomeRouter(r)
 	routes.SetupReservationRouter(r)
 	routes.SetupMarketingRouter(r)
+	routes.SetupAuthRouter(r)
 
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{
