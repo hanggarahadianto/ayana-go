@@ -27,7 +27,7 @@ func Login(c *gin.Context) {
 	if result.Error != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  false,
-			"message": "Username not found"})
+			"message": "username not found"})
 		return
 	}
 
