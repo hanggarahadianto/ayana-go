@@ -8,7 +8,6 @@ import (
 	utilsEnv "ayana/utils/env"
 
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -24,17 +23,17 @@ func Login(c *gin.Context) {
 
 	// =================== find username
 	var user models.User
-	result := db.DB.First(&user, "username = ?", strings.ToLower(loginData.Username))
+	result := db.DB.First(&user, "username = ?", (loginData.Username))
 	if result.Error != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"status":  "failed",
+			"status":  false,
 			"message": "Username not found"})
 		return
 	}
 
 	if err := utilsAuth.VerifiedPassword(user.Password, loginData.Password); err != nil {
 		c.JSON(http.StatusForbidden, gin.H{
-			"status":  "fail",
+			"status":  false,
 			"message": "wrong password"})
 		return
 	}
@@ -46,22 +45,16 @@ func Login(c *gin.Context) {
 	)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"status":  "failed",
+			"status":  false,
 			"message": err.Error()})
 		return
 	}
 	c.SetCookie("token", token, config.AccessTokenMaxAge*60, "/", "localhost", false, true)
 
-	// userResponse := models.UserResponse{
-	// 	ID:    user.ID,
-	// 	Name:  user.Name,
-	// 	Email: user.Email,
-	// }
-
 	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"token":  token,
-		"data":   loginData,
+		"status":  true,
+		"message": "Login Success",
+		"data":    gin.H{"payload": user, "token": token},
 	})
 
 }

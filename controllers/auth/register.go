@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -61,27 +60,10 @@ func Register(c *gin.Context) {
 		UpdatedAt: now,
 	}
 
-	result := db.DB.Debug().Create(&newUser)
-
-	if result.Error != nil && strings.Contains(result.Error.Error(), "duplicate key value") {
-		// Handle duplicate key value error
-		c.JSON(http.StatusConflict, gin.H{
-			"status":  "fail",
-			"message": "Username already exists",
-		})
-		fmt.Println(result)
-		return
-	} else if result.Error != nil {
-		// Handle other database errors
-		c.JSON(http.StatusBadGateway, gin.H{
-			"status":  "error",
-			"message": "Something bad happened",
-		})
-		return
-	}
+	db.DB.Debug().Create(&newUser)
 
 	c.JSON(http.StatusCreated, gin.H{
-		"status": "success",
+		"status": true,
 		"data":   newUser,
 	})
 
