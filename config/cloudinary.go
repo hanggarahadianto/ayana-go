@@ -19,30 +19,7 @@ func SetupCloudinary(config *utilsEnv.Config) (*cloudinary.Cloudinary, error) {
 	return cld, nil
 }
 
-// func SetupCloudinary() (*cloudinary.Cloudinary, error) {
-// 	cldSecret := os.Getenv("CLOUDINARY_API_SECRET")
-// 	cldName := os.Getenv("CLOUDINARY_CLOUD_NAME")
-// 	cldKey := os.Getenv("CLOUDINARY_API_KEY")
-
-// 	cld, err := cloudinary.NewFromParams(cldName, cldKey, cldSecret)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	return cld, nil
-// }
-
 func EnvCloudUploadFolderHome(config *utilsEnv.Config) string {
 	return config.CLOUDINARY_HOME_FOLDER
 
-	// return homeFolder, nil
-	// // return os.Getenv("CLOUDINARY_HOME_FOLDER")
 }
-
-// func EnvCloudUploadFolderHome() string {
-// 	err := godotenv.Load(".env")
-// 	if err != nil {
-// 		log.Fatal("Error loading app.env file")
-// 	}
-// 	return os.Getenv("CLOUDINARY_HOME_FOLDER")
-// }

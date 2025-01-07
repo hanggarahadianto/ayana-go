@@ -21,8 +21,7 @@ func CreateReservation(c *gin.Context) {
 	newReservation := models.Reservation{
 		Name:      reservationData.Name,
 		Phone:     reservationData.Phone,
-		Date:      reservationData.Date,
-		Time:      reservationData.Time,
+		Email:     reservationData.Email,
 		Home_ID:   id,
 		CreatedAt: now,
 		UpdatedAt: now,

@@ -2,7 +2,7 @@ module ayana
 
 go 1.21.0
 
-require gorm.io/gorm v1.25.5
+require gorm.io/gorm v1.25.12
 
 require (
 	github.com/bytedance/sonic v1.9.1 // indirect
@@ -45,7 +45,7 @@ require (
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
 	golang.org/x/net v0.15.0 // indirect
 	golang.org/x/sys v0.12.0 // indirect
-	golang.org/x/text v0.13.0 // indirect
+	golang.org/x/text v0.21.0 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

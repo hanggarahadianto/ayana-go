@@ -1,8 +1,8 @@
 package controllers
 
 import (
-	"mime/multipart"
 	"net/http"
+	"strconv"
 
 	"ayana/db"
 	"ayana/models"
@@ -14,28 +14,48 @@ import (
 
 func CreateHome(c *gin.Context) {
 
-	filename, ok := c.Get("filePath")
-	if !ok {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "filename not found",
-			"data":  filename,
-		})
-	}
-	file, ok := c.Get("file")
-	if !ok {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status": "failed",
-		})
-	}
-
-	// upload file
-	imageUrl, err := uploadClaudinary.UploadtoHomeFolder(file.(multipart.File), filename.(string))
+	file, header, err := c.Request.FormFile("file")
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
+		c.JSON(http.StatusBadRequest, gin.H{
 			"status": "failed",
-			"error":  err.Error()})
+			"error":  "file not found",
+		})
 		return
 	}
+	defer file.Close()
+
+	// Retrieve the filename
+	filename := header.Filename
+
+	// upload file
+	imageUrl, err := uploadClaudinary.UploadtoHomeFolder(file, filename)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status": "failed on upload cloudinary",
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	price, err := strconv.Atoi(c.Request.PostFormValue("price"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status": "failed",
+			"error":  "invalid price",
+		})
+		return
+	}
+
+	quantity, err := strconv.Atoi(c.Request.PostFormValue("quantity"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status": "failed",
+			"error":  "invalid quantity",
+		})
+		return
+	}
+
+	status := models.StatusType(c.Request.PostFormValue("status"))
 
 	now := time.Now()
 	newHome := models.Home{
@@ -45,12 +65,17 @@ func CreateHome(c *gin.Context) {
 		Bathroom: c.Request.PostFormValue("bathroom"),
 		Bedroom:  c.Request.PostFormValue("bedroom"),
 		Square:   c.Request.PostFormValue("square"),
+		Price:    price,
+		Quantity: quantity,
+		Status:   status,
 
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
 
 	newHome.Image = imageUrl
+
+	db.DB.Exec("DISCARD ALL")
 
 	result := db.DB.Debug().Create(&newHome)
 	if result.Error != nil {
