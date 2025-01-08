@@ -7,9 +7,9 @@ import (
 )
 
 func SetupReservationRouter(r *gin.Engine) {
-	home := r.Group("/reservation")
+	reservation := r.Group("/reservation")
 	{
-		home.GET("/get", reservationController.GetReservations)
-		home.POST("/post/id", reservationController.CreateReservation)
+		reservation.GET("/get", reservationController.GetReservations)
+		reservation.POST("/post/:id", reservationController.CreateReservation) // Dynamic :id
 	}
 }

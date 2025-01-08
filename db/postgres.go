@@ -15,13 +15,21 @@ import (
 var DB *gorm.DB
 
 func InitializeDb(config *utilsEnv.Config) {
-	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable statement_cache_mode=none",
 		config.DBHost,
 		config.DBPort,
 		config.DBUser,
 		config.DBPassword,
 		config.DBName,
 	)
+
+	// db, err := gorm.Open(postgres.New(postgres.Config{
+	// 	DSN:                  dsn,
+	// 	PreferSimpleProtocol: true, // Disable prepared statements for the driver
+	// }), &gorm.Config{
+	// 	PrepareStmt: false, // Disable prepared statements in GORM
+	// 	Logger:      logger.Default.LogMode(logger.Info),
+	// })
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		PrepareStmt: false,                               // Disable prepared statements
@@ -31,7 +39,6 @@ func InitializeDb(config *utilsEnv.Config) {
 		log.Fatal("Failed to connect to the Database")
 	}
 
-	// Set up connection pool
 	sqlDB, err := db.DB()
 	if err != nil {
 		log.Fatal("Failed to configure database connection pool")
@@ -42,10 +49,11 @@ func InitializeDb(config *utilsEnv.Config) {
 
 	fmt.Println("Connected to database")
 
-	// Ensure required extensions exist
-	db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"")
+	// db.Exec("SET statement_cache_mode = 'none';") // Disable caching at runtime
+	// db.Exec("DISCARD ALL;")                       // Clear existing cache
 
-	// Migrate models
+	db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";")
+
 	db.AutoMigrate(
 		&models.Home{},
 		&models.Image{},
@@ -55,5 +63,7 @@ func InitializeDb(config *utilsEnv.Config) {
 		&models.User{},
 	)
 
+	fmt.Println("Connected to the database and migrated successfully.")
 	DB = db
+
 }

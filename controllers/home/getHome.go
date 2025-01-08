@@ -3,6 +3,7 @@ package controllers
 import (
 	"ayana/db"
 	"ayana/models"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -13,6 +14,7 @@ func GetHomes(c *gin.Context) {
 
 	result := db.DB.Debug().Order("created_at desc, updated_at desc").Find(&homeList)
 	if result.Error != nil {
+		log.Printf("Database error: %v", result.Error)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "error",
 			"message": result.Error.Error(),

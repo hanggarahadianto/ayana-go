@@ -16,3 +16,7 @@ type Reservation struct {
 	CreatedAt time.Time `gorm:"not null" json:"created_at,omitempty"`
 	UpdatedAt time.Time `gorm:"not null" json:"updated_at,omitempty"`
 }
+
+func (Reservation) TableName() string {
+	return "reservations" // Ensure compatibility with Supabase
+}
