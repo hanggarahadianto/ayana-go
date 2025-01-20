@@ -9,24 +9,25 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func CreateMarketing(c *gin.Context) {
+func CreateTask(c *gin.Context) {
 
-	var marketingData models.Marketing
+	var reservationData models.Reservation
 
-	if err := c.ShouldBindJSON(&marketingData); err != nil {
+	if err := c.ShouldBindJSON(&reservationData); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	now := time.Now()
-	newMarketing := models.Marketing{
-		Name:  marketingData.Name,
-		Phone: marketingData.Phone,
-
+	newReservation := models.Reservation{
+		Name:      reservationData.Name,
+		Email:     reservationData.Email,
+		Phone:     reservationData.Phone,
+		Home_ID:   reservationData.Home_ID,
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
 
-	result := db.DB.Debug().Create(&newMarketing)
+	result := db.DB.Debug().Create(&newReservation)
 	if result.Error != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "failed",
@@ -37,7 +38,7 @@ func CreateMarketing(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
-		"data":   newMarketing,
+		"data":   newReservation,
 	})
 
 }

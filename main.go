@@ -47,7 +47,7 @@ func main() {
 	routes.SetupAuthRouter(r)
 	routes.SetupHomeRouter(r)
 	routes.SetupReservationRouter(r)
-	routes.SetupMarketingRouter(r)
+	routes.SetupInfoRouter(r)
 
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{

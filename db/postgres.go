@@ -23,17 +23,12 @@ func InitializeDb(config *utilsEnv.Config) {
 		config.DBName,
 	)
 
-	// db, err := gorm.Open(postgres.New(postgres.Config{
-	// 	DSN:                  dsn,
-	// 	PreferSimpleProtocol: true, // Disable prepared statements for the driver
-	// }), &gorm.Config{
-	// 	PrepareStmt: false, // Disable prepared statements in GORM
-	// 	Logger:      logger.Default.LogMode(logger.Info),
-	// })
-
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-		PrepareStmt: false,                               // Disable prepared statements
-		Logger:      logger.Default.LogMode(logger.Info), // Log SQL queries
+	db, err := gorm.Open(postgres.New(postgres.Config{
+		DSN:                  dsn,
+		PreferSimpleProtocol: true, // Disable prepared statements in the driver
+	}), &gorm.Config{
+		PrepareStmt: false, // Disable prepared statements in GORM
+		Logger:      logger.Default.LogMode(logger.Info),
 	})
 	if err != nil {
 		log.Fatal("Failed to connect to the Database")
@@ -54,14 +49,42 @@ func InitializeDb(config *utilsEnv.Config) {
 
 	db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";")
 
-	db.AutoMigrate(
+	// modelsToCreate := []interface{}{
+	// 	&models.User{},
+	// 	&models.Home{},
+	// 	&models.Image{},
+	// 	&models.Reservation{},
+	// 	&models.Marketing{},
+	// 	&models.Info{},
+	// 	&models.NearBy{},
+	// }
+
+	// for _, model := range modelsToCreate {
+	// 	err := db.Migrator().CreateTable(model)
+	// 	if err != nil {
+	// 		log.Printf("Failed to create table for model %T: %v", model, err)
+	// 	} else {
+	// 		fmt.Printf("Created table for model %T\n", model)
+	// 	}
+	// }
+
+	modelsToMigrate := []interface{}{
+		&models.User{},
 		&models.Home{},
 		&models.Image{},
 		&models.Reservation{},
-		&models.Marketing{},
 		&models.Info{},
-		&models.User{},
-	)
+		&models.NearBy{},
+	}
+
+	for _, model := range modelsToMigrate {
+		err := db.AutoMigrate(model)
+		if err != nil {
+			log.Printf("Failed to auto-migrate model %T: %v", model, err)
+		} else {
+			fmt.Printf("Auto-migrated model %T\n", model)
+		}
+	}
 
 	fmt.Println("Connected to the database and migrated successfully.")
 	DB = db

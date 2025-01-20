@@ -8,10 +8,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func GetMarketing(c *gin.Context) {
-	var marketingList []models.Marketing
+func GetTasks(c *gin.Context) {
+	var reservationList []models.Reservation
 
-	result := db.DB.Debug().Order("created_at desc, updated_at desc").Find(&marketingList)
+	result := db.DB.Debug().Order("created_at desc, updated_at desc").Find(&reservationList)
 	if result.Error != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "error",
@@ -21,7 +21,7 @@ func GetMarketing(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
-		"data":   marketingList,
+		"data":   reservationList,
 	})
 
 }

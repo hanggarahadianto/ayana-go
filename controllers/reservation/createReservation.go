@@ -10,7 +10,7 @@ import (
 )
 
 func CreateReservation(c *gin.Context) {
-	id := c.Param("id")
+
 	var reservationData models.Reservation
 
 	if err := c.ShouldBindJSON(&reservationData); err != nil {
@@ -20,9 +20,9 @@ func CreateReservation(c *gin.Context) {
 	now := time.Now()
 	newReservation := models.Reservation{
 		Name:      reservationData.Name,
-		Phone:     reservationData.Phone,
 		Email:     reservationData.Email,
-		Home_ID:   id,
+		Phone:     reservationData.Phone,
+		Home_ID:   reservationData.Home_ID,
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
