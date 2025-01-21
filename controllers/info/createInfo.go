@@ -21,7 +21,7 @@ func CreateInfo(c *gin.Context) {
 	}
 
 	var existingInfo models.Info
-	if err := db.DB.Where("home_id = ?", infoData.Home_ID).First(&existingInfo).Error; err == nil {
+	if err := db.DB.Where("home_id = ?", infoData.HomeID).First(&existingInfo).Error; err == nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "failed",
 			"message": "Info record with this home_id already exists",
@@ -32,12 +32,12 @@ func CreateInfo(c *gin.Context) {
 	now := time.Now()
 
 	newInfo := models.Info{
-		Maps:        infoData.Maps,
-		Start_Price: infoData.Start_Price,
-		Home_ID:     infoData.Home_ID,
-		NearBy:      infoData.NearBy,
-		CreatedAt:   now,
-		UpdatedAt:   now,
+		Maps:       infoData.Maps,
+		StartPrice: infoData.StartPrice,
+		HomeID:     infoData.HomeID,
+		NearBy:     infoData.NearBy,
+		CreatedAt:  now,
+		UpdatedAt:  now,
 	}
 
 	db.DB.Exec("DISCARD ALL")

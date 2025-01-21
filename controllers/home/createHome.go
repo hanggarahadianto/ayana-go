@@ -55,8 +55,6 @@ func CreateHome(c *gin.Context) {
 		return
 	}
 
-	status := models.StatusType(c.Request.PostFormValue("status"))
-
 	now := time.Now()
 	newHome := models.Home{
 		Title:    c.Request.PostFormValue("title"),
@@ -65,9 +63,9 @@ func CreateHome(c *gin.Context) {
 		Bathroom: c.Request.PostFormValue("bathroom"),
 		Bedroom:  c.Request.PostFormValue("bedroom"),
 		Square:   c.Request.PostFormValue("square"),
-		Price:    price,
+		Price:    float64(price),
 		Quantity: quantity,
-		Status:   status,
+		Status:   c.Request.PostFormValue("status"),
 
 		CreatedAt: now,
 		UpdatedAt: now,

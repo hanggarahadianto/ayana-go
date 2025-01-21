@@ -22,7 +22,7 @@ func CreateReservation(c *gin.Context) {
 		Name:      reservationData.Name,
 		Email:     reservationData.Email,
 		Phone:     reservationData.Phone,
-		Home_ID:   reservationData.Home_ID,
+		HomeID:    reservationData.HomeID,
 		CreatedAt: now,
 		UpdatedAt: now,
 	}

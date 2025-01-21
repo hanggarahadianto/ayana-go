@@ -15,6 +15,7 @@ import (
 var DB *gorm.DB
 
 func InitializeDb(config *utilsEnv.Config) {
+	// Connection string for Supabase
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable statement_cache_mode=none",
 		config.DBHost,
 		config.DBPort,
@@ -23,6 +24,7 @@ func InitializeDb(config *utilsEnv.Config) {
 		config.DBName,
 	)
 
+	// Connect to the database
 	db, err := gorm.Open(postgres.New(postgres.Config{
 		DSN:                  dsn,
 		PreferSimpleProtocol: true, // Disable prepared statements in the driver
@@ -31,62 +33,44 @@ func InitializeDb(config *utilsEnv.Config) {
 		Logger:      logger.Default.LogMode(logger.Info),
 	})
 	if err != nil {
-		log.Fatal("Failed to connect to the Database")
+		log.Fatalf("Failed to connect to the database: %v", err)
 	}
 
+	// Configure connection pool
 	sqlDB, err := db.DB()
 	if err != nil {
-		log.Fatal("Failed to configure database connection pool")
+		log.Fatalf("Failed to configure database connection pool: %v", err)
 	}
 	sqlDB.SetMaxOpenConns(10)
 	sqlDB.SetMaxIdleConns(5)
 	sqlDB.SetConnMaxLifetime(time.Minute * 30)
 
-	fmt.Println("Connected to database")
+	// Ensure UUID extension for Supabase
+	err = db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";").Error
+	if err != nil {
+		log.Fatalf("Failed to create UUID extension: %v", err)
+	}
 
-	// db.Exec("SET statement_cache_mode = 'none';") // Disable caching at runtime
-	// db.Exec("DISCARD ALL;")                       // Clear existing cache
+	fmt.Println("Connected to the database")
 
-	db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";")
-
-	// modelsToCreate := []interface{}{
-	// 	&models.User{},
-	// 	&models.Home{},
-	// 	&models.Image{},
-	// 	&models.Reservation{},
-	// 	&models.Marketing{},
-	// 	&models.Info{},
-	// 	&models.NearBy{},
-	// }
-
-	// for _, model := range modelsToCreate {
-	// 	err := db.Migrator().CreateTable(model)
-	// 	if err != nil {
-	// 		log.Printf("Failed to create table for model %T: %v", model, err)
-	// 	} else {
-	// 		fmt.Printf("Created table for model %T\n", model)
-	// 	}
-	// }
-
+	// Auto-migrate models
 	modelsToMigrate := []interface{}{
-		&models.User{},
-		&models.Home{},
-		&models.Image{},
-		&models.Reservation{},
-		&models.Info{},
-		&models.NearBy{},
+		&models.Home{},        // Base model should be first
+		&models.Info{},        // Depends on Home
+		&models.NearBy{},      // Depends on Info
+		&models.Reservation{}, // Depends on Home
+		&models.Project{},
 	}
 
 	for _, model := range modelsToMigrate {
 		err := db.AutoMigrate(model)
 		if err != nil {
 			log.Printf("Failed to auto-migrate model %T: %v", model, err)
-		} else {
-			fmt.Printf("Auto-migrated model %T\n", model)
+			continue // Continue with other migrations instead of fatal
 		}
+		fmt.Printf("Auto-migrated model %T successfully\n", model)
 	}
 
-	fmt.Println("Connected to the database and migrated successfully.")
+	// Assign the DB instance to the global variable
 	DB = db
-
 }
