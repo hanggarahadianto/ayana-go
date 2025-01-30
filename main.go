@@ -49,6 +49,7 @@ func main() {
 	routes.SetupReservationRouter(r)
 	routes.SetupInfoRouter(r)
 	routes.SetupProjectRouter(r)
+	routes.SetupWeeklyProgressRouter(r)
 
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{

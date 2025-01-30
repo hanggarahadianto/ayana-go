@@ -60,17 +60,26 @@ func InitializeDb(config *utilsEnv.Config) {
 		&models.NearBy{},      // Depends on Info
 		&models.Reservation{}, // Depends on Home
 		&models.Project{},
+		&models.WeeklyProgress{},
+		&models.Worker{},
+		&models.Material{},
 	}
 
 	for _, model := range modelsToMigrate {
-		err := db.AutoMigrate(model)
-		if err != nil {
-			log.Printf("Failed to auto-migrate model %T: %v", model, err)
-			continue // Continue with other migrations instead of fatal
-		}
-		fmt.Printf("Auto-migrated model %T successfully\n", model)
-	}
+		modelType := fmt.Sprintf("%T", model)
 
+		// Check if the table exists for the current model
+		if db.Migrator().HasTable(model) {
+			fmt.Printf("Table for %s already exists, skipping auto-migration\n", modelType)
+		} else {
+			// If the table doesn't exist, create it
+			fmt.Printf("Creating table for %s\n", modelType)
+			err := db.Migrator().CreateTable(model)
+			if err != nil {
+				log.Printf("Failed to create table for %s: %v", modelType, err)
+			}
+		}
+	}
 	// Assign the DB instance to the global variable
 	DB = db
 }

@@ -7,17 +7,18 @@ import (
 )
 
 type Home struct {
-	ID       uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primary_key" json:"id"`
-	Title    string    `json:"title" form:"title"`
-	Content  string    `json:"content" form:"content"`
-	Image    string    `json:"image" form:"image"`
-	Address  string    `json:"address" form:"address"`
-	Bathroom string    `json:"bathroom" form:"bathroom"`
-	Bedroom  string    `json:"bedroom" form:"bedroom"`
-	Square   string    `json:"square" form:"square"`
-	Price    float64   `json:"price" form:"price"`
-	Quantity int       `json:"quantity" form:"quantity"`
-	Status   string    `json:"status"`
+	ID uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primary_key" json:"id"`
+
+	Title    string  `gorm:"type:varchar(255);not null" json:"title" form:"title"`
+	Content  string  `gorm:"type:varchar(255);not null" json:"content" form:"content"`
+	Image    string  `gorm:"type:varchar(255);not null" json:"image" form:"image"`
+	Address  string  `gorm:"type:varchar(255);not null" json:"address" form:"address"`
+	Bathroom string  `gorm:"type:varchar(255);not null" json:"bathroom" form:"bathroom"`
+	Bedroom  string  `gorm:"type:varchar(255);not null" json:"bedroom" form:"bedroom"`
+	Square   string  `gorm:"type:varchar(255);not null" json:"square" form:"square"`
+	Price    float64 `gorm:"type:bigint;not null" json:"price" form:"price"`
+	Quantity int     `gorm:"type:bigint;not null" json:"quantity" form:"quantity"`
+	Status   string  `gorm:"type:varchar(255);not null" json:"status"`
 	// Remove the direct Info relationship to avoid circular references
 	CreatedAt time.Time `gorm:"not null" json:"created_at"`
 	UpdatedAt time.Time `gorm:"not null" json:"updated_at"`

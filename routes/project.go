@@ -10,8 +10,7 @@ func SetupProjectRouter(r *gin.Engine) {
 	project := r.Group("/project")
 	{
 		project.GET("/get", projectController.GetProject)
-		project.GET("/get/:id", projectController.GetProjectById)
-
+		project.GET("/getById/:id", projectController.GetProjectById)
 		project.POST("/post", projectController.CreateProject)
 	}
 }
