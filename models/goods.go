@@ -8,7 +8,7 @@ import (
 
 type Goods struct {
 	ID                 uuid.UUID  `gorm:"type:uuid;default:uuid_generate_v4();primary_key" json:"id"`
-	GoodsName          string     `gorm:"type:varchar(255);not null" json:"material_name" form:"material_name"`
+	GoodsName          string     `gorm:"type:varchar(255);not null" json:"good_name" form:"good_name"`
 	Status             string     `gorm:"type:varchar(255);not null" json:"status" form:"status"`
 	Quantity           int        `gorm:"not null" json:"quantity" form:"quantity"`
 	TotalCost          float64    `gorm:"type:decimal(10,2);not null" json:"total_cost" form:"total_cost"`

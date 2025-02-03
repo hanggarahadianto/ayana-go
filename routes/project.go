@@ -12,5 +12,6 @@ func SetupProjectRouter(r *gin.Engine) {
 		project.GET("/get", projectController.GetProject)
 		project.GET("/getById/:id", projectController.GetProjectById)
 		project.POST("/post", projectController.CreateProject)
+		project.PUT("/edit", projectController.EditProject)
 	}
 }

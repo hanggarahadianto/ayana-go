@@ -63,6 +63,8 @@ func InitializeDb(config *utilsEnv.Config) {
 		&models.WeeklyProgress{},
 		&models.Worker{},
 		&models.Material{},
+		&models.CashFlow{},
+		&models.Goods{},
 	}
 
 	for _, model := range modelsToMigrate {

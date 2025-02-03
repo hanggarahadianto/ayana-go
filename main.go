@@ -50,6 +50,7 @@ func main() {
 	routes.SetupInfoRouter(r)
 	routes.SetupProjectRouter(r)
 	routes.SetupWeeklyProgressRouter(r)
+	routes.SetupCashFlowRouter(r)
 
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{
