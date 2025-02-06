@@ -17,6 +17,7 @@ type WeeklyProgress struct {
 
 	Material []Material `gorm:"foreignKey:WeeklyProgressIdMaterial" json:"material"`
 	Worker   []Worker   `gorm:"foreignKey:WeeklyProgressIdWorker" json:"worker"`
+	Note     string     `gorm:"type:varchar(255);not null" json:"note" form:"note"`
 
 	CreatedAt time.Time `gorm:"not null" json:"created_at,omitempty"`
 	UpdatedAt time.Time `gorm:"not null" json:"updated_at,omitempty"`
