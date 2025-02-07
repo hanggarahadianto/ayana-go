@@ -43,6 +43,7 @@ func CreateWeeklyProgress(c *gin.Context) {
 		Percentage:     weeklyProgress.Percentage,
 		AmountMaterial: weeklyProgress.AmountMaterial,
 		AmountWorker:   weeklyProgress.AmountWorker,
+		Note:           weeklyProgress.Note,
 		ProjectID:      weeklyProgress.ProjectID,
 		CreatedAt:      time.Now(),
 		UpdatedAt:      time.Now(),
