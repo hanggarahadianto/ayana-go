@@ -13,7 +13,7 @@ type WeeklyProgress struct {
 	AmountWorker   int64     `gorm:"type:bigint;not null" json:"amount_worker" form:"amount_worker"`
 	AmountMaterial int64     `gorm:"type:bigint;not null" json:"amount_material" form:"amount_material"`
 
-	ProjectID uuid.UUID `gorm:"type:uuid" json:"project_id"`
+	ProjectID uuid.UUID `gorm:"type:uuid;constraint:OnDelete:CASCADE;" json:"project_id"`
 
 	Material []Material `gorm:"foreignKey:WeeklyProgressIdMaterial" json:"material"`
 	Worker   []Worker   `gorm:"foreignKey:WeeklyProgressIdWorker" json:"worker"`

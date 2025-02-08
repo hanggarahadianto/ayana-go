@@ -15,7 +15,7 @@ type CashFlow struct {
 
 	ProjectID uuid.UUID `gorm:"type:uuid" json:"project_id"`
 
-	Good []Goods `gorm:"foreignKey:CashFlowId" json:"good"`
+	Good []Goods `gorm:"foreignKey:CashFlowId;constraint:OnDelete:CASCADE;" json:"good"`
 
 	CreatedAt time.Time `gorm:"type:timestamp;default:now()" json:"created_at"`
 	UpdatedAt time.Time `gorm:"type:timestamp;default:now()" json:"updated_at"`

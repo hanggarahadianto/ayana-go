@@ -17,6 +17,7 @@ func CreateProject(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
 	now := time.Now()
 	newProject := models.Project{
 		ProjectName:   projectData.ProjectName,
