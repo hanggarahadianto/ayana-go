@@ -17,7 +17,7 @@ func DeleteHome(c *gin.Context) {
 	if result.Error != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "failed",
-			"message": "restaurant id doesn't exist",
+			"message": "Home Id doesn't exist",
 		})
 		return
 	}
