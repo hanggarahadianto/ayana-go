@@ -23,3 +23,7 @@ func EnvCloudUploadFolderHome(config *utilsEnv.Config) string {
 	return config.CLOUDINARY_HOME_FOLDER
 
 }
+func EnvCloudDeleteFolderHome(config *utilsEnv.Config) string {
+	return config.CLOUDINARY_HOME_FOLDER
+
+}
