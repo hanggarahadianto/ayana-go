@@ -12,49 +12,62 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Login handler for user authentication
 func Login(c *gin.Context) {
-
 	var loginData models.LoginData
 
+	// Bind the JSON request data to loginData
 	if err := c.ShouldBindJSON(&loginData); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  false,
+			"message": "Invalid input data",
+			"error":   err.Error(),
+		})
 		return
 	}
 
-	// =================== find username
+	// Find user by username
 	var user models.User
-	result := db.DB.First(&user, "username = ?", (loginData.Username))
+	result := db.DB.First(&user, "username = ?", loginData.Username)
 	if result.Error != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
+		c.JSON(http.StatusNotFound, gin.H{
 			"status":  false,
-			"message": "username not found"})
+			"message": "Username not found",
+		})
 		return
 	}
 
+	// Verify password
 	if err := utilsAuth.VerifiedPassword(user.Password, loginData.Password); err != nil {
-		c.JSON(http.StatusForbidden, gin.H{
+		c.JSON(http.StatusUnauthorized, gin.H{
 			"status":  false,
-			"message": "wrong password"})
+			"message": "Wrong password",
+		})
 		return
 	}
+
+	// Generate JWT token
 	config, _ := utilsEnv.LoadConfig(".")
-	token, err := middlewares.GenerateToken(
-		config.AccessTokenExpiresIn,
-		user.ID,
-		config.AccessTokenPrivateKey,
-	)
+	token, err := middlewares.GenerateToken(config.AccessTokenExpiresIn, user.ID, config.AccessTokenPrivateKey)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  false,
-			"message": err.Error()})
+			"message": "Error generating token",
+			"error":   err.Error(),
+		})
 		return
 	}
+
+	// Set token as a secure HTTP-only cookie
 	c.SetCookie("token", token, config.AccessTokenMaxAge*60, "/", "localhost", false, true)
 
+	// Respond with the user data and token
 	c.JSON(http.StatusOK, gin.H{
 		"status":  true,
-		"message": "Login Success",
-		"data":    gin.H{"payload": user, "token": token},
+		"message": "Login success",
+		"data": gin.H{
+			"user":  user,
+			"token": token,
+		},
 	})
-
 }

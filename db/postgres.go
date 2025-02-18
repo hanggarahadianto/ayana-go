@@ -2,7 +2,7 @@ package db
 
 import (
 	// "ayana/migrations" // Import migrations without circular dependency
-	"ayana/migrations"
+
 	"ayana/models"
 	utilsEnv "ayana/utils/env"
 	"fmt"
@@ -57,6 +57,7 @@ func InitializeDb(config *utilsEnv.Config) {
 
 	// Auto-migrate models
 	modelsToMigrate := []interface{}{
+		&models.User{},
 		&models.Home{},        // Base model should be first
 		&models.Info{},        // Depends on Home
 		&models.NearBy{},      // Depends on Info
@@ -68,7 +69,6 @@ func InitializeDb(config *utilsEnv.Config) {
 		&models.CashFlow{},
 		&models.Goods{},
 	}
-	migrations.AddUnitToMaterial()
 
 	for _, model := range modelsToMigrate {
 		modelType := fmt.Sprintf("%T", model)
