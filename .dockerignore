@@ -1,0 +1,46 @@
+cat << 'EOF' > ayana-go/.dockerignore
+# Git
+.git
+.gitignore
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Go build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+tmp/
+
+# Go test files
+*_test.go
+*.test
+
+# Go development
+.go/
+vendor/
+Godeps/
+
+# IDE specific
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Project specific
+README.md
+docs/
+tests/
+scripts/
+Dockerfile
+.dockerignore
+EOF
