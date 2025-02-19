@@ -26,6 +26,9 @@ WORKDIR /app
 # Copy only the built binary from the builder stage
 COPY --from=builder /app/main .
 
+# Ensure the binary is executable
+RUN chmod +x /app/main
+
 # Expose the port that your application listens on
 EXPOSE 8080
 
@@ -33,4 +36,4 @@ EXPOSE 8080
 ENV GIN_MODE=release
 
 # Command to run the application
-CMD ["./main"]
+CMD ["/app/main"]
