@@ -4,7 +4,6 @@
 
 # Environment variables
 !.env  # ✅ Allow .env file for Docker
-.env.*
 !.env.example  # ✅ Keep .env.example for reference
 
 # Go build artifacts
