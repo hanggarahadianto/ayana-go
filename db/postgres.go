@@ -1,8 +1,6 @@
 package db
 
 import (
-	// "ayana/migrations" // Import migrations without circular dependency
-
 	"ayana/models"
 	utilsEnv "ayana/utils/env"
 	"fmt"
@@ -17,8 +15,8 @@ import (
 var DB *gorm.DB
 
 func InitializeDb(config *utilsEnv.Config) {
-	// Connection string for Supabase
-	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable statement_cache_mode=none",
+	// Connection string for PostgreSQL without invalid parameter
+	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		config.DBHost,
 		config.DBPort,
 		config.DBUser,
@@ -47,7 +45,7 @@ func InitializeDb(config *utilsEnv.Config) {
 	sqlDB.SetMaxIdleConns(5)
 	sqlDB.SetConnMaxLifetime(time.Minute * 30)
 
-	// Ensure UUID extension for Supabase
+	// Ensure UUID extension for PostgreSQL (if needed)
 	err = db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";").Error
 	if err != nil {
 		log.Fatalf("Failed to create UUID extension: %v", err)
@@ -58,10 +56,10 @@ func InitializeDb(config *utilsEnv.Config) {
 	// Auto-migrate models
 	modelsToMigrate := []interface{}{
 		&models.User{},
-		&models.Home{},        // Base model should be first
-		&models.Info{},        // Depends on Home
-		&models.NearBy{},      // Depends on Info
-		&models.Reservation{}, // Depends on Home
+		&models.Home{},
+		&models.Info{},
+		&models.NearBy{},
+		&models.Reservation{},
 		&models.Project{},
 		&models.WeeklyProgress{},
 		&models.Worker{},
@@ -85,6 +83,7 @@ func InitializeDb(config *utilsEnv.Config) {
 			}
 		}
 	}
+
 	// Assign the DB instance to the global variable
 	DB = db
 }
