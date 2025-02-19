@@ -1,36 +1,36 @@
-# Git
+# === 🚀 Git ===
 .git/
 .gitignore
 
-
-# Go build artifacts
+# === 🏗️ Go Build Artifacts ===
 *.exe
-*.exe~
 *.dll
 *.so
 *.dylib
+*.test
+*.exe~
 bin/
 tmp/
 
-# Go test files
+# === 🧪 Go Test Files ===
 *_test.go
-*.test
 
-
-# IDE specific files
+# === 💻 IDE & Editor Specific ===
 .idea/
 .vscode/
 *.swp
 *.swo
 
-# OS specific files
+# === 🖥️ OS Specific Files ===
 .DS_Store
 Thumbs.db
 
-# Project specific
+# === 📂 Project Specific (Docs, Scripts, & Misc) ===
 README.md
 docs/
 tests/
 scripts/
+
+# === 🐳 Docker Specific ===
 Dockerfile
 .dockerignore
