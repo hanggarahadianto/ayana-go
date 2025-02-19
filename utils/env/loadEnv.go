@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/spf13/viper"
@@ -38,18 +39,39 @@ type Config struct {
 	SMTPUser  string `mapstructure:"SMTP_USER"`
 }
 
+// func LoadConfig(path string) (config Config, err error) {
+// 	viper.AddConfigPath(path)
+// 	viper.SetConfigType("env")
+// 	viper.SetConfigName(".env")
+
+// 	viper.AutomaticEnv()
+
+// 	err = viper.ReadInConfig()
+// 	if err != nil {
+// 		return
+// 	}
+
+// 	err = viper.Unmarshal(&config)
+// 	return
+// }
+
 func LoadConfig(path string) (config Config, err error) {
-	viper.AddConfigPath(path)
+	viper.SetConfigFile(fmt.Sprintf("%s/.env", path)) // ✅ Set exact file path
 	viper.SetConfigType("env")
-	viper.SetConfigName(".env")
+	viper.AutomaticEnv() // ✅ Allow overriding with system env vars
 
-	viper.AutomaticEnv()
-
-	err = viper.ReadInConfig()
-	if err != nil {
-		return
+	// ✅ Read .env file if it exists
+	if err := viper.ReadInConfig(); err != nil {
+		fmt.Printf("⚠️ Warning: No .env file found at %s/.env. Using default env variables.\n", path)
+	} else {
+		fmt.Println("✅ Environment variables loaded from .env")
 	}
 
-	err = viper.Unmarshal(&config)
-	return
+	// ✅ Unmarshal into struct
+	if err := viper.Unmarshal(&config); err != nil {
+		fmt.Println("❌ Error parsing .env file:", err)
+		return config, err
+	}
+
+	return config, nil
 }
