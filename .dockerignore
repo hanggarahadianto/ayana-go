@@ -20,9 +20,6 @@ tmp/
 *_test.go
 *.test
 
-# Go module files (if using Go modules)
-go.sum
-go.mod
 
 # IDE specific files
 .idea/
