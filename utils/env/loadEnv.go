@@ -39,22 +39,6 @@ type Config struct {
 	SMTPUser  string `mapstructure:"SMTP_USER"`
 }
 
-// func LoadConfig(path string) (config Config, err error) {
-// 	viper.AddConfigPath(path)
-// 	viper.SetConfigType("env")
-// 	viper.SetConfigName(".env")
-
-// 	viper.AutomaticEnv()
-
-// 	err = viper.ReadInConfig()
-// 	if err != nil {
-// 		return
-// 	}
-
-// 	err = viper.Unmarshal(&config)
-// 	return
-// }
-
 func LoadConfig(path string) (config Config, err error) {
 	viper.SetConfigFile(fmt.Sprintf("%s/.env", path)) // ✅ Set exact file path
 	viper.SetConfigType("env")
