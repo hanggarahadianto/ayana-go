@@ -1,12 +1,11 @@
-cat << 'EOF' > ayana-go/.dockerignore
 # Git
-.git
+.git/
 .gitignore
 
 # Environment variables
-.env
+!.env  # ✅ Allow .env file for Docker
 .env.*
-!.env.example
+!.env.example  # ✅ Keep .env.example for reference
 
 # Go build artifacts
 *.exe
@@ -21,18 +20,17 @@ tmp/
 *_test.go
 *.test
 
-# Go development
-.go/
-vendor/
-Godeps/
+# Go module files (if using Go modules)
+go.sum
+go.mod
 
-# IDE specific
+# IDE specific files
 .idea/
 .vscode/
 *.swp
 *.swo
 
-# OS specific
+# OS specific files
 .DS_Store
 Thumbs.db
 
@@ -43,4 +41,3 @@ tests/
 scripts/
 Dockerfile
 .dockerignore
-EOF
