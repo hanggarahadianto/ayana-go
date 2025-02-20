@@ -2,15 +2,7 @@
 .git/
 .gitignore
 
-# === 🏗️ Go Build Artifacts ===
-*.exe
-*.dll
-*.so
-*.dylib
-*.test
-*.exe~
-bin/
-tmp/
+
 
 # === 🧪 Go Test Files ===
 *_test.go
