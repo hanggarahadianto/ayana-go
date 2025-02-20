@@ -1,35 +1,28 @@
-# Use the official Golang image
-FROM golang:1.21-alpine AS builder
+# Use the official Golang image as a base
+FROM golang:1.20-alpine
 
-# Install necessary dependencies
-RUN apk add --no-cache git
+# Set environment variables
+ENV GO111MODULE=on \
+    CGO_ENABLED=0 \
+    GOOS=linux \
+    GOARCH=amd64
 
-# Set the working directory
+# Set working directory inside the container
 WORKDIR /app
 
-# Copy go.mod and go.sum files to download dependencies
+# Copy Go modules manifests
 COPY go.mod go.sum ./
-RUN go mod tidy
 
-# Copy the rest of the application source code into the container
+# Download Go modules
+RUN go mod download
+
+# Copy the rest of the application files
 COPY . .
 
 # Build the Go application
-RUN go build -o main . && ls -la
+RUN go build -o main .
 
-# Use a minimal Alpine Linux image for the final image
-FROM alpine:latest
-
-# Set the working directory inside the container
-WORKDIR /app
-
-# Copy only the built binary from the builder stage
-COPY --from=builder /app/main .
-
-# Ensure the binary is executable
-RUN chmod +x /app/main && ls -la /app
-
-# Expose the port that your application listens on
+# Expose the application port
 EXPOSE 8080
 
 # Run the application
