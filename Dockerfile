@@ -1,5 +1,3 @@
-
-
 # Use the official Golang image
 FROM golang:1.21-alpine AS builder
 
@@ -29,7 +27,7 @@ WORKDIR /app
 COPY --from=builder /app/main .
 
 # Ensure the binary is executable
-RUN chmod +x /app/main && ls -la
+RUN chmod +x /app/main && ls -la /app
 
 # Expose the port that your application listens on
 EXPOSE 8080
