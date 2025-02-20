@@ -1,6 +1,6 @@
 module ayana
 
-go 1.21.0
+go 1.21
 
 require gorm.io/gorm v1.25.12
 
