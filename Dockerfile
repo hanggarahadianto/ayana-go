@@ -17,7 +17,7 @@ COPY . .
 RUN GOARCH=amd64 GOOS=linux go build -o main .
 
 # Use a minimal base image for the final container
-FROM alpine:latest  
+FROM debian:latest
 
 WORKDIR /app
 
