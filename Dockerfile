@@ -2,7 +2,8 @@
 
 
 # Use the official Golang image
-FROM golang:1.20-alpine AS builder
+FROM golang:1.21-alpine AS builder
+
 
 # Install necessary dependencies
 RUN apk add --no-cache git
