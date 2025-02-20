@@ -1,35 +1,35 @@
-# 1️⃣ Use official Go image to build
+# Use official Go image as builder
 FROM golang:1.21-alpine AS builder
 
-# 2️⃣ Set the working directory inside the container
-WORKDIR /app/ayana-go
+# Set environment variables
+ENV CGO_ENABLED=0 GOOS=linux GOARCH=amd64
 
-# 3️⃣ Copy go.mod and go.sum files
-COPY ayana-go/go.mod ayana-go/go.sum ./
+# Set working directory inside the container
+WORKDIR /app
 
-# 4️⃣ Download dependencies
+# Copy Go modules manifests
+COPY go.mod go.sum ./
+
+# Download dependencies
 RUN go mod download
 
-# 5️⃣ Copy the rest of the application files
-COPY ayana-go .
+# Copy the rest of the application files
+COPY . .  # ✅ This works because context is "ayana-go"
 
-# 6️⃣ Build the Go application and place it in ayana-go
-RUN go build -o /app/ayana-go/main
+# Build the Go application
+RUN go build -o main .
 
-# 7️⃣ Use a lightweight image for runtime
+# Use a minimal base image for the final container
 FROM alpine:latest
 
-# 8️⃣ Set working directory in final container
-WORKDIR /app/ayana-go
+# Set working directory
+WORKDIR /app
 
-# 9️⃣ Copy the built binary from the builder stage
-COPY --from=builder /app/ayana-go/main .
+# Copy the built binary from the builder stage
+COPY --from=builder /app/main .
 
-# 🔟 Ensure the binary has execution permissions
-RUN chmod +x /app/ayana-go/main
-
-# 1️⃣1️⃣ Expose the application's port
+# Expose port
 EXPOSE 8080
 
-# 1️⃣2️⃣ Start the application
-CMD ["/app/ayana-go/main"]
+# Run the application
+CMD ["/app/main"]
