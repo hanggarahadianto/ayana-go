@@ -1,9 +1,7 @@
 
 
-
 # Use the official Golang image
 FROM golang:1.21-alpine AS builder
-
 
 # Install necessary dependencies
 RUN apk add --no-cache git
@@ -19,7 +17,7 @@ RUN go mod tidy
 COPY . .
 
 # Build the Go application
-RUN go build -o main .
+RUN go build -o main . && ls -la
 
 # Use a minimal Alpine Linux image for the final image
 FROM alpine:latest
@@ -31,11 +29,10 @@ WORKDIR /app
 COPY --from=builder /app/main .
 
 # Ensure the binary is executable
-RUN chmod +x /app/main
+RUN chmod +x /app/main && ls -la
 
 # Expose the port that your application listens on
 EXPOSE 8080
 
 # Run the application
 CMD ["/app/main"]
-
