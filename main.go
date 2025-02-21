@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -26,12 +25,10 @@ func main() {
 
 	// Apply CORS middleware before defining any routes
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000"},                                     // Allow requests from http://localhost:3000
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},                   // Include OPTIONS for preflight
-		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization"}, // Add Authorization
-		ExposeHeaders:    []string{"Content-Length"},
+		AllowOrigins:     []string{configure.ClientOrigin}, // ✅ Use the environment variable
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Content-Type", "Authorization"},
 		AllowCredentials: true,
-		MaxAge:           12 * time.Hour, // Cache preflight response for 12 hours
 	}))
 
 	// Handle OPTIONS requests globally
