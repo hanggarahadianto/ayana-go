@@ -5,6 +5,7 @@ import (
 	"ayana/routes"
 	utilsEnv "ayana/utils/env"
 	"log"
+	"os"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -27,13 +28,30 @@ func main() {
 	r := gin.Default()
 
 	// Check if CLIENT_ORIGIN is empty
-	if configure.ClientOrigin == "" {
-		log.Fatal("❌ CLIENT_ORIGIN is not set. Check your .env file.")
+	clientOrigin := configure.ClientOrigin
+	log.Println("Loaded CLIENT_ORIGIN from config:", clientOrigin)
+
+	// Fallback: Try to load from os.Getenv if it's empty
+	if clientOrigin == "" {
+		clientOrigin = os.Getenv("CLIENT_ORIGIN")
+		log.Println("Loaded CLIENT_ORIGIN from environment variable:", clientOrigin)
 	}
 
-	// Apply CORS middleware before defining any routes
+	if clientOrigin == "" {
+		log.Fatal("❌ CLIENT_ORIGIN is not set. Check your .env file or environment variables.")
+	}
+
+	// Initialize database
+	db.InitializeDb(&configure)
+
+	// Set Gin to release mode
+	gin.SetMode(gin.ReleaseMode)
+
+	// Create a new Gin router
+
+	// Apply CORS middleware
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{configure.ClientOrigin}, // ✅ Use the environment variable
+		AllowOrigins:     []string{clientOrigin},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Content-Type", "Authorization"},
 		AllowCredentials: true,
