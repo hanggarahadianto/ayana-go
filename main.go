@@ -12,6 +12,8 @@ import (
 )
 
 func main() {
+	log.SetFlags(0)
+	log.SetOutput(os.Stdout)
 	configure, err := utilsEnv.LoadConfig(".")
 	if err != nil {
 		log.Fatal("🚀 Could not load environment variables ", err)
