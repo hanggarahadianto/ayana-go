@@ -4,7 +4,6 @@ import (
 	"ayana/db"
 	"ayana/routes"
 	utilsEnv "ayana/utils/env"
-	"fmt"
 	"log"
 
 	"github.com/gin-contrib/cors"
@@ -16,7 +15,7 @@ func main() {
 	if err != nil {
 		log.Fatal("🚀 Could not load environment variables ", err)
 	}
-	fmt.Println("Loaded CLIENT_ORIGIN:", configure.ClientOrigin)
+	log.Println("Loaded CLIENT_ORIGIN:", configure.ClientOrigin)
 
 	// Initialize database
 	db.InitializeDb(&configure)
@@ -40,7 +39,7 @@ func main() {
 		AllowCredentials: true,
 	}))
 
-	fmt.Println("✅ CORS Middleware Applied Successfully!")
+	log.Println("✅ CORS Middleware Applied Successfully!")
 
 	// ************* Router
 	routes.SetupAuthRouter(r)
@@ -55,9 +54,9 @@ func main() {
 		c.JSON(200, gin.H{
 			"message": "Welcome to my Ayana application! 🚀",
 		})
-		fmt.Println("Welcome to my Ayana application! 🚀")
+		log.Println("Welcome to my Ayana application! 🚀")
 	})
 
-	fmt.Println("🚀 Server running on port:", configure.ServerPort)
+	log.Println("🚀 Server running on port:", configure.ServerPort)
 	log.Fatal(r.Run(":" + configure.ServerPort))
 }
