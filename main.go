@@ -53,17 +53,13 @@ func main() {
 
 	// Apply CORS middleware
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://134.209.107.103:8080"},
+		AllowOrigins:     []string{"http://frontend:3000", "http://localhost:3000"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Content-Type", "Authorization"},
 		AllowCredentials: true,
 	}))
-	// r.Use(cors.New(cors.Config{
-	// 	AllowOrigins:     []string{clientOrigin},
-	// 	AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-	// 	AllowHeaders:     []string{"Content-Type", "Authorization"},
-	// 	AllowCredentials: true,
-	// }))
+
+	log.Fatal(r.Run("0.0.0.0:" + configure.ServerPort)) // ✅ Important for Docker
 
 	log.Println("✅ CORS Middleware Applied Successfully!")
 
@@ -84,5 +80,6 @@ func main() {
 	})
 
 	log.Println("🚀 Server running on port:", configure.ServerPort)
-	log.Fatal(r.Run(":" + configure.ServerPort))
+	log.Fatal(r.Run("0.0.0.0:" + configure.ServerPort)) // ✅ Works inside Docker
+
 }
