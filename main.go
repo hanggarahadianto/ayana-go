@@ -6,7 +6,6 @@ import (
 	utilsEnv "ayana/utils/env"
 	"fmt"
 	"log"
-	"net/http"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -17,11 +16,21 @@ func main() {
 	if err != nil {
 		log.Fatal("🚀 Could not load environment variables ", err)
 	}
+	fmt.Println("Loaded CLIENT_ORIGIN:", configure.ClientOrigin)
+
+	// Initialize database
 	db.InitializeDb(&configure)
 
+	// Set Gin to release mode
 	gin.SetMode(gin.ReleaseMode)
 
+	// Create a new Gin router
 	r := gin.Default()
+
+	// Check if CLIENT_ORIGIN is empty
+	if configure.ClientOrigin == "" {
+		log.Fatal("❌ CLIENT_ORIGIN is not set. Check your .env file.")
+	}
 
 	// Apply CORS middleware before defining any routes
 	r.Use(cors.New(cors.Config{
@@ -31,14 +40,7 @@ func main() {
 		AllowCredentials: true,
 	}))
 
-	// Handle OPTIONS requests globally
-	r.OPTIONS("/*any", func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", "http://localhost:3000")
-		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		c.Header("Access-Control-Allow-Headers", "Origin, Content-Length, Content-Type, Authorization")
-		c.Header("Access-Control-Allow-Credentials", "true")
-		c.Status(http.StatusNoContent) // 204 No Content
-	})
+	fmt.Println("✅ CORS Middleware Applied Successfully!")
 
 	// ************* Router
 	routes.SetupAuthRouter(r)
@@ -56,6 +58,6 @@ func main() {
 		fmt.Println("Welcome to my Ayana application! 🚀")
 	})
 
-	fmt.Println("running on server : " + configure.ServerPort)
+	fmt.Println("🚀 Server running on port:", configure.ServerPort)
 	log.Fatal(r.Run(":" + configure.ServerPort))
 }
