@@ -1,36 +1,56 @@
 
 services:
-  backend-ayana-go:
+  backend:
+    container_name: Backend-Ayana-Go
     build:
       context: ./ayana-go
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
     env_file:
-      - ./ayana-go/.env   # Load environment variables for backend from .env file
+      - ./ayana-go/.env
     volumes:
       - ./ayana-go:/app
     restart: always
     depends_on:
-      - postgres  # Ensure backend starts after PostgreSQL
+      - postgres
+    networks:
+      - app_network
+    tty: true
+    stdin_open: true
 
   postgres:
-    image: postgres:16  # Use PostgreSQL 16
+    image: postgres:16
     environment:
-      POSTGRES_USER: ${DB_USER}           # Read from .env file
-      POSTGRES_PASSWORD: ${DB_PASSWORD}   # Read from .env file
-      POSTGRES_DB: ${DB_NAME}             # Read from .env file
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data  # Persist data
+      - postgres_data:/var/lib/postgresql/data
     networks:
-      - backend_network
+      - app_network
     restart: always
+
+  frontend:
+    container_name: Frontend-Ayana-Nextjs
+    build:
+      context: ./ayana-nextjs
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:8080  # This points to backend container
+    depends_on:
+      - backend
+    networks:
+      - app_network
+    ports:
+      - "3000:3000"
 
 volumes:
   postgres_data:
 
 networks:
-  backend_network:
+  app_network:
     driver: bridge
