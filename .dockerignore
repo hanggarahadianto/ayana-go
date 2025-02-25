@@ -2,7 +2,8 @@
 .git/
 .gitignore
 
-
+# === 🐳 Docker Specific (Tetap Sertakan Dockerfile) ===
+.dockerignore
 
 # === 🧪 Go Test Files ===
 *_test.go
@@ -17,12 +18,23 @@
 .DS_Store
 Thumbs.db
 
+# === 📂 Build Artifacts ===
+bin/           # Folder hasil kompilasi Go
+dist/          # Folder hasil build jika ada
+build/         # Folder build lainnya
+*.exe          # Binary Windows
+*.out          # Binary Linux/macOS
+*.log          # File log agar tidak memenuhi container
+*.tmp          # File sementara
+
+# === 📂 Cache Dependencies (Go Modules) ===
+vendor/        # Vendor dependencies jika tidak digunakan
+/go/pkg/mod/   # Cache Go modules
+/go/bin/       # Binary dari Go modules
+/tmp/          # File sementara dari proses build
+
 # === 📂 Project Specific (Docs, Scripts, & Misc) ===
 README.md
 docs/
 tests/
 scripts/
-
-# === 🐳 Docker Specific ===
-Dockerfile
-.dockerignore
