@@ -5,10 +5,11 @@ import (
 	"ayana/routes"
 	utilsEnv "ayana/utils/env"
 	"log"
+	"net/http"
 	"os"
 
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/rs/cors"
 )
 
 func main() {
@@ -42,15 +43,17 @@ func main() {
 	// Create a new Gin router
 	r := gin.Default()
 
-	// Apply CORS middleware
-	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{clientOrigin},
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Content-Type", "Authorization"},
+	// Setup CORS using github.com/rs/cors
+	corsMiddleware := cors.New(cors.Options{
+		AllowedOrigins:   []string{clientOrigin}, // Izinkan origin tertentu
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
 		AllowCredentials: true,
-	}))
+		Debug:            true, // Aktifkan debug untuk melihat log CORS
+	})
 
-	log.Println("✅ CORS Middleware Applied Successfully!")
+	// Wrap the Gin router with the CORS middleware
+	handler := corsMiddleware.Handler(r)
 
 	// Setup routes
 	routes.SetupAuthRouter(r)
@@ -72,5 +75,5 @@ func main() {
 	// Start server
 	serverAddr := "0.0.0.0:" + configure.ServerPort
 	log.Println("🚀 Server running on port:", configure.ServerPort)
-	log.Fatal(r.Run(serverAddr))
+	log.Fatal(http.ListenAndServe(serverAddr, handler))
 }
