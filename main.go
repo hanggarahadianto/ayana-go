@@ -43,17 +43,18 @@ func main() {
 	// Create a new Gin router
 	r := gin.Default()
 
-	// Setup CORS using github.com/rs/cors
-	corsMiddleware := cors.New(cors.Options{
-		AllowedOrigins:   []string{clientOrigin}, // Izinkan origin tertentu
+	// Apply CORS middleware
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{clientOrigin},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Content-Type", "Authorization"},
 		AllowCredentials: true,
-		Debug:            true, // Aktifkan debug untuk melihat log CORS
+		Debug:            true, // Set to true for debugging CORS issues
 	})
 
-	// Wrap the Gin router with the CORS middleware
-	handler := corsMiddleware.Handler(r)
+	log.Println("✅ CORS Middleware Applied Successfully!")
+
+	handler := c.Handler(r)
 
 	// Setup routes
 	routes.SetupAuthRouter(r)
