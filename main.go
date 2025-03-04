@@ -6,20 +6,24 @@ import (
 	utilsEnv "ayana/utils/env"
 	"log"
 	"os"
+	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/rs/cors"
 )
 
 func main() {
+	log.Println("🔹 Starting Ayana Backend...")
+
 	// 🔹 Setup logging untuk debugging
-	log.SetFlags(0)
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	log.SetOutput(os.Stdout)
 
 	// 🔹 Load environment variables dari .env
+	log.Println("📂 Loading environment variables...")
 	configure, err := utilsEnv.LoadConfig(".")
 	if err != nil {
-		log.Fatal("🚀 ERROR: Tidak bisa memuat environment variables:", err)
+		log.Fatalf("❌ ERROR: Tidak bisa memuat environment variables: %v", err)
 	}
 
 	// 🔹 Pastikan CLIENT_ORIGIN terbaca
@@ -30,11 +34,12 @@ func main() {
 	if clientOrigin == "" {
 		log.Fatal("❌ ERROR: CLIENT_ORIGIN tidak diset. Periksa file .env atau environment variables.")
 	}
-
-	log.Println("✅ CLIENT_ORIGIN berhasil dimuat:", clientOrigin)
+	log.Printf("✅ CLIENT_ORIGIN: %s\n", clientOrigin)
 
 	// 🔹 Initialize database
+	log.Println("📦 Initializing database...")
 	db.InitializeDb(&configure)
+	log.Println("✅ Database initialized successfully!")
 
 	// 🔹 Set Gin ke mode release (agar lebih cepat di production)
 	gin.SetMode(gin.ReleaseMode)
@@ -43,29 +48,24 @@ func main() {
 	r := gin.Default()
 
 	// 🔹 Middleware CORS untuk menangani request dari frontend
-	corsMiddleware := cors.New(cors.Options{
-		AllowedOrigins:   []string{clientOrigin}, // Gunakan nilai dari environment
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+	log.Println("🌍 Setting up CORS middleware...")
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{clientOrigin}, // Bisa gunakan "*" jika ingin allow semua
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Content-Type", "Authorization"},
 		AllowCredentials: true,
-	})
+		MaxAge:           12 * time.Hour,
+	}))
 
-	// 🔹 Debugging: Cek header response yang dikirim
+	// 🔹 Debugging Middleware: Log setiap request yang masuk
 	r.Use(func(c *gin.Context) {
-		corsMiddleware.HandlerFunc(c.Writer, c.Request)
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
-			return
-		}
+		log.Printf("📥 Incoming Request: %s %s", c.Request.Method, c.Request.URL.Path)
 		c.Next()
-	})
-
-	r.Use(func(c *gin.Context) {
-		c.Next()
-		log.Println("🚀 Response Headers:", c.Writer.Header())
+		log.Printf("📤 Response Status: %d", c.Writer.Status())
 	})
 
 	// 🔹 Setup routes untuk berbagai fitur aplikasi
+	log.Println("📌 Setting up routes...")
 	routes.SetupAuthRouter(r)
 	routes.SetupHomeRouter(r)
 	routes.SetupReservationRouter(r)
@@ -76,14 +76,14 @@ func main() {
 
 	// 🔹 Route utama (tes apakah server berjalan)
 	r.GET("/", func(c *gin.Context) {
+		log.Println("🏠 Root endpoint accessed")
 		c.JSON(200, gin.H{
-			"message": "Welcome to my Ayana application! 🚀",
+			"message": "Welcome to Ayana Backend! 🚀",
 		})
-		log.Println("Welcome to my Ayana application! 🚀")
 	})
 
 	// 🔹 Jalankan server
 	serverAddr := "0.0.0.0:" + configure.ServerPort
-	log.Println("🚀 Server berjalan di port:", configure.ServerPort)
+	log.Printf("🚀 Server berjalan di: http://localhost:%s", configure.ServerPort)
 	log.Fatal(r.Run(serverAddr)) // Gunakan `r.Run()` agar CORS tetap bekerja
 }
