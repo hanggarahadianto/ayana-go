@@ -1,5 +1,6 @@
 # Use Ubuntu as the builder image
-FROM ubuntu:24.04 AS builder
+# FROM ubuntu:24.04 AS builder
+FROM golang:1.21 AS builder
 
 WORKDIR /app
 
@@ -27,6 +28,7 @@ RUN GOARCH=amd64 GOOS=linux go build -o main .
 
 # Use Ubuntu as the final base image
 FROM ubuntu:24.04
+
 
 WORKDIR /app
 
