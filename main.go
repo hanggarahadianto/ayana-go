@@ -6,9 +6,7 @@ import (
 	utilsEnv "ayana/utils/env"
 	"log"
 	"os"
-	"time"
 
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -39,13 +37,26 @@ func main() {
 
 	// 🔹 Middleware CORS untuk menangani request dari frontend
 	log.Println("🌍 Setting up CORS middleware...")
-	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"}, // Bisa gunakan "*" jika ingin allow semua
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Content-Type", "Authorization"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
-	}))
+	// r.Use(cors.New(cors.Config{
+	// 	AllowOrigins:     []string{"*"}, // Bisa gunakan "*" jika ingin allow semua
+	// 	AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+	// 	AllowHeaders:     []string{"Content-Type", "Authorization"},
+	// 	AllowCredentials: true,
+	// 	MaxAge:           12 * time.Hour,
+	// }))
+
+	// Tambahkan middleware khusus untuk OPTIONS
+	r.Use(func(c *gin.Context) {
+		if c.Request.Method == "OPTIONS" {
+			c.Header("Access-Control-Allow-Origin", "*")
+			c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+			c.Header("Access-Control-Allow-Headers", "Authorization, Content-Type")
+			c.Header("Access-Control-Allow-Credentials", "true")
+			c.AbortWithStatus(200) // Ubah dari 403 ke 200
+			return
+		}
+		c.Next()
+	})
 
 	// 🔹 Debugging Middleware: Log setiap request yang masuk
 	r.Use(func(c *gin.Context) {
