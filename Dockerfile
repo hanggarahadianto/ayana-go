@@ -1,48 +1,40 @@
-# Use Ubuntu as the builder image
-# FROM ubuntu:24.04 AS builder
+# Gunakan golang sebagai builder
 FROM golang:1.21 AS builder
 
 WORKDIR /app
 
-# Install necessary dependencies: Git, Go, and CA certificates
+# Hanya install git dan ca-certificates, tidak perlu golang lagi
 RUN apt update && apt install -y \
-    golang \
     git \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Set Go environment variables
-ENV GOPROXY=https://proxy.golang.org,direct
-ENV GOSUMDB=sum.golang.org
-
-
-# Copy Go modules files and download dependencies
+# Copy go.mod dan go.sum sebelum copy semua file
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy the rest of the application source code
+# Copy seluruh source code
 COPY . .
 
-# Build the Go binary inside the container
-RUN GOARCH=amd64 GOOS=linux go build -o main .
+# Build aplikasi dengan path absolut agar tidak ada kesalahan path
+RUN GOARCH=amd64 GOOS=linux go build -o /app/main .
 
-# Use Ubuntu as the final base image
+# Gunakan Ubuntu sebagai base image
 FROM ubuntu:24.04
-
 
 WORKDIR /app
 
-# Install CA certificates in the final image
+# Install CA certificates
 RUN apt update && apt install -y ca-certificates curl && rm -rf /var/lib/apt/lists/*
 
-# Copy the compiled binary from the builder stage
-COPY --from=builder /app/main .
+# Copy binary dengan path absolut untuk memastikan file ada
+COPY --from=builder /app/main /app/main
 
-# Ensure the binary has execution permissions
-RUN chmod +x main
+# Beri izin eksekusi ke binary
+RUN chmod +x /app/main
 
-# Expose the Go app's port (5000)
+# Expose port aplikasi
 EXPOSE 5000
 
-# Run the binary
-CMD ["./main"]
+# Jalankan aplikasi
+CMD ["/app/main"]
