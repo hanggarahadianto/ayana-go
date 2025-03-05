@@ -26,16 +26,6 @@ func main() {
 		log.Fatalf("❌ ERROR: Tidak bisa memuat environment variables: %v", err)
 	}
 
-	// 🔹 Pastikan CLIENT_ORIGIN terbaca
-	clientOrigin := configure.ClientOrigin
-	if clientOrigin == "" {
-		clientOrigin = os.Getenv("CLIENT_ORIGIN") // Coba baca dari ENV
-	}
-	if clientOrigin == "" {
-		log.Fatal("❌ ERROR: CLIENT_ORIGIN tidak diset. Periksa file .env atau environment variables.")
-	}
-	log.Printf("✅ CLIENT_ORIGIN: %s\n", clientOrigin)
-
 	// 🔹 Initialize database
 	log.Println("📦 Initializing database...")
 	db.InitializeDb(&configure)
@@ -50,7 +40,7 @@ func main() {
 	// 🔹 Middleware CORS untuk menangani request dari frontend
 	log.Println("🌍 Setting up CORS middleware...")
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{clientOrigin}, // Bisa gunakan "*" jika ingin allow semua
+		AllowOrigins:     []string{"*"}, // Bisa gunakan "*" jika ingin allow semua
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Content-Type", "Authorization"},
 		AllowCredentials: true,
