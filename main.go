@@ -6,7 +6,9 @@ import (
 	utilsEnv "ayana/utils/env"
 	"log"
 	"os"
+	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -46,24 +48,33 @@ func main() {
 	// }))
 
 	// Tambahkan middleware khusus untuk OPTIONS
-	r.Use(func(c *gin.Context) {
-		if c.Request.Method == "OPTIONS" {
-			c.Header("Access-Control-Allow-Origin", "*")
-			c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-			c.Header("Access-Control-Allow-Headers", "Authorization, Content-Type")
-			c.Header("Access-Control-Allow-Credentials", "true")
-			c.AbortWithStatus(200) // Ubah dari 403 ke 200
-			return
-		}
-		c.Next()
-	})
+	// r.Use(func(c *gin.Context) {
+	// 	if c.Request.Method == "OPTIONS" {
+	// 		c.Header("Access-Control-Allow-Origin", "*")
+	// 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+	// 		c.Header("Access-Control-Allow-Headers", "Authorization, Content-Type")
+	// 		c.Header("Access-Control-Allow-Credentials", "true")
+	// 		c.AbortWithStatus(200) // Ubah dari 403 ke 200
+	// 		return
+	// 	}
+	// 	c.Next()
+	// })
+
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"}, // Ganti dengan domain frontend jika perlu, misalnya "https://ayanagroup99.com"
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Authorization", "Content-Type"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
 
 	// 🔹 Debugging Middleware: Log setiap request yang masuk
-	r.Use(func(c *gin.Context) {
-		log.Printf("📥 Incoming Request: %s %s", c.Request.Method, c.Request.URL.Path)
-		c.Next()
-		log.Printf("📤 Response Status: %d", c.Writer.Status())
-	})
+	// r.Use(func(c *gin.Context) {
+	// 	log.Printf("📥 Incoming Request: %s %s", c.Request.Method, c.Request.URL.Path)
+	// 	c.Next()
+	// 	log.Printf("📤 Response Status: %d", c.Writer.Status())
+	// })
 
 	// 🔹 Setup routes untuk berbagai fitur aplikasi
 	log.Println("📌 Setting up routes...")

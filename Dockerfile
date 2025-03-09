@@ -1,4 +1,3 @@
-cat Dockerfile
 # Stage 1: Build aplikasi dalam builder container
 FROM ubuntu:24.04 AS builder
 
