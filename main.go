@@ -6,7 +6,6 @@ import (
 	utilsEnv "ayana/utils/env"
 	"log"
 	"os"
-	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -39,34 +38,24 @@ func main() {
 
 	// 🔹 Middleware CORS untuk menangani request dari frontend
 	log.Println("🌍 Setting up CORS middleware...")
+
 	// r.Use(cors.New(cors.Config{
-	// 	AllowOrigins:     []string{"*"}, // Bisa gunakan "*" jika ingin allow semua
+	// 	AllowOrigins:     []string{"*"}, // Ganti dengan domain frontend jika perlu, misalnya "https://ayanagroup99.com"
 	// 	AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-	// 	AllowHeaders:     []string{"Content-Type", "Authorization"},
+	// 	AllowHeaders:     []string{"Authorization", "Content-Type"},
+	// 	ExposeHeaders:    []string{"Content-Length"},
 	// 	AllowCredentials: true,
 	// 	MaxAge:           12 * time.Hour,
 	// }))
 
-	// Tambahkan middleware khusus untuk OPTIONS
-	// r.Use(func(c *gin.Context) {
-	// 	if c.Request.Method == "OPTIONS" {
-	// 		c.Header("Access-Control-Allow-Origin", "*")
-	// 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-	// 		c.Header("Access-Control-Allow-Headers", "Authorization, Content-Type")
-	// 		c.Header("Access-Control-Allow-Credentials", "true")
-	// 		c.AbortWithStatus(200) // Ubah dari 403 ke 200
-	// 		return
-	// 	}
-	// 	c.Next()
-	// })
-
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"}, // Ganti dengan domain frontend jika perlu, misalnya "https://ayanagroup99.com"
+		AllowOriginFunc: func(origin string) bool {
+			return true // Mengizinkan semua domain yang mengirim request
+		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Authorization", "Content-Type"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
+		ExposeHeaders:    []string{"Authorization"},
+		AllowCredentials: true, // Harus true agar bisa mengirim token/cookie
 	}))
 
 	// 🔹 Debugging Middleware: Log setiap request yang masuk
