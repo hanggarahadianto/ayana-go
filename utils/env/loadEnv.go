@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/spf13/viper"
@@ -16,6 +17,7 @@ type Config struct {
 	ServerPort string `mapstructure:"SERVER_PORT"`
 
 	ClientOrigin string `mapstructure:"CLIENT_ORIGIN"`
+	JWTSecret    string `mapstructure:"JWT_SECRET"`
 
 	AccessTokenPrivateKey  string        `mapstructure:"ACCESS_TOKEN_PRIVATE_KEY"`
 	AccessTokenPublicKey   string        `mapstructure:"ACCESS_TOKEN_PUBLIC_KEY"`
@@ -40,18 +42,40 @@ type Config struct {
 }
 
 func LoadConfig(path string) (config Config, err error) {
-	viper.SetConfigFile(fmt.Sprintf("%s/.env", path)) // ✅ Set exact file path
+	viper.SetConfigFile(fmt.Sprintf("%s/.env", path))
 	viper.SetConfigType("env")
-	viper.AutomaticEnv() // ✅ Allow overriding with system env vars
+	viper.AutomaticEnv()
 
-	// ✅ Read .env file if it exists
 	if err := viper.ReadInConfig(); err != nil {
 		fmt.Printf("⚠️ Warning: No .env file found at %s/.env. Using default env variables.\n", path)
 	} else {
 		fmt.Println("✅ Environment variables loaded from .env")
 	}
 
-	// ✅ Unmarshal into struct
+	config.AccessTokenPrivateKey = strings.ReplaceAll(viper.GetString("ACCESS_TOKEN_PRIVATE_KEY"), `\n`, "\n")
+	config.AccessTokenPublicKey = strings.ReplaceAll(viper.GetString("ACCESS_TOKEN_PUBLIC_KEY"), `\n`, "\n")
+
+	// ✅ Convert ACCESS_TOKEN_EXPIRED_IN (string) -> time.Duration
+	accessTokenDuration, err := time.ParseDuration(viper.GetString("ACCESS_TOKEN_EXPIRED_IN"))
+	if err != nil {
+		fmt.Println("❌ Error parsing ACCESS_TOKEN_EXPIRED_IN:", err)
+		return config, err
+	}
+	config.AccessTokenExpiresIn = accessTokenDuration
+
+	// ✅ Convert REFRESH_TOKEN_EXPIRED_IN (string) -> time.Duration
+	refreshTokenDuration, err := time.ParseDuration(viper.GetString("REFRESH_TOKEN_EXPIRED_IN"))
+	if err != nil {
+		fmt.Println("❌ Error parsing REFRESH_TOKEN_EXPIRED_IN:", err)
+		return config, err
+	}
+	config.RefreshTokenExpiresIn = refreshTokenDuration
+
+	// ✅ Use GetInt for integer values
+	config.AccessTokenMaxAge = viper.GetInt("ACCESS_TOKEN_MAXAGE")
+	config.RefreshTokenMaxAge = viper.GetInt("REFRESH_TOKEN_MAXAGE")
+
+	// ✅ Unmarshal ke struct
 	if err := viper.Unmarshal(&config); err != nil {
 		fmt.Println("❌ Error parsing .env file:", err)
 		return config, err

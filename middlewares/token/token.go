@@ -1,64 +1,54 @@
 package middlewares
 
 import (
-	"encoding/base64"
+	"crypto/rsa"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt"
 )
 
-func GenerateToken(ttl time.Duration, payload interface{}, privateKey string) (string, error) {
-
-	decodedPrivateKey, err := base64.StdEncoding.DecodeString(privateKey)
+func GenerateToken(ttl time.Duration, payload interface{}, privateKeyPath string) (string, error) {
+	// Load private key from file
+	key, err := LoadPrivateKey(privateKeyPath)
 	if err != nil {
-		return "", fmt.Errorf("could not decode key: %w", err)
-	}
-	key, err := jwt.ParseRSAPrivateKeyFromPEM(decodedPrivateKey)
-
-	if err != nil {
-		return "", fmt.Errorf("create: parse key: %w", err)
+		return "", fmt.Errorf("could not load private key: %w", err)
 	}
 
 	now := time.Now().UTC()
-	claims := make(jwt.MapClaims)
-
-	claims["sub"] = payload
-	claims["exp"] = now.Add(ttl).Unix()
-	claims["iat"] = now.Unix()
-	claims["nbf"] = now.Unix()
-
-	token, err := jwt.NewWithClaims(jwt.SigningMethodRS256, claims).SignedString(key)
-
-	if err != nil {
-		return "", fmt.Errorf("create : sign token : %w", err)
+	claims := jwt.MapClaims{
+		"sub": payload,             // User ID atau data lainnya
+		"exp": now.Add(ttl).Unix(), // Expiry time
+		"iat": now.Unix(),          // Issued at
+		"nbf": now.Unix(),          // Not before
 	}
 
-	return token, nil
+	// Buat token dengan RSA256
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+	signedToken, err := token.SignedString(key)
+	if err != nil {
+		return "", fmt.Errorf("could not sign token: %w", err)
+	}
+
+	return signedToken, nil
 }
 
 func ValidateToken(token string, publicKey string) (interface{}, error) {
-	decodedPublicKey, err := base64.StdEncoding.DecodeString(publicKey)
-
+	key, err := jwt.ParseRSAPublicKeyFromPEM([]byte(publicKey))
 	if err != nil {
-		return nil, fmt.Errorf("could not decode: %w", err)
-	}
-
-	key, err := jwt.ParseRSAPublicKeyFromPEM(decodedPublicKey)
-
-	if err != nil {
-		return "", fmt.Errorf("validate : parse key : %w", err)
+		return nil, fmt.Errorf("could not parse public key: %w", err)
 	}
 
 	parsedToken, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
-			return nil, fmt.Errorf("unexpected method : %s", t.Header["alg"])
+			return nil, fmt.Errorf("unexpected signing method: %s", t.Header["alg"])
 		}
 		return key, nil
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("validate : %w", err)
+		return nil, fmt.Errorf("could not parse token: %w", err)
 	}
 
 	claims, ok := parsedToken.Claims.(jwt.MapClaims)
@@ -67,4 +57,29 @@ func ValidateToken(token string, publicKey string) (interface{}, error) {
 	}
 
 	return claims["sub"], nil
+}
+
+func LoadPrivateKey(path string) (*rsa.PrivateKey, error) {
+	privateKeyData, err := os.ReadFile(path) // ✅ Gunakan os.ReadFile
+	if err != nil {
+		return nil, fmt.Errorf("error reading private key: %w", err)
+	}
+	privateKey, err := jwt.ParseRSAPrivateKeyFromPEM(privateKeyData)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing private key: %w", err)
+	}
+	return privateKey, nil
+}
+
+// Load public key from file
+func LoadPublicKey(path string) (*rsa.PublicKey, error) {
+	publicKeyData, err := os.ReadFile(path) // ✅ Gunakan os.ReadFile
+	if err != nil {
+		return nil, fmt.Errorf("error reading public key: %w", err)
+	}
+	publicKey, err := jwt.ParseRSAPublicKeyFromPEM(publicKeyData)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing public key: %w", err)
+	}
+	return publicKey, nil
 }

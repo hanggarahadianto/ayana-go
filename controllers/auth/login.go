@@ -2,21 +2,32 @@ package controllers
 
 import (
 	"ayana/db"
-	middlewares "ayana/middlewares/token"
 	"ayana/models"
+	"fmt"
+	"net/http"
+	"time"
+
 	utilsAuth "ayana/utils/auth"
 	utilsEnv "ayana/utils/env"
 
-	"net/http"
-
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v4"
 )
 
-// Login handler for user authentication
-func Login(c *gin.Context) {
-	var loginData models.LoginData
+type LoginData struct {
+	Username string `json:"username" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}
 
-	// Bind the JSON request data to loginData
+type Claims struct {
+	Username string `json:"username"`
+	jwt.RegisteredClaims
+}
+
+func Login(c *gin.Context) {
+	var loginData LoginData
+
+	// Bind JSON input
 	if err := c.ShouldBindJSON(&loginData); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  false,
@@ -26,10 +37,13 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// Find user by username
+	// Cetak username dan password ke console
+
+	// Cari user berdasarkan username
 	var user models.User
 	result := db.DB.First(&user, "username = ?", loginData.Username)
 	if result.Error != nil {
+		fmt.Println("User not found")
 		c.JSON(http.StatusNotFound, gin.H{
 			"status":  false,
 			"message": "Username not found",
@@ -37,7 +51,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// Verify password
+	// Validasi password (sebaiknya gunakan bcrypt.CompareHashAndPassword di produksi)
 	if err := utilsAuth.VerifiedPassword(user.Password, loginData.Password); err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"status":  false,
@@ -45,29 +59,36 @@ func Login(c *gin.Context) {
 		})
 		return
 	}
+	// Buat token JWT
+	expirationTime := time.Now().Add(24 * time.Hour)
+	claims := &Claims{
+		Username: user.Username,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expirationTime),
+		},
+	}
 
-	// Generate JWT token
 	config, _ := utilsEnv.LoadConfig(".")
-	token, err := middlewares.GenerateToken(config.AccessTokenExpiresIn, user.ID, config.AccessTokenPrivateKey)
+
+	fmt.Println("JWT ENV", []byte(config.JWTSecret))
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString([]byte(config.JWTSecret))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  false,
-			"message": "Error generating token",
-			"error":   err.Error(),
+			"message": "Failed to generate token",
 		})
 		return
 	}
 
-	// Set token as a secure HTTP-only cookie
-	c.SetCookie("token", token, config.AccessTokenMaxAge*60, "/", "localhost", false, true)
-
-	// Respond with the user data and token
+	// Berikan token sebagai respons
 	c.JSON(http.StatusOK, gin.H{
 		"status":  true,
 		"message": "Login success",
 		"data": gin.H{
 			"user":  user,
-			"token": token,
+			"token": tokenString,
 		},
 	})
 }
