@@ -28,6 +28,7 @@ func EditProject(c *gin.Context) {
 	// Update project data with new values from the request body
 	existingProject.ProjectName = projectData.ProjectName
 	existingProject.ProjectLeader = projectData.ProjectLeader
+	existingProject.Investor = projectData.Investor
 	existingProject.TotalCost = projectData.TotalCost
 	existingProject.ProjectTime = projectData.ProjectTime
 	existingProject.ProjectStart = projectData.ProjectStart
