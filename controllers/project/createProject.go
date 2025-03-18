@@ -22,6 +22,7 @@ func CreateProject(c *gin.Context) {
 	newProject := models.Project{
 		ProjectName:   projectData.ProjectName,
 		ProjectLeader: projectData.ProjectLeader,
+		Investor:      projectData.Investor,
 		TotalCost:     projectData.TotalCost,
 		ProjectTime:   projectData.ProjectTime,
 		ProjectStart:  projectData.ProjectStart, // Set the ProjectStart value from the input

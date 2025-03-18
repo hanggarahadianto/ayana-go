@@ -58,13 +58,6 @@ func main() {
 		AllowCredentials: true, // Harus true agar bisa mengirim token/cookie
 	}))
 
-	// 🔹 Debugging Middleware: Log setiap request yang masuk
-	// r.Use(func(c *gin.Context) {
-	// 	log.Printf("📥 Incoming Request: %s %s", c.Request.Method, c.Request.URL.Path)
-	// 	c.Next()
-	// 	log.Printf("📤 Response Status: %d", c.Writer.Status())
-	// })
-
 	// 🔹 Setup routes untuk berbagai fitur aplikasi
 	log.Println("📌 Setting up routes...")
 	routes.SetupAuthRouter(r)
