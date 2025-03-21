@@ -56,6 +56,7 @@ func InitializeDb(config *utilsEnv.Config) {
 	// Auto-migrate models
 	modelsToMigrate := []interface{}{
 		&models.User{},
+		&models.Company{},
 		&models.Home{},
 		&models.Info{},
 		&models.NearBy{},
@@ -66,6 +67,7 @@ func InitializeDb(config *utilsEnv.Config) {
 		&models.Material{},
 		&models.CashFlow{},
 		&models.Goods{},
+		&models.Payout{},
 	}
 
 	for _, model := range modelsToMigrate {
