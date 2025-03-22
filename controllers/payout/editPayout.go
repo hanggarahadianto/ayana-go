@@ -8,87 +8,51 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 func EditPayout(c *gin.Context) {
-	var cashFlow models.CashFlow
-
-	if err := c.ShouldBindJSON(&cashFlow); err != nil {
+	// Bind JSON input ke struct Payout
+	var updatedPayout models.Payout
+	if err := c.ShouldBindJSON(&updatedPayout); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	var existingCashFlow models.CashFlow
-	if err := db.DB.Where("id = ?", cashFlow.ID).Preload("Good").First(&existingCashFlow).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Cash Flow ID does not exist"})
-		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching Cash Flow"})
-		}
+	// Validasi apakah ID valid
+	if updatedPayout.ID == uuid.Nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid payout ID"})
 		return
 	}
 
+	// Cek apakah Payout ada di database berdasarkan ID dan CompanyID
+	var payout models.Payout
+	if err := db.DB.Where("id = ? AND company_id = ?", updatedPayout.ID, updatedPayout.CompanyID).First(&payout).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Payout not found"})
+		return
+	}
+
+	// Mulai transaksi database
 	tx := db.DB.Begin()
 
-	existingCashFlow.WeekNumber = cashFlow.WeekNumber
-	existingCashFlow.CashIn = cashFlow.CashIn
-	existingCashFlow.CashOut = cashFlow.CashOut
-	existingCashFlow.Outstanding = cashFlow.Outstanding
-	existingCashFlow.ProjectID = cashFlow.ProjectID
-	existingCashFlow.UpdatedAt = time.Now()
+	// Update data payout
+	payout.Invoice = updatedPayout.Invoice
+	payout.Nominal = updatedPayout.Nominal
+	payout.DateInputed = updatedPayout.DateInputed
+	payout.Note = updatedPayout.Note
+	payout.UpdatedAt = time.Now()
 
-	if err := tx.Save(&existingCashFlow).Error; err != nil {
+	if err := tx.Save(&payout).Error; err != nil {
 		tx.Rollback()
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update Cash Flow"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update Payout"})
 		return
 	}
 
-	var goodIDsToDelete []uuid.UUID
-	for _, existingGood := range existingCashFlow.Good {
-		found := false
-		for _, updatedGood := range cashFlow.Good {
-			if existingGood.ID == updatedGood.ID {
-				found = true
-				break
-			}
-		}
-		if !found {
-			goodIDsToDelete = append(goodIDsToDelete, existingGood.ID)
-		}
-	}
-
-	if len(goodIDsToDelete) > 0 {
-		if err := tx.Where("id IN ?", goodIDsToDelete).Delete(&models.Goods{}).Error; err != nil {
-			tx.Rollback()
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete Goods"})
-			return
-		}
-	}
-
-	for _, good := range cashFlow.Good {
-		if good.ID != uuid.Nil {
-			if err := tx.Model(&models.Goods{}).Where("id = ?", good.ID).Updates(good).Error; err != nil {
-				tx.Rollback()
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update Good"})
-				return
-			}
-		} else {
-			good.CashFlowId = existingCashFlow.ID
-			if err := tx.Create(&good).Error; err != nil {
-				tx.Rollback()
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add Good"})
-				return
-			}
-		}
-	}
-
+	// Commit transaksi
 	tx.Commit()
 
+	// Respon sukses
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
-		"data": gin.H{
-			"cash_flow": existingCashFlow,
-		},
+		"data":   payout,
 	})
 }

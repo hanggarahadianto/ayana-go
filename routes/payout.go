@@ -12,7 +12,7 @@ func SetupPayoutRouter(r *gin.Engine) {
 		payout.GET("/get", payoutController.GetPayoutsByCompany)
 		// project.GET("/getById/:id", projectController.GetProjectById)
 		payout.POST("/post", payoutController.CreatePayout)
-		// project.PUT("/edit", projectController.EditProject)
-		// project.DELETE("/delete/:id", projectController.DeleteProject)
+		payout.PUT("/edit", payoutController.EditPayout)
+		payout.DELETE("/delete/:id", payoutController.DeletePayout)
 	}
 }
