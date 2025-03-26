@@ -16,7 +16,7 @@ type Goods struct {
 	Unit      string    `gorm:"type:varchar(255);not null" json:"unit" form:"unit"`
 	TotalCost float64   `gorm:"type:decimal(10,2);not null" json:"total_cost" form:"total_cost"`
 
-	CashFlowId uuid.UUID `gorm:"type:uuid;not null;index" json:"cash_flow_id"`
+	CashFlowId uuid.UUID `gorm:"type:uuid;not null;index;constraint:OnDelete:CASCADE;" json:"cash_flow_id"`
 
 	CreatedAt time.Time `gorm:"type:timestamp;default:now()" json:"created_at"`
 	UpdatedAt time.Time `gorm:"type:timestamp;default:now()" json:"updated_at"`
