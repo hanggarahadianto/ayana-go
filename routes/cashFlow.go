@@ -14,7 +14,7 @@ func SetupCashFlowRouter(r *gin.Engine) {
 		cashFlow.POST("/post", cashFlowController.CreateCashFlow)
 		cashFlow.PUT("/edit/:id", cashFlowController.UpdateCashFlow)
 		// weeklyProgress.GET("getById/:id", weeklyProgress.HomeById)
-		// weeklyProgress.DELETE("deleteById/:id", weeklyProgress.DeleteHome)
+		cashFlow.DELETE("deleteById/:id", cashFlowController.DeleteCashFlow)
 		// weeklyProgress.PUT("update/:id", weeklyProgress.UpdateHome)
 		// weeklyProgress.POST("/img", middlewares.FileUploadMiddleware(), weeklyProgress.AddImage)
 	}

@@ -14,7 +14,7 @@ func SetupGoodRouter(r *gin.Engine) {
 		good.POST("/post", goodController.CreateGood)
 		good.PUT("/edit", goodController.UpdateGood)
 		// weeklyProgress.GET("getById/:id", weeklyProgress.HomeById)
-		// weeklyProgress.DELETE("deleteById/:id", weeklyProgress.DeleteHome)
+
 		// weeklyProgress.PUT("update/:id", weeklyProgress.UpdateHome)
 		// weeklyProgress.POST("/img", middlewares.FileUploadMiddleware(), weeklyProgress.AddImage)
 	}

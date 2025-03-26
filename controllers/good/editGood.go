@@ -8,14 +8,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
-// UpdateGood menangani pembuatan, pembaruan, dan penghapusan data Goods berdasarkan payload
 func UpdateGood(c *gin.Context) {
 	var goodsPayload []models.Goods
 
-	// Bind JSON payload ke struct goodsPayload
+	// Bind JSON payload ke struct
 	if err := c.ShouldBindJSON(&goodsPayload); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -24,61 +22,67 @@ func UpdateGood(c *gin.Context) {
 	var response []models.Goods
 	var errors []error
 
-	// Loop melalui setiap item dalam payload
+	// Ambil semua ID yang terkait dengan cash_flow_id yang dikirimkan dalam payload
+	var cashFlowIDs []uuid.UUID
 	for _, good := range goodsPayload {
-		goodID, err := uuid.Parse(good.ID.String())
+		cashFlowIDs = append(cashFlowIDs, good.CashFlowId)
+	}
 
-		// Jika ID tidak valid atau kosong, buat record baru
-		if err != nil || good.ID == uuid.Nil {
-			newGood := models.Goods{
-				ID:         good.ID,
-				GoodsName:  good.GoodsName,
-				Status:     good.Status,
-				Quantity:   good.Quantity,
-				CostsDue:   good.CostsDue,
-				Price:      good.Price,
-				Unit:       good.Unit,
-				TotalCost:  good.TotalCost,
-				CashFlowId: good.CashFlowId,
-				CreatedAt:  time.Now(),
-				UpdatedAt:  time.Now(),
-			}
+	var existingGoods []models.Goods
+	if err := db.DB.Where("cash_flow_id IN (?)", cashFlowIDs).Find(&existingGoods).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch existing goods"})
+		return
+	}
 
-			if err := db.DB.Create(&newGood).Error; err != nil {
+	existingGoodsMap := make(map[uuid.UUID]models.Goods)
+	for _, g := range existingGoods {
+		existingGoodsMap[g.ID] = g
+	}
+
+	processedIDs := make(map[uuid.UUID]bool)
+
+	for _, good := range goodsPayload {
+		goodID := good.ID
+		if goodID == uuid.Nil {
+			// Create new record jika ID kosong
+			good.ID = uuid.New()
+			good.CreatedAt = time.Now()
+			good.UpdatedAt = time.Now()
+
+			if err := db.DB.Create(&good).Error; err != nil {
 				errors = append(errors, err)
 				continue
 			}
-			response = append(response, newGood)
+			response = append(response, good)
 		} else {
-			// Jika ID valid, lakukan update
-			var existingGood models.Goods
-			result := db.DB.First(&existingGood, "id = ?", goodID)
+			// Update existing record jika ID ditemukan
+			if existingGood, found := existingGoodsMap[goodID]; found {
+				existingGood.GoodsName = good.GoodsName
+				existingGood.Status = good.Status
+				existingGood.Quantity = good.Quantity
+				existingGood.CostsDue = good.CostsDue
+				existingGood.Price = good.Price
+				existingGood.Unit = good.Unit
+				existingGood.TotalCost = good.TotalCost
+				existingGood.CashFlowId = good.CashFlowId
+				existingGood.UpdatedAt = time.Now()
 
-			// Jika data tidak ditemukan, tambahkan ke errors
-			if result.Error == gorm.ErrRecordNotFound {
-				errors = append(errors, result.Error)
-				continue
-			} else if result.Error != nil {
-				errors = append(errors, result.Error)
-				continue
+				if err := db.DB.Save(&existingGood).Error; err != nil {
+					errors = append(errors, err)
+					continue
+				}
+				response = append(response, existingGood)
+				processedIDs[goodID] = true
 			}
+		}
+	}
 
-			// Update field dengan nilai baru
-			existingGood.GoodsName = good.GoodsName
-			existingGood.Status = good.Status
-			existingGood.Quantity = good.Quantity
-			existingGood.CostsDue = good.CostsDue
-			existingGood.Price = good.Price
-			existingGood.Unit = good.Unit
-			existingGood.TotalCost = good.TotalCost
-			existingGood.CashFlowId = good.CashFlowId
-			existingGood.UpdatedAt = time.Now()
-
-			if err := db.DB.Save(&existingGood).Error; err != nil {
+	// Hapus data yang tidak termasuk dalam payload
+	for id, existingGood := range existingGoodsMap {
+		if !processedIDs[id] {
+			if err := db.DB.Delete(&existingGood).Error; err != nil {
 				errors = append(errors, err)
-				continue
 			}
-			response = append(response, existingGood)
 		}
 	}
 
