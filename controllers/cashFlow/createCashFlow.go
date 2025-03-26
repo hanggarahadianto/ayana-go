@@ -38,14 +38,13 @@ func CreateCashFlow(c *gin.Context) {
 
 	// Create the new CashFlow entry
 	newCashFlow := models.CashFlow{
-		ID:          uuid.New(),
-		WeekNumber:  cashFlow.WeekNumber,
-		CashIn:      cashFlow.CashIn,
-		CashOut:     cashFlow.CashOut,
-		Outstanding: cashFlow.Outstanding,
-		ProjectID:   cashFlow.ProjectID,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		ID:         uuid.New(),
+		WeekNumber: cashFlow.WeekNumber,
+		CashIn:     cashFlow.CashIn,
+		CashOut:    cashFlow.CashOut,
+		ProjectID:  cashFlow.ProjectID,
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
 	}
 
 	// Insert the new CashFlow record into the database
@@ -55,35 +54,13 @@ func CreateCashFlow(c *gin.Context) {
 		return
 	}
 
-	// Check if Goods data is provided in the incoming request
-	if len(cashFlow.Good) > 0 {
-		// Prepare Goods entries with the new CashFlow ID
-		var goods []models.Goods
-		for _, good := range cashFlow.Good {
-			good.ID = uuid.New()
-			good.CashFlowId = newCashFlow.ID // Link the good to the new CashFlow
-			goods = append(goods, good)
-		}
-
-		// Insert the Goods entries into the database
-		if err := tx.Create(&goods).Error; err != nil {
-			tx.Rollback()
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create Goods"})
-			return
-		}
-
-		// Associate the created Goods with the new CashFlow
-		newCashFlow.Good = goods
-	}
-
 	// Commit the transaction if all operations were successful
 	tx.Commit()
 
 	// Respond with success and return the created CashFlow data
+
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
-		"data": gin.H{
-			"cash_flow": newCashFlow,
-		},
+		"data":   newCashFlow, // Use the newly created CashFlow object
 	})
 }

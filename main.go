@@ -39,15 +39,6 @@ func main() {
 	// 🔹 Middleware CORS untuk menangani request dari frontend
 	log.Println("🌍 Setting up CORS middleware...")
 
-	// r.Use(cors.New(cors.Config{
-	// 	AllowOrigins:     []string{"*"}, // Ganti dengan domain frontend jika perlu, misalnya "https://ayanagroup99.com"
-	// 	AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-	// 	AllowHeaders:     []string{"Authorization", "Content-Type"},
-	// 	ExposeHeaders:    []string{"Content-Length"},
-	// 	AllowCredentials: true,
-	// 	MaxAge:           12 * time.Hour,
-	// }))
-
 	r.Use(cors.New(cors.Config{
 		AllowOriginFunc: func(origin string) bool {
 			return true // Mengizinkan semua domain yang mengirim request
@@ -69,6 +60,7 @@ func main() {
 	routes.SetupCashFlowRouter(r)
 	routes.SetupPayoutRouter(r)
 	routes.SetupCompanyRouter(r)
+	routes.SetupGoodRouter(r)
 
 	// 🔹 Route utama (tes apakah server berjalan)
 	r.GET("/", func(c *gin.Context) {
