@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"net/http"
-	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -12,7 +11,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 func CreateHome(c *gin.Context) {
@@ -45,15 +43,9 @@ func CreateHome(c *gin.Context) {
 	}
 	defer file.Close()
 
-	title := c.Request.PostFormValue("title")
-	slugTitle := strings.ReplaceAll(strings.ToLower(title), " ", "-") // Convert to slug
-	uniqueID := uuid.New().String()[:8]                               // Short unique ID
-	ext := filepath.Ext(header.Filename)                              // Get file extension
-	filename := slugTitle + "-" + uniqueID + ext                      // Create final filename
+	filename := header.Filename
 
-	// Upload file
-
-	imageUrl, err := uploadClaudinary.UploadtoHomeFolder(file, filename)
+	imageUrl, err := uploadClaudinary.UploadToCloudinary(file, filename)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status": "failed",
@@ -80,6 +72,14 @@ func CreateHome(c *gin.Context) {
 		})
 		return
 	}
+	sequence, err := strconv.Atoi(c.Request.PostFormValue("sequence"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status": "failed",
+			"error":  "sequence must be a valid number",
+		})
+		return
+	}
 
 	// Save to database
 	now := time.Now()
@@ -94,6 +94,7 @@ func CreateHome(c *gin.Context) {
 		Price:     float64(price),
 		Quantity:  quantity,
 		Status:    c.Request.PostFormValue("status"),
+		Sequence:  sequence,
 		CreatedAt: now,
 		UpdatedAt: now,
 		Image:     imageUrl,

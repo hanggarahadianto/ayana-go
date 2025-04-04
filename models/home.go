@@ -20,6 +20,7 @@ type Home struct {
 	Price     float64   `gorm:"type:bigint;not null" json:"price" form:"price"`
 	Quantity  int       `gorm:"type:bigint;not null" json:"quantity" form:"quantity"`
 	Status    string    `gorm:"type:varchar(255);not null" json:"status"`
+	Sequence  int       `gorm:"type:bigint;not null" json:"sequence" form:"sequence"`
 	CreatedAt time.Time `gorm:"not null" json:"created_at"`
 	UpdatedAt time.Time `gorm:"not null" json:"updated_at"`
 }

@@ -27,7 +27,7 @@ func AddImage(c *gin.Context) {
 	}
 
 	// upload file
-	imageUrl, err := uploadClaudinary.UploadtoHomeFolder(file.(multipart.File), filename.(string))
+	imageUrl, err := uploadClaudinary.UploadToCloudinary(file.(multipart.File), filename.(string))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status": "failed",

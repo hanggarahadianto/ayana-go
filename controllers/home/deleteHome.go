@@ -4,21 +4,43 @@ import (
 	"ayana/db"
 	"ayana/models"
 	uploadClaudinary "ayana/utils/cloudinary-folder"
+
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
+// func ExtractPublicID(imageURL string) (string, error) {
+// 	parsedURL, err := url.Parse(imageURL)
+// 	if err != nil {
+// 		return "", err
+// 	}
+
+// 	// Hapus '/upload/vXYZ/' → ambil bagian setelahnya
+// 	segments := strings.Split(parsedURL.Path, "/upload/")
+// 	if len(segments) < 2 {
+// 		return "", fmt.Errorf("format URL tidak valid")
+// 	}
+
+// 	publicID := segments[1]
+// 	publicID = strings.TrimPrefix(publicID, "v")   // kadang masih ada v123/
+// 	publicID = strings.SplitN(publicID, "/", 2)[1] // buang version
+// 	publicID, _ = url.QueryUnescape(publicID)      // decode %20 → spasi
+
+// 	// Hapus ekstensi ganda .png.png jika perlu
+// 	publicID = strings.ReplaceAll(publicID, ".png.png", ".png")
+
+// 	return publicID, nil
+// }
+
 // DeleteHome deletes a home from the database and removes its image from Cloudinary
 func DeleteHome(c *gin.Context) {
-	fmt.Println("🚀 Starting DeleteHome process...")
 
 	homeId := c.Param("id")
-	fmt.Println("🔍 Home ID:", homeId)
 
-	// Parse UUID
 	homeUUID, err := uuid.Parse(homeId)
 	if err != nil {
 		fmt.Println("❌ Invalid Home ID:", err)
@@ -34,24 +56,16 @@ func DeleteHome(c *gin.Context) {
 		return
 	}
 
-	// Log the image URL before deleting
-	fmt.Println("🖼 Home Image URL:", home.Image)
-
-	// Delete image from Cloudinary
-	err = uploadClaudinary.DeleteFromCloudinary(home.Image)
+	publicID, err := uploadClaudinary.ExtractPublicID(home.Image)
 	if err != nil {
-		fmt.Println("❌ Error deleting image from Cloudinary:", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"status": "failed", "message": "Failed to delete image from Cloudinary"})
-		return
+		log.Println("❌ Gagal extract Public ID:", err)
 	}
-	fmt.Println("✅ Image deleted from Cloudinary:", home.Image)
 
-	// Delete related records
-	fmt.Println("🗑 Deleting related Reservations and Info records...")
-	db.DB.Debug().Where("home_id = ?", homeUUID).Delete(&models.Reservation{})
-	db.DB.Debug().Where("home_id = ?", homeUUID).Delete(&models.Info{})
+	err = uploadClaudinary.DeleteFromCloudinary(publicID)
+	if err != nil {
+		log.Println("❌ Gagal hapus dari Cloudinary:", err)
+	}
 
-	// Get all Info IDs linked to this Home
 	var infoIDs []uuid.UUID
 	db.DB.Model(&models.Info{}).Where("home_id = ?", homeUUID).Pluck("id", &infoIDs)
 
@@ -61,7 +75,6 @@ func DeleteHome(c *gin.Context) {
 		db.DB.Debug().Where("info_id IN (?)", infoIDs).Delete(&models.NearBy{})
 	}
 
-	// Delete the Home itself
 	fmt.Println("🗑 Deleting Home record from database...")
 	result := db.DB.Debug().Where("id = ?", homeUUID).Delete(&models.Home{})
 	if result.Error != nil || result.RowsAffected == 0 {
@@ -70,6 +83,6 @@ func DeleteHome(c *gin.Context) {
 		return
 	}
 
-	fmt.Println("✅ Home and image deleted successfully")
+	// fmt.Println("✅ Home and image deleted successfully")
 	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "Home and image deleted successfully"})
 }
