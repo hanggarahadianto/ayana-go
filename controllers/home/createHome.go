@@ -4,13 +4,14 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"ayana/db"
 	"ayana/models"
 	uploadClaudinary "ayana/utils/cloudinary-folder"
-	"time"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 func CreateHome(c *gin.Context) {
@@ -44,75 +45,73 @@ func CreateHome(c *gin.Context) {
 	defer file.Close()
 
 	filename := header.Filename
+	var newHome models.Home
 
-	imageUrl, err := uploadClaudinary.UploadToCloudinary(file, filename)
+	// Mulai transaksi database
+	err = db.DB.Transaction(func(tx *gorm.DB) error {
+		imageUrl, err := uploadClaudinary.UploadToCloudinary(file, filename)
+		if err != nil {
+			return err // Jika gagal upload, transaksi otomatis rollback
+		}
+
+		// Convert price, quantity, sequence safely
+		price, err := strconv.Atoi(c.Request.PostFormValue("price"))
+		if err != nil {
+			_ = uploadClaudinary.DeleteFromCloudinary(imageUrl) // Hapus gambar jika terjadi error
+			return err
+		}
+
+		quantity, err := strconv.Atoi(c.Request.PostFormValue("quantity"))
+		if err != nil {
+			_ = uploadClaudinary.DeleteFromCloudinary(imageUrl)
+			return err
+		}
+
+		sequence, err := strconv.Atoi(c.Request.PostFormValue("sequence"))
+		if err != nil {
+			_ = uploadClaudinary.DeleteFromCloudinary(imageUrl)
+			return err
+		}
+
+		// Save to database
+		now := time.Now()
+		newHome = models.Home{
+			Title:     c.Request.PostFormValue("title"),
+			Location:  c.Request.PostFormValue("location"),
+			Content:   c.Request.PostFormValue("content"),
+			Address:   c.Request.PostFormValue("address"),
+			Bathroom:  c.Request.PostFormValue("bathroom"),
+			Bedroom:   c.Request.PostFormValue("bedroom"),
+			Square:    c.Request.PostFormValue("square"),
+			Price:     float64(price),
+			Quantity:  quantity,
+			Status:    c.Request.PostFormValue("status"),
+			Sequence:  sequence,
+			CreatedAt: now,
+			UpdatedAt: now,
+			Image:     imageUrl,
+		}
+
+		// Insert into database
+		if err := tx.Create(&newHome).Error; err != nil {
+			_ = uploadClaudinary.DeleteFromCloudinary(imageUrl) // Hapus gambar jika gagal menyimpan ke DB
+			return err
+		}
+
+		return nil // Jika berhasil, commit transaksi
+	})
+
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"status": "failed",
-			"error":  "upload to cloudinary failed: " + err.Error(),
-		})
-		return
-	}
-
-	// Convert price and quantity safely
-	price, err := strconv.Atoi(c.Request.PostFormValue("price"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status": "failed",
-			"error":  "price must be a valid number",
-		})
-		return
-	}
-
-	quantity, err := strconv.Atoi(c.Request.PostFormValue("quantity"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status": "failed",
-			"error":  "quantity must be a valid number",
-		})
-		return
-	}
-	sequence, err := strconv.Atoi(c.Request.PostFormValue("sequence"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status": "failed",
-			"error":  "sequence must be a valid number",
-		})
-		return
-	}
-
-	// Save to database
-	now := time.Now()
-	newHome := models.Home{
-		Title:     c.Request.PostFormValue("title"),
-		Location:  c.Request.PostFormValue("location"),
-		Content:   c.Request.PostFormValue("content"),
-		Address:   c.Request.PostFormValue("address"),
-		Bathroom:  c.Request.PostFormValue("bathroom"),
-		Bedroom:   c.Request.PostFormValue("bedroom"),
-		Square:    c.Request.PostFormValue("square"),
-		Price:     float64(price),
-		Quantity:  quantity,
-		Status:    c.Request.PostFormValue("status"),
-		Sequence:  sequence,
-		CreatedAt: now,
-		UpdatedAt: now,
-		Image:     imageUrl,
-	}
-
-	// Insert into database
-	result := db.DB.Debug().Create(&newHome)
-	if result.Error != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "failed",
-			"message": result.Error.Error(),
+			"message": err.Error(),
 		})
 		return
 	}
 
-	// Success response
 	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"data":   newHome,
+		"status":  "success",
+		"message": "Home created successfully",
+		"data":    newHome,
 	})
 }

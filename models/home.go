@@ -10,7 +10,7 @@ type Home struct {
 	ID uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primary_key" json:"id"`
 
 	Title     string    `gorm:"type:varchar(255);not null" json:"title" form:"title"`
-	Location  string    `gorm:"type:varchar(255);not null" json:"location" form:"location"`
+	Location  string    `gorm:"type:varchar(255)" json:"location" form:"location"`
 	Content   string    `gorm:"type:varchar(255);not null" json:"content" form:"content"`
 	Image     string    `gorm:"type:varchar(255);not null" json:"image" form:"image"`
 	Address   string    `gorm:"type:varchar(255);not null" json:"address" form:"address"`

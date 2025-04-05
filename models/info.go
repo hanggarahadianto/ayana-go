@@ -9,7 +9,7 @@ import (
 type Info struct {
 	ID         uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primary_key" json:"id"`
 	Maps       string    `json:"maps"`
-	StartPrice string    `json:"start_price"`
+	StartPrice float64   `json:"start_price"`
 
 	HomeID uuid.UUID `gorm:"type:uuid;constraint:OnDelete:CASCADE;" json:"home_id"`
 
