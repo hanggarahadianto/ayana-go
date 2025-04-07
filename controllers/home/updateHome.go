@@ -3,63 +3,102 @@ package controllers
 import (
 	"ayana/db"
 	"ayana/models"
+	uploadClaudinary "ayana/utils/cloudinary-folder"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
 func UpdateHome(c *gin.Context) {
-	homeId := c.Param("id")
+	id := c.Param("id")
+	var home models.Home
 
-	var updateHomeData models.Home
-	result := db.DB.Debug().First(&updateHomeData, "id = ?", homeId)
-	if result.Error != nil {
+	// Cari data berdasarkan ID
+	if err := db.DB.First(&home, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"status":  "failed",
-			"message": "home id not found",
+			"message": "Home not found",
 		})
 		return
 	}
 
-	// filename, ok := c.Get("filePath")
-	// if !ok {
-	// 	c.JSON(http.StatusBadRequest, gin.H{
-	// 		"error": "filename not found",
-	// 		"data":  filename,
-	// 	})
-	// }
-	// file, ok := c.Get("file")
-	// if !ok {
-	// 	c.JSON(http.StatusBadRequest, gin.H{
-	// 		"status": "failed",
-	// 	})
-	// }
+	// Ambil nilai dari form
+	title := c.Request.PostFormValue("title")
+	location := c.Request.PostFormValue("location")
+	content := c.Request.PostFormValue("content")
+	address := c.Request.PostFormValue("address")
+	bathroom := c.Request.PostFormValue("bathroom")
+	bedroom := c.Request.PostFormValue("bedroom")
+	square := c.Request.PostFormValue("square")
+	priceStr := c.Request.PostFormValue("price")
+	quantityStr := c.Request.PostFormValue("quantity")
+	status := c.Request.PostFormValue("status")
+	sequenceStr := c.Request.PostFormValue("sequence")
 
-	// upload file
-	// imageUrl, err := uploadClaudinary.UploadtoHomeFolder(file.(multipart.File), filename.(string))
-	// if err != nil {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{
-	// 		"status": "failed",
-	// 		"error":  err.Error()})
-	// 	return
-	// }
-
-	afterUpdateHome := models.Home{
-		ID:       updateHomeData.ID,
-		Title:    c.Request.PostFormValue("title"),
-		Content:  c.Request.PostFormValue("content"),
-		Address:  c.Request.PostFormValue("address"),
-		Bathroom: c.Request.PostFormValue("bathroom"),
-		Bedroom:  c.Request.PostFormValue("bedroom"),
-		Square:   c.Request.PostFormValue("square"),
+	// Validasi dan konversi numerik
+	price, err := strconv.Atoi(priceStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "failed", "message": "Invalid price"})
+		return
+	}
+	quantity, err := strconv.Atoi(quantityStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "failed", "message": "Invalid quantity"})
+		return
+	}
+	sequence, err := strconv.Atoi(sequenceStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "failed", "message": "Invalid sequence"})
+		return
 	}
 
-	// newHome.Image = imageUrl
+	// Cek apakah file baru diunggah
+	file, header, err := c.Request.FormFile("file")
+	var imageUrl string
+	if err == nil {
+		defer file.Close()
 
-	db.DB.Debug().Model(&updateHomeData).Updates(afterUpdateHome)
-	c.JSON(http.StatusBadRequest, gin.H{
+		// Upload file baru
+		imageUrl, err = uploadClaudinary.UploadToCloudinary(file, header.Filename)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"status": "failed", "message": "Failed to upload image"})
+			return
+		}
+
+		// Hapus gambar lama
+		if home.Image != "" {
+			_ = uploadClaudinary.DeleteFromCloudinary(home.Image)
+		}
+	} else {
+		// Jika tidak upload file, gunakan gambar lama
+		imageUrl = home.Image
+	}
+
+	// Update data
+	home.Title = title
+	home.Location = location
+	home.Content = content
+	home.Address = address
+	home.Bathroom = bathroom
+	home.Bedroom = bedroom
+	home.Square = square
+	home.Price = float64(price)
+	home.Quantity = quantity
+	home.Status = status
+	home.Sequence = sequence
+	home.Image = imageUrl
+	home.UpdatedAt = time.Now()
+
+	if err := db.DB.Save(&home).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "failed", "message": "Failed to update home"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
 		"status":  "success",
-		"message": afterUpdateHome,
+		"message": "Home updated successfully",
+		"data":    home,
 	})
-
 }
