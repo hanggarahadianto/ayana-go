@@ -35,7 +35,9 @@ func CreatePayout(c *gin.Context) {
 		Invoice:     payout.Invoice,
 		Nominal:     payout.Nominal,
 		DateInputed: payout.DateInputed,
+		DueDate:     payout.DueDate,
 		Note:        payout.Note,
+		Status:      payout.Status,
 		CompanyID:   payout.CompanyID,
 
 		CreatedAt: time.Now(),

@@ -9,19 +9,37 @@ import (
 )
 
 func GetCompany(c *gin.Context) {
-	// Ambil query parameter dari request
-
-	// Query untuk mencari company berdasarkan company_id
 	var companyList []models.Company
 
-	if err := db.DB.Debug().Order("created_at desc, updated_at desc").Find(&companyList).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Company not found"})
+	// Query database dengan pengecekan lebih baik
+	err := db.DB.Debug().
+		Order("created_at DESC, updated_at DESC").
+		Find(&companyList).Error
+
+	if err != nil {
+		// Jika terjadi error database
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "Failed to query database",
+			"error":   err.Error(),
+		})
 		return
 	}
 
-	// Kirim response jika ditemukan
+	// Jika tidak ada data yang ditemukan
+	if len(companyList) == 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"status":  "success",
+			"message": "No companies found",
+			"data":    []models.Company{},
+		})
+		return
+	}
+
+	// Jika data ditemukan
 	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"data":   companyList,
+		"status":  "success",
+		"message": "Companies retrieved successfully",
+		"data":    companyList,
 	})
 }

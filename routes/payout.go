@@ -10,6 +10,7 @@ func SetupPayoutRouter(r *gin.Engine) {
 	payout := r.Group("/payout")
 	{
 		payout.GET("/get", payoutController.GetPayoutsByCompany)
+		payout.GET("/debt/get", payoutController.GetDebtByID)
 		// project.GET("/getById/:id", projectController.GetProjectById)
 		payout.POST("/post", payoutController.CreatePayout)
 		payout.PUT("/edit", payoutController.EditPayout)
