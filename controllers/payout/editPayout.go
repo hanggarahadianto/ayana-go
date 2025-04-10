@@ -11,48 +11,60 @@ import (
 )
 
 func EditPayout(c *gin.Context) {
-	// Bind JSON input ke struct Payout
-	var updatedPayout models.Payout
-	if err := c.ShouldBindJSON(&updatedPayout); err != nil {
+	var input models.Payout
+
+	// Bind input JSON ke struct
+	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Validasi apakah ID valid
-	if updatedPayout.ID == uuid.Nil {
+	if input.ID == uuid.Nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid payout ID"})
 		return
 	}
 
-	// Cek apakah Payout ada di database berdasarkan ID dan CompanyID
-	var payout models.Payout
-	if err := db.DB.Where("id = ? AND company_id = ?", updatedPayout.ID, updatedPayout.CompanyID).First(&payout).Error; err != nil {
+	// Ambil payout berdasarkan ID dan company_id
+	var existing models.Payout
+	if err := db.DB.Where("id = ? AND company_id = ?", input.ID, input.CompanyID).First(&existing).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Payout not found"})
 		return
 	}
 
-	// Mulai transaksi database
-	tx := db.DB.Begin()
+	// Update field jika nilainya tidak kosong atau nol
+	if input.Invoice != "" {
+		existing.Invoice = input.Invoice
+	}
+	if input.Nominal != 0 {
+		existing.Nominal = input.Nominal
+	}
+	if input.DateInputed != nil {
+		existing.DateInputed = input.DateInputed
+	}
+	if input.DueDate != nil {
+		existing.DueDate = input.DueDate
+	}
+	if input.PaymentDate != nil {
+		existing.PaymentDate = input.PaymentDate
+	}
 
-	// Update data payout
-	payout.Invoice = updatedPayout.Invoice
-	payout.Nominal = updatedPayout.Nominal
-	payout.DateInputed = updatedPayout.DateInputed
-	payout.Note = updatedPayout.Note
-	payout.UpdatedAt = time.Now()
+	if input.Note != "" {
+		existing.Note = input.Note
+	}
+	if input.Status != "" {
+		existing.Status = input.Status
+	}
 
-	if err := tx.Save(&payout).Error; err != nil {
-		tx.Rollback()
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update Payout"})
+	existing.UpdatedAt = time.Now()
+
+	// Simpan perubahan
+	if err := db.DB.Save(&existing).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update payout"})
 		return
 	}
 
-	// Commit transaksi
-	tx.Commit()
-
-	// Respon sukses
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
-		"data":   payout,
+		"data":   existing,
 	})
 }

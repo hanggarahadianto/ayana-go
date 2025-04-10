@@ -12,8 +12,11 @@ type Payout struct {
 	Nominal     int64      `gorm:"type:bigint;not null" json:"nominal" form:"nominal"`
 	DateInputed *time.Time `gorm:"type:timestamp" json:"date_inputed" form:"date_inputed"`
 	DueDate     *time.Time `gorm:"type:timestamp" json:"due_date" form:"due_date"`
+	PaymentDate *time.Time `gorm:"type:timestamp" json:"payment_date" form:"payment_date"`
 	Note        string     `gorm:"type:varchar(255);not null" json:"note" form:"note"`
 	Status      string     `gorm:"type:varchar(255);not null" json:"status" form:"status"`
+	Category    string     `gorm:"type:varchar(255);not null" json:"category" form:"category"`
+	Mitra       string     `gorm:"type:varchar(255);not null" json:"mitra" form:"mitra"` // Foreign key ke Mitra
 
 	CompanyID uuid.UUID `gorm:"type:uuid;not null" json:"company_id"` // Foreign key ke Company
 

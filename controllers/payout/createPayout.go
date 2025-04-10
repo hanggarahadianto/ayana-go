@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 func CreatePayout(c *gin.Context) {
@@ -31,7 +30,7 @@ func CreatePayout(c *gin.Context) {
 
 	// Buat payout baru
 	newPayout := models.Payout{
-		ID:          uuid.New(),
+
 		Invoice:     payout.Invoice,
 		Nominal:     payout.Nominal,
 		DateInputed: payout.DateInputed,
@@ -39,6 +38,8 @@ func CreatePayout(c *gin.Context) {
 		Note:        payout.Note,
 		Status:      payout.Status,
 		CompanyID:   payout.CompanyID,
+		Category:    payout.Category,
+		Mitra:       payout.Mitra,
 
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
