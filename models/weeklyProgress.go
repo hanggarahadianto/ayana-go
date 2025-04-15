@@ -9,7 +9,7 @@ import (
 type WeeklyProgress struct {
 	ID             uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primary_key" json:"id"`
 	WeekNumber     string    `json:"week_number" form:"week_number"`
-	Percentage     string    `json:"percentage" form:"percentage"`
+	Percentage     int64     `gorm:"type:bigint;not null" json:"percentage" form:"percentage"`
 	AmountWorker   int64     `gorm:"type:bigint;not null" json:"amount_worker" form:"amount_worker"`
 	AmountMaterial int64     `gorm:"type:bigint;not null" json:"amount_material" form:"amount_material"`
 
