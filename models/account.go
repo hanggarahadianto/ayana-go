@@ -8,7 +8,7 @@ import (
 
 type Account struct {
 	ID          uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primary_key" json:"id"`
-	Code        string    `gorm:"type:varchar(20);unique;not null" json:"code"` // ex: 101, 201
+	Code        int16     `gorm:"type:varchar(20);unique;not null" json:"code"` // ex: 101, 201
 	Name        string    `gorm:"type:varchar(100);not null" json:"name"`       // ex: Kas, Gaji
 	Type        string    `gorm:"type:varchar(50);not null" json:"type"`        // Asset, Expense, Liability, Revenue, Equity
 	Category    string    `gorm:"type:varchar(100)" json:"category"`            // Gaji, Operasional, Piutang, dll

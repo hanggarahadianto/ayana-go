@@ -10,6 +10,7 @@ import (
 func SetupAccountRouter(r *gin.Engine) {
 	account := r.Group("/account")
 	{
+		account.GET("/get", accountController.GetAccount)
 		account.POST("/post", accountController.CreateAccount)
 
 	}

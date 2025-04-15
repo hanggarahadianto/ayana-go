@@ -17,6 +17,15 @@ func CreateAccount(c *gin.Context) {
 		return
 	}
 
+	var existingAccount models.Account
+	if err := db.DB.Where("code = ?", input.Code).First(&existingAccount).Error; err == nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Kode sudah tersedia",
+		})
+		return
+	}
+
 	account := models.Account{
 		Code:        input.Code,
 		Name:        input.Name,

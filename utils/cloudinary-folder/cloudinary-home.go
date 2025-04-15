@@ -8,8 +8,9 @@ import (
 
 	"log"
 	"mime/multipart"
-	"net/url"
-	"strings"
+
+	// "net/url"
+	// "strings"
 
 	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
 )
@@ -41,34 +42,34 @@ func UploadToCloudinary(file multipart.File, filePath string) (string, error) {
 	return result.SecureURL, nil
 }
 
-func ExtractPublicID(imageURL string) (string, error) {
-	parsedURL, err := url.Parse(imageURL)
-	if err != nil {
-		return "", err
-	}
+// func ExtractPublicID(imageURL string) (string, error) {
+// 	parsedURL, err := url.Parse(imageURL)
+// 	if err != nil {
+// 		return "", err
+// 	}
 
-	// Hapus '/upload/vXYZ/' → ambil bagian setelahnya
-	segments := strings.Split(parsedURL.Path, "/upload/")
-	if len(segments) < 2 {
-		return "", fmt.Errorf("format URL tidak valid")
-	}
+// 	// Hapus '/upload/vXYZ/' → ambil bagian setelahnya
+// 	segments := strings.Split(parsedURL.Path, "/upload/")
+// 	if len(segments) < 2 {
+// 		return "", fmt.Errorf("format URL tidak valid")
+// 	}
 
-	publicID := segments[1]
-	publicID = strings.TrimPrefix(publicID, "v")   // kadang masih ada v123/
-	publicID = strings.SplitN(publicID, "/", 2)[1] // buang version
-	publicID, _ = url.QueryUnescape(publicID)      // decode %20 → spasi
+// 	publicID := segments[1]
+// 	publicID = strings.TrimPrefix(publicID, "v")   // kadang masih ada v123/
+// 	publicID = strings.SplitN(publicID, "/", 2)[1] // buang version
+// 	publicID, _ = url.QueryUnescape(publicID)      // decode %20 → spasi
 
-	// Hapus ekstensi ganda .png.png jika perlu
-	publicID = strings.ReplaceAll(publicID, ".png.png", ".png")
+// 	// Hapus ekstensi ganda .png.png jika perlu
+// 	publicID = strings.ReplaceAll(publicID, ".png.png", ".png")
 
-	return publicID, nil
-}
+// 	return publicID, nil
+// }
 
-type CloudinaryConfig struct {
-	CloudName string
-	ApiKey    string
-	ApiSecret string
-}
+// type CloudinaryConfig struct {
+// 	CloudName string
+// 	ApiKey    string
+// 	ApiSecret string
+// }
 
 func DeleteFromCloudinary(publicID string) error {
 	// Load .env config
@@ -88,7 +89,8 @@ func DeleteFromCloudinary(publicID string) error {
 	_, err = cld.Upload.Destroy(context.Background(), uploader.DestroyParams{
 		PublicID:     publicID,
 		ResourceType: "image",
-		Invalidate:   &invalidate,
+
+		Invalidate: &invalidate,
 	})
 	if err != nil {
 		return fmt.Errorf("❌ Gagal hapus gambar dari Cloudinary: %v", err)
