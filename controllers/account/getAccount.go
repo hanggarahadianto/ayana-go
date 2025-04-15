@@ -47,9 +47,13 @@ func GetAccount(c *gin.Context) {
 		return
 	}
 
-	// Count total with the same filter
+	// Count total records without limit and offset
 	var total int64
-	query.Count(&total)
+	countQuery := db.DB.Model(&models.Account{}).Where("company_id = ?", companyID)
+	if accountType != "" {
+		countQuery = countQuery.Where("type = ?", accountType)
+	}
+	countQuery.Count(&total)
 
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
