@@ -51,7 +51,6 @@ func main() {
 
 	// 🔹 Setup routes untuk berbagai fitur aplikasi
 	log.Println("📌 Setting up routes...")
-	routes.SetupJournalEntryRouter(r)
 
 	routes.SetupAuthRouter(r)
 	routes.SetupHomeRouter(r)
@@ -64,6 +63,8 @@ func main() {
 	routes.SetupCompanyRouter(r)
 	routes.SetupGoodRouter(r)
 	routes.SetupAccountRouter(r)
+	routes.SetupPayinRouter(r)
+	routes.SetupTransactionCategoryRouter(r)
 
 	// 🔹 Route utama (tes apakah server berjalan)
 	r.GET("/", func(c *gin.Context) {

@@ -8,7 +8,7 @@ import (
 
 type JournalEntry struct {
 	ID          uuid.UUID  `gorm:"type:uuid;default:uuid_generate_v4();primary_key" json:"id"`
-	Date        *time.Time `gorm:"type:timestamp;not null" json:"date"` // Tanggal transaksi
+	DateInputed *time.Time `gorm:"type:timestamp;not null" json:"date_inputed"` // Tanggal transaksi
 	Description string     `gorm:"type:varchar(255);not null" json:"description"`
 	Invoice     string     `gorm:"type:varchar(100);unique" json:"invoice"`
 	Category    string     `gorm:"type:varchar(100)" json:"category"`              // misalnya: payroll, equipment, dsb

@@ -71,6 +71,7 @@ func InitializeDb(config *utilsEnv.Config) {
 		&models.Account{},
 		&models.JournalEntry{},
 		&models.JournalLine{},
+		&models.TransactionCategory{},
 	}
 
 	for _, model := range modelsToMigrate {
