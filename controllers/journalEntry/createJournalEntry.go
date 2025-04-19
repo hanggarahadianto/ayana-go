@@ -1,71 +1,139 @@
-package journalentry
+package controller
 
-// import (
-// 	"ayana/db"
-// 	"ayana/models"
-// 	"net/http"
-// 	"time"
+import (
+	"ayana/db"
+	"ayana/models"
+	"net/http"
+	"time"
 
-// 	"github.com/gin-gonic/gin"
-// 	"github.com/google/uuid"
-// )
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+)
 
-// func CreateJournalEntry(c *gin.Context) {
-// 	var journal models.JournalEntry
+func CreateJournalEntry(c *gin.Context) {
+	var input models.JournalEntry
 
-// 	// Parse JSON dari request
-// 	if err := c.ShouldBindJSON(&journal); err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Gagal parsing JSON: " + err.Error()})
-// 		return
-// 	}
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Invalid input",
+			"details": err.Error(),
+		})
+		return
+	}
 
-// 	var existing models.JournalEntry
-// 	if err := db.DB.Where("invoice = ?", journal.Invoice).First(&existing).Error; err == nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invoice tidak boleh sama"})
-// 		return
-// 	}
+	if input.TransactionCategoryID == uuid.Nil || input.Amount <= 0 || input.CompanyID == uuid.Nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Missing required fields",
+		})
+		return
+	}
 
-// 	// Generate UUID jika belum ada
-// 	if journal.ID == uuid.Nil {
-// 		journal.ID = uuid.New()
-// 	}
+	var company models.Company
+	if err := db.DB.First(&company, "id = ?", input.CompanyID).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Company not found",
+		})
+		return
+	}
 
-// 	// Set tanggal jika null (optional)
-// 	if journal.Date == nil {
-// 		now := time.Now()
-// 		journal.Date = &now
-// 	}
+	// Validate Transaction Category
+	var trxCategory models.TransactionCategory
+	if err := db.DB.Preload("DebitAccount").Preload("CreditAccount").First(&trxCategory, "id = ?", input.TransactionCategoryID).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Transaction category not found",
+		})
+		return
+	}
 
-// 	// Set waktu dibuat dan diupdate
-// 	journal.CreatedAt = time.Now()
-// 	journal.UpdatedAt = time.Now()
+	// Validate Accounts associated with the Transaction Category
+	var debitAccount models.Account
+	if err := db.DB.First(&debitAccount, "id = ?", trxCategory.DebitAccountID).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Debit account not found",
+		})
+		return
+	}
 
-// 	// Validasi: minimal ada 1 baris jurnal
-// 	if len(journal.Lines) == 0 {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Minimal satu baris jurnal (lines) diperlukan."})
-// 		return
-// 	}
+	var creditAccount models.Account
+	if err := db.DB.First(&creditAccount, "id = ?", trxCategory.CreditAccountID).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Credit account not found",
+		})
+		return
+	}
 
-// 	// Set ID dan JournalID untuk tiap JournalLine
-// 	for i := range journal.Lines {
-// 		if journal.Lines[i].ID == uuid.Nil {
-// 			journal.Lines[i].ID = uuid.New()
-// 		}
-// 		journal.Lines[i].JournalID = journal.ID
-// 		journal.Lines[i].CreatedAt = time.Now()
-// 		journal.Lines[i].UpdatedAt = time.Now()
-// 	}
+	// Create JournalEntry
+	journal := models.JournalEntry{
+		ID:                    uuid.New(),
+		Invoice:               input.Invoice,
+		Description:           input.Description,
+		TransactionCategoryID: input.TransactionCategoryID,
+		Amount:                input.Amount,
+		Partner:               input.Partner,
+		TransactionType:       input.TransactionType,
+		Status:                input.Status,
+		DateInputed:           input.DateInputed,
+		CompanyID:             input.CompanyID,
+		CreatedAt:             time.Now(),
+		UpdatedAt:             time.Now(),
+	}
 
-// 	// Simpan ke database (akan insert ke JournalEntry dan JournalLine)
-// 	if err := db.DB.Create(&journal).Error; err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menyimpan jurnal: " + err.Error()})
-// 		return
-// 	}
+	// Create Lines (Auto from Transaction Category)
+	journal.Lines = []models.JournalLine{
+		{
+			ID:          uuid.New(),
+			JournalID:   journal.ID,
+			AccountID:   trxCategory.DebitAccountID,
+			Debit:       input.Amount,
+			Credit:      0,
+			Description: "Auto debit from transaction category",
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
+		},
+		{
+			ID:          uuid.New(),
+			JournalID:   journal.ID,
+			AccountID:   trxCategory.CreditAccountID,
+			Debit:       0,
+			Credit:      input.Amount,
+			Description: "Auto credit from transaction category",
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
+		},
+	}
 
-// 	// Respons sukses
-// 	c.JSON(http.StatusOK, gin.H{
-// 		"status":  "success",
-// 		"message": "Journal entry berhasil dibuat",
-// 		"data":    journal,
-// 	})
-// }
+	if err := db.DB.Create(&journal).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "Failed to create journal entry",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	var journalWithLinesAndCategory models.JournalEntry
+	if err := db.DB.Preload("Lines.Account").
+		Preload("TransactionCategory").
+		Preload("TransactionCategory.DebitAccount").
+		Preload("TransactionCategory.CreditAccount").
+		First(&journalWithLinesAndCategory, "id = ?", journal.ID).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "Failed to preload journal lines and transaction category",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": "success",
+		"data":   journalWithLinesAndCategory,
+	})
+
+}

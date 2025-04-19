@@ -1,4 +1,3 @@
-// CreateTransactionCategory creates a new transaction category.
 package controller
 
 import (

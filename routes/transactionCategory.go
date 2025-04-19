@@ -10,6 +10,7 @@ func SetupTransactionCategoryRouter(r *gin.Engine) {
 	transactionController := r.Group("/transaction-category")
 	{
 		transactionController.POST("/post", transactionCategory.CreateTransactionCategory)
+		transactionController.GET("/get", transactionCategory.GetTransactionCategory)
 
 	}
 }

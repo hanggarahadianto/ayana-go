@@ -7,12 +7,15 @@ import (
 )
 
 type JournalLine struct {
-	ID          uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primary_key" json:"id"`
-	JournalID   uuid.UUID `gorm:"type:uuid;not null" json:"journal_id"`          // Foreign key untuk JournalEntry
-	AccountCode string    `gorm:"type:varchar(50);not null" json:"account_code"` // Kode akun
-	Debit       int64     `gorm:"type:bigint;default:0" json:"debit"`            // Jumlah debit
-	Credit      int64     `gorm:"type:bigint;default:0" json:"credit"`           // Jumlah kredit
-	Description string    `gorm:"type:varchar(255)" json:"description"`          // Deskripsi baris jurnal
-	CreatedAt   time.Time `gorm:"autoCreateTime" json:"created_at"`
-	UpdatedAt   time.Time `gorm:"autoUpdateTime" json:"updated_at"`
+	ID          uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
+	JournalID   uuid.UUID `gorm:"type:uuid;not null;onDelete:CASCADE" json:"journal_id"` // Menambahkan onDelete: "CASCADE"
+	AccountID   uuid.UUID `gorm:"type:uuid;not null" json:"account_id"`
+	Debit       int64     `json:"debit"`
+	Credit      int64     `json:"credit"`
+	Description string    `gorm:"type:varchar(255)" json:"description"`
+
+	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"`
+
+	Account Account `gorm:"foreignKey:AccountID" json:"account"`
 }
