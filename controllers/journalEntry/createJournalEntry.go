@@ -79,6 +79,7 @@ func CreateJournalEntry(c *gin.Context) {
 		TransactionType:       input.TransactionType,
 		Status:                input.Status,
 		DateInputed:           input.DateInputed,
+		DueDate:               input.DueDate,
 		CompanyID:             input.CompanyID,
 		CreatedAt:             time.Now(),
 		UpdatedAt:             time.Now(),

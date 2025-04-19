@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 func GetJournalEntriesByCategory(c *gin.Context) {
@@ -39,21 +40,37 @@ func GetJournalEntriesByCategory(c *gin.Context) {
 	var journalEntries []models.JournalEntry
 	var total int64
 
-	// Hitung total data berdasarkan transaction_category_id dan company_id
-	if err := db.DB.Model(&models.JournalEntry{}).
-		Where("transaction_category_id = ? AND company_id = ?", transactionCategoryID, companyID).
-		Count(&total).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to count journal entries"})
+	err := db.DB.Where("company_id = ? AND transaction_category_id = ?", companyID, transactionCategoryID).First(&journalEntries).Error
+
+	if err != nil {
+		// Periksa apakah error karena data tidak ditemukan
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{
+				"status":  "error",
+				"message": "Journal entries not found for the given Company ID and Transaction Category ID",
+			})
+			return
+		}
+
+		// Error lainnya
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "Failed to fetch journal entry",
+		})
 		return
 	}
 
-	// Ambil data jurnal berdasarkan transaction_category_id dan company_id
-	if err := db.DB.Preload("Lines").
+	if err := db.DB.
+		Preload("Lines").
+		Preload("Lines.Account").
+		Preload("TransactionCategory").
+		Preload("TransactionCategory.DebitAccount").
+		Preload("TransactionCategory.CreditAccount").
 		Where("transaction_category_id = ? AND company_id = ?", transactionCategoryID, companyID).
 		Limit(limit).
 		Offset(offset).
 		Find(&journalEntries).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch journal entries"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch journal entries with full relations"})
 		return
 	}
 

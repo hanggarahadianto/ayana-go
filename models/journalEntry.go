@@ -6,6 +6,21 @@ import (
 	"github.com/google/uuid"
 )
 
+type Status string
+type TransactionType string
+
+const (
+	StatusDraft     Status = "draft"
+	StatusApproved  Status = "approved"
+	StatusPaid      Status = "paid"
+	StatusUnpaid    Status = "unpaid"
+	StatusCancelled Status = "cancelled"
+)
+const (
+	PayinType  TransactionType = "payin"
+	PayoutType TransactionType = "payout"
+)
+
 type JournalEntry struct {
 	ID                    uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
 	Invoice               string    `gorm:"type:varchar(100)" json:"invoice"`
@@ -14,9 +29,9 @@ type JournalEntry struct {
 	Amount                int64     `gorm:"not null" json:"amount"`
 	Partner               string    `gorm:"type:text;not null" json:"partner"`
 
-	TransactionType string    `gorm:"type:varchar(50)" json:"transaction_type"` // e.g., "payin", "payout"
-	Status          string    `gorm:"type:varchar(50)" json:"status"`           // e.g., "draft", "posted"
-	CompanyID       uuid.UUID `gorm:"type:uuid;not null" json:"company_id"`
+	TransactionType TransactionType `gorm:"type:varchar(50)" json:"transaction_type"`
+	Status          Status          // e.g., "draft", "posted"
+	CompanyID       uuid.UUID       `gorm:"type:uuid;not null" json:"company_id"`
 
 	DateInputed *time.Time `gorm:"type:timestamp;not null" json:"date_inputed"` // Tanggal transaksi
 	DueDate     *time.Time `gorm:"type:timestamp" json:"due_date,omitempty"`    // nullable, tergantung jenis transaksi

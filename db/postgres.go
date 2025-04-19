@@ -67,7 +67,7 @@ func InitializeDb(config *utilsEnv.Config) {
 		&models.Material{},
 		&models.CashFlow{},
 		&models.Goods{},
-		&models.Payout{},
+		// &models.Payout{},
 		&models.Account{},
 		&models.JournalEntry{},
 		&models.JournalLine{},

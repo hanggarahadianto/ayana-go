@@ -66,6 +66,7 @@ func main() {
 	routes.SetupPayinRouter(r)
 	routes.SetupTransactionCategoryRouter(r)
 	routes.SetupJournalEntryRouter(r)
+	routes.SetupFianceRouter(r)
 
 	// 🔹 Route utama (tes apakah server berjalan)
 	r.GET("/", func(c *gin.Context) {
