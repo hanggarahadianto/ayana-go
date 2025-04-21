@@ -30,16 +30,21 @@ type JournalEntry struct {
 	Partner               string    `gorm:"type:text;not null" json:"partner"`
 
 	TransactionType TransactionType `gorm:"type:varchar(50)" json:"transaction_type"`
-	Status          Status          // e.g., "draft", "posted"
+	Status          Status          `gorm:"not null" json:"status"`
 	CompanyID       uuid.UUID       `gorm:"type:uuid;not null" json:"company_id"`
 
-	DateInputed *time.Time `gorm:"type:timestamp;not null" json:"date_inputed"` // Tanggal transaksi
-	DueDate     *time.Time `gorm:"type:timestamp" json:"due_date,omitempty"`    // nullable, tergantung jenis transaksi
+	DateInputed *time.Time `gorm:"type:timestamp;" json:"date_inputed"`      // Tanggal transaksi
+	DueDate     *time.Time `gorm:"type:timestamp" json:"due_date,omitempty"` // nullable, tergantung jenis transaksi
 	IsRepaid    bool       `json:"is_repaid"`
-	CreatedAt   time.Time  `gorm:"autoCreateTime" json:"created_at"`
-	UpdatedAt   time.Time  `gorm:"autoUpdateTime" json:"updated_at"`
+	Installment int        `json:"installment"`
+
+	Note string `gorm:"type:varchar(100)" json:"note"`
+
+	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 
 	Lines []JournalLine `gorm:"foreignKey:JournalID" json:"lines"`
 
 	TransactionCategory TransactionCategory `gorm:"foreignKey:TransactionCategoryID" json:"transaction_category"` // optional relasi
+	Installments        []Installment       `json:"installments" gorm:"foreignKey:JournalID;references:ID"`
 }

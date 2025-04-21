@@ -11,6 +11,8 @@ import (
 
 func GetTransactionCategory(c *gin.Context) {
 	companyID := c.Query("company_id")
+	transactionType := c.Query("transaction_type") // payin / payout
+
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 
@@ -18,7 +20,6 @@ func GetTransactionCategory(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Company ID is required"})
 		return
 	}
-
 	if page < 1 {
 		page = 1
 	}
@@ -30,18 +31,29 @@ func GetTransactionCategory(c *gin.Context) {
 	var transactions []models.TransactionCategory
 	var total int64
 
-	// Hitung total data
-	if err := db.DB.Model(&models.TransactionCategory{}).
-		Where("company_id = ?", companyID).
-		Count(&total).Error; err != nil {
+	tx := db.DB.Model(&models.TransactionCategory{}).
+		Joins("JOIN accounts AS debit ON debit.id = transaction_categories.debit_account_id").
+		Where("transaction_categories.company_id = ?", companyID)
+
+	// ✅ Filter berdasarkan jenis transaksi
+	if transactionType == "payin" {
+		// Payin → Filter debit account bertipe Asset
+		tx = tx.Where("LOWER(debit.type) LIKE ?", "asset%")
+	} else if transactionType == "payout" {
+		// Payout → Join credit account dan filter tipe Asset
+		tx = tx.Joins("JOIN accounts AS credit ON credit.id = transaction_categories.credit_account_id").
+			Where("LOWER(credit.type) LIKE ?", "asset%")
+	}
+
+	// Hitung total
+	if err := tx.Count(&total).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to count transaction categories"})
 		return
 	}
 
-	// Ambil data dengan relasi akun
-	if err := db.DB.Preload("DebitAccount").
+	// Ambil data dengan preload account
+	if err := tx.Preload("DebitAccount").
 		Preload("CreditAccount").
-		Where("company_id = ?", companyID).
 		Limit(limit).
 		Offset(offset).
 		Find(&transactions).Error; err != nil {
@@ -49,6 +61,7 @@ func GetTransactionCategory(c *gin.Context) {
 		return
 	}
 
+	// Return JSON response
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
 		"page":   page,

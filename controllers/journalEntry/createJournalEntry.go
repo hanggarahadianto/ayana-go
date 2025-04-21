@@ -3,6 +3,7 @@ package controller
 import (
 	"ayana/db"
 	"ayana/models"
+	Service "ayana/service"
 	"net/http"
 	"time"
 
@@ -68,6 +69,24 @@ func CreateJournalEntry(c *gin.Context) {
 		return
 	}
 
+	if input.Installment > 1 {
+		journals, err := Service.CreateInstallmentJournals(input)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"status":  "error",
+				"message": "Failed to create installment journals",
+				"details": err.Error(),
+			})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"status": "success",
+			"data":   journals,
+		})
+		return
+	}
+
 	// Create JournalEntry
 	journal := models.JournalEntry{
 		ID:                    uuid.New(),
@@ -80,6 +99,7 @@ func CreateJournalEntry(c *gin.Context) {
 		Status:                input.Status,
 		DateInputed:           input.DateInputed,
 		DueDate:               input.DueDate,
+		Note:                  input.Note,
 		CompanyID:             input.CompanyID,
 		CreatedAt:             time.Now(),
 		UpdatedAt:             time.Now(),
@@ -91,9 +111,10 @@ func CreateJournalEntry(c *gin.Context) {
 			ID:          uuid.New(),
 			JournalID:   journal.ID,
 			AccountID:   trxCategory.DebitAccountID,
+			CompanyID:   journal.CompanyID,
 			Debit:       input.Amount,
 			Credit:      0,
-			Description: "Auto debit from transaction category",
+			Description: input.Description,
 			CreatedAt:   time.Now(),
 			UpdatedAt:   time.Now(),
 		},
@@ -101,9 +122,10 @@ func CreateJournalEntry(c *gin.Context) {
 			ID:          uuid.New(),
 			JournalID:   journal.ID,
 			AccountID:   trxCategory.CreditAccountID,
+			CompanyID:   journal.CompanyID,
 			Debit:       0,
 			Credit:      input.Amount,
-			Description: "Auto credit from transaction category",
+			Description: input.Description,
 			CreatedAt:   time.Now(),
 			UpdatedAt:   time.Now(),
 		},
