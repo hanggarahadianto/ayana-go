@@ -3,6 +3,7 @@ package controller
 import (
 	"ayana/db"
 	"ayana/models"
+	"ayana/service"
 	"net/http"
 	"time"
 
@@ -47,64 +48,15 @@ func CreateJournalEntry(c *gin.Context) {
 		})
 		return
 	}
-
 	if input.Installment > 0 {
-		installmentAmount := input.Amount / int64(input.Installment)
-
-		var journals []models.JournalEntry
-		for i := 0; i < input.Installment; i++ {
-			journal := models.JournalEntry{
-				ID:                    uuid.New(),
-				Invoice:               input.Invoice,
-				Description:           input.Description,
-				TransactionCategoryID: input.TransactionCategoryID,
-				Amount:                installmentAmount,
-				Partner:               input.Partner,
-				TransactionType:       input.TransactionType,
-				Status:                input.Status,
-				DateInputed:           input.DateInputed,
-				DueDate:               input.DueDate,
-				Note:                  input.Note,
-				CompanyID:             input.CompanyID,
-				CreatedAt:             time.Now(),
-				UpdatedAt:             time.Now(),
-			}
-
-			journal.Lines = []models.JournalLine{
-				{
-					ID:          uuid.New(),
-					JournalID:   journal.ID,
-					AccountID:   trxCategory.DebitAccountID,
-					CompanyID:   journal.CompanyID,
-					Debit:       installmentAmount,
-					Credit:      0,
-					Description: input.Description,
-					CreatedAt:   time.Now(),
-					UpdatedAt:   time.Now(),
-				},
-				{
-					ID:          uuid.New(),
-					JournalID:   journal.ID,
-					AccountID:   trxCategory.CreditAccountID,
-					CompanyID:   journal.CompanyID,
-					Debit:       0,
-					Credit:      installmentAmount,
-					Description: input.Description,
-					CreatedAt:   time.Now(),
-					UpdatedAt:   time.Now(),
-				},
-			}
-
-			if err := db.DB.Create(&journal).Error; err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"status":  "error",
-					"message": "Failed to create installment journal",
-					"details": err.Error(),
-				})
-				return
-			}
-
-			journals = append(journals, journal)
+		journals, err := service.CreateInstallment(input, trxCategory)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"status":  "error",
+				"message": "Failed to create installment journals",
+				"details": err.Error(),
+			})
+			return
 		}
 
 		c.JSON(http.StatusOK, gin.H{
@@ -134,26 +86,28 @@ func CreateJournalEntry(c *gin.Context) {
 
 	journal.Lines = []models.JournalLine{
 		{
-			ID:          uuid.New(),
-			JournalID:   journal.ID,
-			AccountID:   trxCategory.DebitAccountID,
-			CompanyID:   journal.CompanyID,
-			Debit:       input.Amount,
-			Credit:      0,
-			Description: input.Description,
-			CreatedAt:   time.Now(),
-			UpdatedAt:   time.Now(),
+			ID:              uuid.New(),
+			JournalID:       journal.ID,
+			AccountID:       trxCategory.DebitAccountID,
+			CompanyID:       journal.CompanyID,
+			Debit:           input.Amount,
+			Credit:          0,
+			TransactionType: input.TransactionType,
+			Description:     input.Description,
+			CreatedAt:       time.Now(),
+			UpdatedAt:       time.Now(),
 		},
 		{
-			ID:          uuid.New(),
-			JournalID:   journal.ID,
-			AccountID:   trxCategory.CreditAccountID,
-			CompanyID:   journal.CompanyID,
-			Debit:       0,
-			Credit:      input.Amount,
-			Description: input.Description,
-			CreatedAt:   time.Now(),
-			UpdatedAt:   time.Now(),
+			ID:              uuid.New(),
+			JournalID:       journal.ID,
+			AccountID:       trxCategory.CreditAccountID,
+			CompanyID:       journal.CompanyID,
+			Debit:           0,
+			Credit:          input.Amount,
+			TransactionType: input.TransactionType,
+			Description:     input.Description,
+			CreatedAt:       time.Now(),
+			UpdatedAt:       time.Now(),
 		},
 	}
 

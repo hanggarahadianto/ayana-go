@@ -11,6 +11,7 @@ import (
 
 func GetExpenseSummary(c *gin.Context) {
 	companyID := c.Query("company_id")
+
 	if companyID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Company ID is required"})
 		return

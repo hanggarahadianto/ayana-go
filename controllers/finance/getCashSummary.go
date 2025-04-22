@@ -5,6 +5,7 @@ import (
 	"ayana/models"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,6 +17,8 @@ func GetCashSummary(c *gin.Context) {
 		return
 	}
 
+	transactionTypeFilter := c.Query("transaction_type")
+
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 	if page < 1 {
@@ -26,27 +29,7 @@ func GetCashSummary(c *gin.Context) {
 	}
 	offset := (page - 1) * limit
 
-	// Total count
-	var total int64
-	if err := db.DB.Model(&models.JournalLine{}).
-		Joins("JOIN accounts ON accounts.id = journal_lines.account_id").
-		Where("accounts.company_id = ?", companyID).
-		Count(&total).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to count journal lines"})
-		return
-	}
-
-	// Fetch paginated journal lines
 	var journalLines []models.JournalLine
-	// if err := db.DB.Preload("Account").
-	// 	Joins("JOIN accounts ON accounts.id = journal_lines.account_id").
-	// 	Where("accounts.company_id = ?", companyID).
-	// 	Limit(limit).Offset(offset).
-	// 	Find(&journalLines).Error; err != nil {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve journal data"})
-	// 	return
-	// }
-
 	if err := db.DB.Preload("Account").Preload("Journal").
 		Joins("JOIN accounts ON accounts.id = journal_lines.account_id").
 		Where("accounts.company_id = ?", companyID).
@@ -63,6 +46,14 @@ func GetCashSummary(c *gin.Context) {
 	for _, line := range journalLines {
 		account := line.Account
 		balance := line.Debit - line.Credit
+		transactionType := line.TransactionType
+
+		category := ""
+		if balance > 0 {
+			category = "inflow" // atau "penerimaan"
+		} else if balance < 0 {
+			category = "outflow" // atau "pengeluaran"
+		}
 
 		if account.Type == "Asset (Aset)" {
 			netAssets += balance
@@ -74,23 +65,22 @@ func GetCashSummary(c *gin.Context) {
 			availableCash += balance
 		}
 
-		cashStatus := "unpaid" // Default status
-		if balance < 0 {
-			cashStatus = "cash_out" // Negative amount indicates cash out
-		} else if balance > 0 {
-			cashStatus = "cash_in" // Positive amount indicates cash in
+		if transactionTypeFilter != "" && !strings.EqualFold(string(transactionType), transactionTypeFilter) {
+			continue
 		}
 
 		cashList = append(cashList, map[string]interface{}{
-			"id":             line.ID,
-			"description":    account.Name,
-			"amount":         balance,
-			"date":           line.CreatedAt.Format("2006-01-02"),
-			"status":         "unpaid",
-			"cash_flow_type": cashStatus,
-			"note":           line.Journal.Note, // ✅ Ini dia
+			"id":               line.ID,
+			"description":      account.Name,
+			"amount":           balance,
+			"date":             line.CreatedAt.Format("2006-01-02"),
+			"status":           "unpaid",
+			"transaction_type": transactionType, // payin / payout
+			"note":             line.Journal.Note,
+			"category":         category,
 		})
 	}
+	total := int64(len(cashList))
 
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
@@ -99,9 +89,10 @@ func GetCashSummary(c *gin.Context) {
 			"net_assets":     netAssets,
 			"page":           page,
 			"limit":          limit,
-			"total":          total,
+			"total":          total, // ✅ Sudah sesuai hasil filter
 		},
 		"message": "Cash summary retrieved successfully",
 		"status":  "success",
 	})
+
 }
