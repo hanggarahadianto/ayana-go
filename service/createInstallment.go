@@ -172,6 +172,7 @@ import (
 // }
 
 func CreateInstallmentJournals(input models.JournalEntry) ([]models.JournalEntry, error) {
+	fmt.Println("HALO")
 	fmt.Println(">>> DEBUG input:", input) // Tambahkan log ini
 	return []models.JournalEntry{input}, nil
 }
