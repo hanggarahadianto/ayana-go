@@ -41,7 +41,7 @@ func AddImage(c *gin.Context) {
 
 	newImageData.Image = imageUrl
 
-	result := db.DB.Debug().Create(&newImageData)
+	result := db.DB.Create(&newImageData)
 	if result.Error != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "failed",

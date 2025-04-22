@@ -14,7 +14,6 @@ import (
 func main() {
 	log.Println("🔹 Starting Ayana Backend...")
 
-	// 🔹 Setup logging untuk debugging
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	log.SetOutput(os.Stdout)
 

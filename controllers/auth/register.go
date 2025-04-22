@@ -60,7 +60,7 @@ func Register(c *gin.Context) {
 		UpdatedAt: now,
 	}
 
-	db.DB.Debug().Create(&newUser)
+	db.DB.Create(&newUser)
 
 	c.JSON(http.StatusCreated, gin.H{
 		"status": true,

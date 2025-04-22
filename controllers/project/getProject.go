@@ -11,7 +11,7 @@ import (
 func GetProject(c *gin.Context) {
 	var projectList []models.Project
 
-	result := db.DB.Debug().Order("created_at desc, updated_at desc").Find(&projectList)
+	result := db.DB.Order("created_at desc, updated_at desc").Find(&projectList)
 	if result.Error != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "error",

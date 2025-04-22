@@ -13,7 +13,7 @@ func HomeById(c *gin.Context) {
 
 	var home models.Home
 
-	result := db.DB.Debug().First(&home, "id = ?", homeId)
+	result := db.DB.First(&home, "id = ?", homeId)
 	if result.Error != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "failed",

@@ -12,7 +12,7 @@ func GetCompany(c *gin.Context) {
 	var companyList []models.Company
 
 	// Query database dengan pengecekan lebih baik
-	err := db.DB.Debug().
+	err := db.DB.
 		Order("created_at DESC, updated_at DESC").
 		Find(&companyList).Error
 

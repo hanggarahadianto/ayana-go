@@ -26,7 +26,7 @@ func CreateCompany(c *gin.Context) {
 		UpdatedAt: now,
 	}
 
-	result := db.DB.Debug().Create(&newCompany)
+	result := db.DB.Create(&newCompany)
 	if result.Error != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "failed",

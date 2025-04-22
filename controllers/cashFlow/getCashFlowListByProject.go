@@ -17,7 +17,7 @@ func GetCashFlowListByProjectId(c *gin.Context) {
 
 	// Query the database with Preload to include materials and workers
 
-	result := db.DB.Debug().
+	result := db.DB.
 		Where("project_id = ?", projectId).
 		Order("created_at ASC").
 		Find(&cashFlowList) // Use Find instead of First

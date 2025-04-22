@@ -32,7 +32,7 @@ func CreateProject(c *gin.Context) {
 		UpdatedAt:     now,
 	}
 
-	result := db.DB.Debug().Create(&newProject)
+	result := db.DB.Create(&newProject)
 	if result.Error != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "failed",

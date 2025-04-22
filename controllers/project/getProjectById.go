@@ -13,7 +13,7 @@ func GetProjectById(c *gin.Context) {
 
 	var project models.Project
 
-	result := db.DB.Debug().First(&project, "id = ?", projectId)
+	result := db.DB.First(&project, "id = ?", projectId)
 	if result.Error != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "failed",

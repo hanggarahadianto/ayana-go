@@ -15,8 +15,7 @@ func GetInfo(c *gin.Context) {
 
 	infoId := c.Param("id")
 
-	// result := db.DB.Debug().First(&additionalInfo, "home_id = ?", infoId)
-	result := db.DB.Debug().Preload("NearBy").First(&additionalInfo, "home_id = ?", infoId)
+	result := db.DB.Preload("NearBy").First(&additionalInfo, "home_id = ?", infoId)
 	if result.Error != nil {
 		log.Printf("Database error: %v", result.Error)
 		c.JSON(http.StatusOK, gin.H{

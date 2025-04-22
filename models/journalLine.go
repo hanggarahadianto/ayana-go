@@ -20,5 +20,5 @@ type JournalLine struct {
 
 	Account Account      `gorm:"foreignKey:AccountID" json:"account"`
 	Company Company      `gorm:"foreignkey:CompanyID" json:"company"`
-	Journal JournalEntry `gorm:"foreignKey:JournalID" json:"journal"`
+	Journal JournalEntry `gorm:"foreignKey:JournalID;references:ID" json:"journal"`
 }

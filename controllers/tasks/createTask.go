@@ -27,7 +27,7 @@ func CreateTask(c *gin.Context) {
 		UpdatedAt: now,
 	}
 
-	result := db.DB.Debug().Create(&newReservation)
+	result := db.DB.Create(&newReservation)
 	if result.Error != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "failed",

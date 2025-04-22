@@ -38,7 +38,6 @@ func DeleteWeeklyProgress(c *gin.Context) {
 		return
 	}
 
-	// Log the found WeeklyProgress for debugging
 	log.Printf("Weekly Progress found: %+v", weeklyProgress)
 
 	// Check if related materials exist

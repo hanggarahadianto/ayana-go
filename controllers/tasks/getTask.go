@@ -11,7 +11,7 @@ import (
 func GetTasks(c *gin.Context) {
 	var reservationList []models.Reservation
 
-	result := db.DB.Debug().Order("created_at desc, updated_at desc").Find(&reservationList)
+	result := db.DB.Order("created_at desc, updated_at desc").Find(&reservationList)
 	if result.Error != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "error",
