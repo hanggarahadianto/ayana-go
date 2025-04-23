@@ -46,5 +46,23 @@ type JournalEntry struct {
 	Lines []JournalLine `gorm:"foreignKey:JournalID" json:"lines"`
 
 	TransactionCategory TransactionCategory `gorm:"foreignKey:TransactionCategoryID" json:"transaction_category"` // optional relasi
-	Installments        []Installment       `json:"installments" gorm:"foreignKey:JournalID;references:ID"`
+	// Installments        []Installment       `json:"installments" gorm:"foreignKey:JournalID;references:ID"`
+}
+
+type JournalEntryResponse struct {
+	ID                    string     `json:"id"`
+	Invoice               string     `json:"invoice"`
+	Description           string     `json:"description"`
+	TransactionCategoryID string     `json:"transaction_category_id"`
+	Amount                int64      `json:"amount"`
+	Partner               string     `json:"partner"`
+	TransactionType       string     `json:"transaction_type"`
+	Status                string     `json:"status"`
+	CompanyID             string     `json:"company_id"`
+	DateInputed           *time.Time `json:"date_inputed"`
+	DueDate               *time.Time `json:"due_date"`
+	IsRepaid              bool       `json:"is_repaid"`
+	Installment           int        `json:"installment"`
+	Note                  string     `json:"note"`
+	Lines                 any        `json:"lines"` // bisa diganti []JournalLine jika ingin lebih spesifik
 }

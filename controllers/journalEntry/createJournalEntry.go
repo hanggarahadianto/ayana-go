@@ -70,7 +70,7 @@ func CreateJournalEntry(c *gin.Context) {
 	journal := models.JournalEntry{
 		ID:                    uuid.New(),
 		Invoice:               input.Invoice,
-		Description:           input.Description,
+		Description:           input.Note,
 		TransactionCategoryID: input.TransactionCategoryID,
 		Amount:                input.Amount,
 		Partner:               input.Partner,
