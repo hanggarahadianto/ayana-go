@@ -3,40 +3,39 @@ package service
 import (
 	"ayana/db"
 	"ayana/models"
-	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 )
 
-func CreateInstallment(input models.JournalEntry, trxCategory models.TransactionCategory) ([]models.JournalEntry, error) {
-	var journals []models.JournalEntry
-
-	installmentCount := input.Installment
-	if installmentCount <= 0 {
-		return nil, errors.New("installment count must be greater than 0")
+func CreateInstallmentJournals(input models.JournalEntry) ([]models.JournalEntry, error) {
+	var trxCategory models.TransactionCategory
+	if err := db.DB.Preload("DebitAccount").Preload("CreditAccount").
+		First(&trxCategory, "id = ?", input.TransactionCategoryID).Error; err != nil {
+		return nil, err
 	}
 
-	installmentAmount := input.Amount / int64(installmentCount)
+	amountPerInstallment := input.Amount / int64(input.Installment)
 
-	for i := 0; i < installmentCount; i++ {
-		debitAmount := int64(0)
-		if i == 0 {
-			debitAmount = input.Amount
-		}
+	var journals []models.JournalEntry
+
+	for i := 0; i < input.Installment; i++ {
+		journalID := uuid.New()
+		dueDate := input.DateInputed.AddDate(0, i+1, 0)
+		dueDatePtr := &dueDate
 
 		journal := models.JournalEntry{
-			ID:                    uuid.New(),
-			Invoice:               input.Invoice,
-			Description:           input.Description,
+			ID:                    journalID,
+			Invoice:               fmt.Sprintf("%s-%02d", input.Invoice, i+1),
+			Description:           fmt.Sprintf("%s - Cicilan %d", input.Description, i+1),
 			TransactionCategoryID: input.TransactionCategoryID,
-			Amount:                installmentAmount,
+			Amount:                amountPerInstallment,
 			Partner:               input.Partner,
 			TransactionType:       input.TransactionType,
 			Status:                input.Status,
 			DateInputed:           input.DateInputed,
-			DueDate:               input.DueDate,
-			Note:                  input.Note,
+			DueDate:               dueDatePtr,
 			CompanyID:             input.CompanyID,
 			CreatedAt:             time.Now(),
 			UpdatedAt:             time.Now(),
@@ -45,33 +44,33 @@ func CreateInstallment(input models.JournalEntry, trxCategory models.Transaction
 		journal.Lines = []models.JournalLine{
 			{
 				ID:          uuid.New(),
-				JournalID:   journal.ID,
+				JournalID:   journalID,
 				AccountID:   trxCategory.DebitAccountID,
-				CompanyID:   journal.CompanyID,
-				Debit:       debitAmount,
+				CompanyID:   input.CompanyID,
+				Debit:       amountPerInstallment,
 				Credit:      0,
-				Description: input.Description,
+				Description: "Auto debit cicilan",
 				CreatedAt:   time.Now(),
 				UpdatedAt:   time.Now(),
 			},
 			{
 				ID:          uuid.New(),
-				JournalID:   journal.ID,
+				JournalID:   journalID,
 				AccountID:   trxCategory.CreditAccountID,
-				CompanyID:   journal.CompanyID,
+				CompanyID:   input.CompanyID,
 				Debit:       0,
-				Credit:      installmentAmount,
-				Description: input.Description,
+				Credit:      amountPerInstallment,
+				Description: "Auto credit cicilan",
 				CreatedAt:   time.Now(),
 				UpdatedAt:   time.Now(),
 			},
 		}
 
-		if err := db.DB.Create(&journal).Error; err != nil {
-			return nil, err
-		}
-
 		journals = append(journals, journal)
+	}
+
+	if err := db.DB.Create(&journals).Error; err != nil {
+		return nil, err
 	}
 
 	return journals, nil

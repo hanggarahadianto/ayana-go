@@ -13,16 +13,22 @@ import (
 func GetOutstandingDebts(c *gin.Context) {
 
 	companyID := c.Query("company_id")
-	transactionType := c.Query("transaction_type")
+	// transactionType := c.Query("transaction_type")
 	status := c.Query("status")
 	if companyID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Company ID is required"})
 		return
 	}
-	if transactionType == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "TransactionType is required"})
-		return
-	}
+	// if transactionType == "" {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "TransactionType is required"})
+	// 	return
+	// }
+
+	// if !validationEnum.IsValidTransactionType(transactionType) {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid transaction_type"})
+	// 	return
+	// }
+
 	if status == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Status is required"})
 		return
@@ -30,11 +36,6 @@ func GetOutstandingDebts(c *gin.Context) {
 
 	if !validationEnum.IsValidStatus(status) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid status"})
-		return
-	}
-
-	if !validationEnum.IsValidTransactionType(transactionType) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid transaction_type"})
 		return
 	}
 
@@ -53,7 +54,8 @@ func GetOutstandingDebts(c *gin.Context) {
 	offset := (page - 1) * limit
 
 	query := db.DB.
-		Where("company_id = ? AND transaction_type = ? AND status = ? AND is_repaid = false", companyID, transactionType, status)
+		Where("company_id = ?  AND status = ? AND is_repaid = false", companyID, status)
+		// Where("company_id = ? AND transaction_type = ? AND status = ? AND is_repaid = false", companyID, transactionType, status)
 
 	// Count total matching records
 	if err := query.Model(&models.JournalEntry{}).Count(&total).Error; err != nil {
@@ -67,7 +69,8 @@ func GetOutstandingDebts(c *gin.Context) {
 		Preload("TransactionCategory").
 		Preload("TransactionCategory.DebitAccount").
 		Preload("TransactionCategory.CreditAccount").
-		Where("company_id = ? AND transaction_type = ? AND status = ? AND is_repaid = false", companyID, transactionType, status).
+		Where("company_id = ? AND status = ? AND is_repaid = false", companyID, status).
+		// Where("company_id = ? AND transaction_type = ? AND status = ? AND is_repaid = false", companyID, transactionType, status).
 		Limit(limit).
 		Offset(offset).
 		Order("due_date ASC").

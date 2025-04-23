@@ -49,7 +49,7 @@ func CreateJournalEntry(c *gin.Context) {
 		return
 	}
 	if input.Installment > 0 {
-		journals, err := service.CreateInstallment(input, trxCategory)
+		journals, err := service.CreateInstallmentJournals(input)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"status":  "error",
@@ -86,28 +86,26 @@ func CreateJournalEntry(c *gin.Context) {
 
 	journal.Lines = []models.JournalLine{
 		{
-			ID:              uuid.New(),
-			JournalID:       journal.ID,
-			AccountID:       trxCategory.DebitAccountID,
-			CompanyID:       journal.CompanyID,
-			Debit:           input.Amount,
-			Credit:          0,
-			TransactionType: input.TransactionType,
-			Description:     input.Description,
-			CreatedAt:       time.Now(),
-			UpdatedAt:       time.Now(),
+			ID:          uuid.New(),
+			JournalID:   journal.ID,
+			AccountID:   trxCategory.DebitAccountID,
+			CompanyID:   journal.CompanyID,
+			Debit:       input.Amount,
+			Credit:      0,
+			Description: input.Description,
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
 		},
 		{
-			ID:              uuid.New(),
-			JournalID:       journal.ID,
-			AccountID:       trxCategory.CreditAccountID,
-			CompanyID:       journal.CompanyID,
-			Debit:           0,
-			Credit:          input.Amount,
-			TransactionType: input.TransactionType,
-			Description:     input.Description,
-			CreatedAt:       time.Now(),
-			UpdatedAt:       time.Now(),
+			ID:          uuid.New(),
+			JournalID:   journal.ID,
+			AccountID:   trxCategory.CreditAccountID,
+			CompanyID:   journal.CompanyID,
+			Debit:       0,
+			Credit:      input.Amount,
+			Description: input.Description,
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
 		},
 	}
 

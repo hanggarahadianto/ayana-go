@@ -19,7 +19,7 @@ type JournalLine struct {
 	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 
-	Account Account      `gorm:"foreignKey:AccountID" json:"account"`
-	Company Company      `gorm:"foreignkey:CompanyID" json:"company"`
+	Account Account `gorm:"foreignKey:AccountID" json:"account"`
+	// Company Company      `gorm:"foreignkey:CompanyID" json:"company"`
 	Journal JournalEntry `gorm:"foreignKey:JournalID;references:ID" json:"journal"`
 }
