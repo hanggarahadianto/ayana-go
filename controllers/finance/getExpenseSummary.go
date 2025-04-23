@@ -28,11 +28,11 @@ func GetExpenseSummary(c *gin.Context) {
 	}
 	offset := (page - 1) * limit
 
-	// Hitung total data
 	var total int64
 	if err := db.DB.Model(&models.JournalLine{}).
 		Joins("JOIN accounts ON accounts.id = journal_lines.account_id").
-		Where("accounts.company_id = ? AND accounts.type = ?", companyID, "Expense (Beban)").
+		Joins("JOIN journal_entries ON journal_entries.id = journal_lines.journal_id").
+		Where("accounts.company_id = ? AND accounts.type = ? AND journal_entries.status = ?", companyID, "Expense (Beban)", "paid").
 		Count(&total).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to count expenses"})
 		return
@@ -42,13 +42,13 @@ func GetExpenseSummary(c *gin.Context) {
 	var journalLines []models.JournalLine
 	if err := db.DB.Preload("Account").
 		Joins("JOIN accounts ON accounts.id = journal_lines.account_id").
-		Where("accounts.company_id = ? AND accounts.type = ?", companyID, "Expense (Beban)").
+		Joins("JOIN journal_entries ON journal_entries.id = journal_lines.journal_id").
+		Where("accounts.company_id = ? AND accounts.type = ? AND journal_entries.status = ?", companyID, "Expense (Beban)", "paid").
 		Limit(limit).Offset(offset).
 		Find(&journalLines).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve expense data"})
 		return
 	}
-
 	var totalExpense int64 = 0
 	var expenseList []map[string]interface{}
 
@@ -63,7 +63,7 @@ func GetExpenseSummary(c *gin.Context) {
 			"description": line.Description,
 			"amount":      balance,
 			"date":        line.CreatedAt.Format("2006-01-02"),
-			"status":      "paid", // opsional
+			// "status":      "paid", // opsional
 		})
 	}
 

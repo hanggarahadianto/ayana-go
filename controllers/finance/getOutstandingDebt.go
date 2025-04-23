@@ -64,13 +64,15 @@ func GetOutstandingDebts(c *gin.Context) {
 	}
 
 	if err := db.DB.
-		Preload("Lines").
+		Preload("Lines", "debit = 0").
 		Preload("Lines.Account").
 		Preload("TransactionCategory").
 		Preload("TransactionCategory.DebitAccount").
 		Preload("TransactionCategory.CreditAccount").
-		Where("company_id = ? AND status = ? AND is_repaid = false", companyID, status).
-		// Where("company_id = ? AND transaction_type = ? AND status = ? AND is_repaid = false", companyID, transactionType, status).
+		// Explicitly specify the table name for company_id
+		Where("journal_entries.company_id = ? AND status = ? AND is_repaid = false", companyID, status).
+		Joins("JOIN journal_lines ON journal_lines.journal_id = journal_entries.id").
+		Where("journal_lines.debit = 0").
 		Limit(limit).
 		Offset(offset).
 		Order("due_date ASC").
@@ -78,7 +80,6 @@ func GetOutstandingDebts(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "Failed to fetch data"})
 		return
 	}
-
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
 		"page":   page,
