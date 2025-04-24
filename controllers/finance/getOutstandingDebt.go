@@ -3,6 +3,7 @@ package controller
 import (
 	"ayana/db"
 	"ayana/models"
+	"ayana/service"
 	"net/http"
 	"strconv"
 	"time"
@@ -33,6 +34,24 @@ func GetOutstandingDebts(c *gin.Context) {
 	status := c.Query("status")
 	if companyID == "" || status == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing required parameters"})
+		return
+	}
+
+	if c.Query("summary_only") == "true" {
+		totalOutstandingDebt, err := service.GetOutstandingDebtSummaryOnly(companyID, status)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to calculate summary total"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"data": gin.H{
+				"total_outstandingDebt": totalOutstandingDebt,
+			},
+			"message": "OutstandingDebt summary retrieved successfully",
+			"status":  "success",
+		})
+
 		return
 	}
 
@@ -121,11 +140,11 @@ func GetOutstandingDebts(c *gin.Context) {
 	// Kirim JSON response
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
-			"debtList":   responseData,
-			"total_debt": totalDebt,
-			"page":       page,
-			"limit":      limit,
-			"total":      total,
+			"debtList":              responseData,
+			"total_outstandingDebt": totalDebt,
+			"page":                  page,
+			"limit":                 limit,
+			"total":                 total,
 		},
 		"message": "Outstanding debts retrieved successfully",
 		"status":  "success",
