@@ -3,6 +3,7 @@ package controller
 import (
 	"ayana/db"
 	"ayana/models"
+	"ayana/service"
 	"net/http"
 	"strconv"
 
@@ -13,6 +14,24 @@ func GetExpenseSummary(c *gin.Context) {
 	companyID := c.Query("company_id")
 	if companyID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Company ID is required"})
+		return
+	}
+
+	if c.Query("summary_only") == "true" {
+		totalExpense, err := service.GetExpenseSummaryOnly(companyID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to calculate summary total"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"data": gin.H{
+				"total_expense": totalExpense,
+			},
+			"message": "Expense summary retrieved successfully",
+			"status":  "success",
+		})
+
 		return
 	}
 
@@ -66,7 +85,7 @@ func GetExpenseSummary(c *gin.Context) {
 				"id":          line.ID,
 				"account":     line.Account.Name,
 				"category":    line.Account.Category,
-				"description": line.Description,
+				"description": line.Journal.Note,
 				"amount":      amount,
 				"date":        line.CreatedAt.Format("2006-01-02"),
 			})
