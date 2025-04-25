@@ -2,33 +2,28 @@ package controller
 
 import (
 	"ayana/db"
+	"ayana/dto"
 	"ayana/models"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
+
 	"gorm.io/gorm"
 )
 
 func GetJournalEntriesByCategory(c *gin.Context) {
-	// Ambil query parameters dari request
 	transactionCategoryID := c.DefaultQuery("transaction_category_id", "")
 	companyID := c.DefaultQuery("company_id", "")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 
-	// Validasi parameter
-	if transactionCategoryID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Transaction category ID is required"})
+	if transactionCategoryID == "" || companyID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Transaction category ID and Company ID are required"})
 		return
 	}
 
-	if companyID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Company ID is required"})
-		return
-	}
-
-	// Tentukan nilai default untuk page dan limit
 	if page < 1 {
 		page = 1
 	}
@@ -38,48 +33,70 @@ func GetJournalEntriesByCategory(c *gin.Context) {
 	offset := (page - 1) * limit
 
 	var journalEntries []models.JournalEntry
-	var total int64
 
-	err := db.DB.Where("company_id = ? AND transaction_category_id = ?", companyID, transactionCategoryID).First(&journalEntries).Error
-
-	if err != nil {
-		// Periksa apakah error karena data tidak ditemukan
-		if err == gorm.ErrRecordNotFound {
-			c.JSON(http.StatusNotFound, gin.H{
-				"status":  "error",
-				"message": "Journal entries not found for the given Company ID and Transaction Category ID",
-			})
-			return
-		}
-
-		// Error lainnya
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"status":  "error",
-			"message": "Failed to fetch journal entry",
-		})
-		return
-	}
-
-	if err := db.DB.
+	err := db.DB.
 		Preload("Lines").
-		Preload("Lines.Account").
-		Preload("TransactionCategory").
-		Preload("TransactionCategory.DebitAccount").
-		Preload("TransactionCategory.CreditAccount").
 		Where("transaction_category_id = ? AND company_id = ?", transactionCategoryID, companyID).
 		Limit(limit).
 		Offset(offset).
-		Find(&journalEntries).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch journal entries with full relations"})
+		Find(&journalEntries).Error
+
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{
+				"status":  "error",
+				"message": "Journal entries not found",
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch journal entries"})
 		return
 	}
 
-	// Kirimkan response dengan data jurnal yang ditemukan
+	// Mapping ke response DTO
+	var responseData []dto.JournalEntryResponse
+	for _, entry := range journalEntries {
+		var lines []dto.JournalEntryLineItem
+		for _, line := range entry.Lines {
+			lines = append(lines, dto.JournalEntryLineItem{
+				ID:             line.ID.String(),        // Mengonversi UUID ke string
+				JournalEntryID: entry.ID.String(),       // Menambahkan ID dari JournalEntry
+				AccountID:      line.AccountID.String(), // Jika line.AccountID adalah UUID
+				AccountName:    line.Account.Name,       // Mengambil nama akun dari relasi
+				Debit:          float64(line.Debit),     // Konversi ke float64
+				Credit:         float64(line.Credit),    // Konversi ke float64
+				Description:    line.Description,
+			})
+		}
+
+		// Untuk field `Amount` (int64 ke float64), `TransactionType` (models.TransactionType ke string), `Status` (models.Status ke string), dan `DateInputed` (pointer *time.Time ke time.Time)
+		var dateInputed time.Time
+		if entry.DateInputed != nil {
+			dateInputed = *entry.DateInputed // Jika tidak nil, ambil nilai waktu
+		}
+
+		responseData = append(responseData, dto.JournalEntryResponse{
+			ID:                    entry.ID.String(), // Mengonversi UUID ke string
+			Invoice:               entry.Invoice,
+			Description:           entry.Description,
+			TransactionCategoryID: entry.TransactionCategoryID.String(), // Mengonversi UUID ke string
+			Amount:                float64(entry.Amount),                // Konversi dari int64 ke float64
+			Partner:               entry.Partner,
+			TransactionType:       string(entry.TransactionType), // Konversi enum ke string
+			Status:                string(entry.Status),          // Konversi enum ke string
+			CompanyID:             entry.CompanyID.String(),      // Mengonversi UUID ke string
+			DateInputed:           dateInputed,                   // Jika nil, kosongkan
+			IsRepaid:              entry.IsRepaid,
+			Installment:           entry.Installment,
+			Note:                  entry.Note,
+			Lines:                 lines,
+		})
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
 		"page":   page,
 		"limit":  limit,
-		"total":  total,
-		"data":   journalEntries,
+		"data":   responseData,
 	})
 }

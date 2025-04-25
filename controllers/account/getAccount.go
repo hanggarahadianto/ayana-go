@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"ayana/db"
+	"ayana/dto"
 	"ayana/models"
 	"net/http"
 	"strconv"
@@ -32,12 +33,10 @@ func GetAccount(c *gin.Context) {
 	var accounts []models.Account
 	query := db.DB.Model(&models.Account{}).Where("company_id = ?", companyID)
 
-	// Apply filter if type is provided
 	if accountType != "" {
 		query = query.Where("type = ?", accountType)
 	}
 
-	// Fetch paginated data
 	if err := query.
 		Order("code ASC").
 		Limit(limit).
@@ -47,7 +46,6 @@ func GetAccount(c *gin.Context) {
 		return
 	}
 
-	// Count total records without limit and offset
 	var total int64
 	countQuery := db.DB.Model(&models.Account{}).Where("company_id = ?", companyID)
 	if accountType != "" {
@@ -55,11 +53,25 @@ func GetAccount(c *gin.Context) {
 	}
 	countQuery.Count(&total)
 
+	// ✅ Convert to AccountResponse
+	var responseData []dto.AccountResponse
+	for _, a := range accounts {
+		responseData = append(responseData, dto.AccountResponse{
+			ID:          a.ID,
+			Code:        a.Code,
+			Name:        a.Name,
+			Type:        a.Type,
+			Category:    a.Category,
+			Description: a.Description,
+			CompanyID:   a.CompanyID,
+		})
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
 		"page":   page,
 		"limit":  limit,
 		"total":  total,
-		"data":   accounts,
+		"data":   responseData,
 	})
 }

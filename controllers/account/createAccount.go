@@ -3,6 +3,7 @@ package controllers
 import (
 	"ayana/db"
 	"ayana/models"
+	"ayana/utils/helper"
 	"net/http"
 	"time"
 
@@ -17,6 +18,16 @@ func CreateAccount(c *gin.Context) {
 		return
 	}
 
+	if !helper.ValidateCompanyID(input.CompanyID, c) {
+		return
+	}
+
+	if err := helper.ValidateAccount(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Validasi apakah kode akun sudah ada
 	var existingAccount models.Account
 	if err := db.DB.Where("code = ?", input.Code).First(&existingAccount).Error; err == nil {
 		c.JSON(http.StatusBadRequest, gin.H{

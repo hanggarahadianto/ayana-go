@@ -54,15 +54,17 @@ func CreateTransactionCategory(c *gin.Context) {
 
 	// Create the transaction category
 	transactionCategory := models.TransactionCategory{
-		ID:              uuid.New(),
-		Name:            input.Name,
-		DebitAccountID:  input.DebitAccountID,
-		CreditAccountID: input.CreditAccountID,
-		Category:        input.Category,
-		Description:     input.Description,
-		CompanyID:       input.CompanyID,
-		CreatedAt:       time.Now(),
-		UpdatedAt:       time.Now(),
+		ID:                uuid.New(),
+		Name:              input.Name,
+		DebitAccountID:    input.DebitAccountID,
+		DebitAccountName:  input.DebitAccountName,
+		CreditAccountID:   input.CreditAccountID,
+		CreditAccountName: input.CreditAccountName,
+		Category:          input.Category,
+		Description:       input.Description,
+		CompanyID:         input.CompanyID,
+		CreatedAt:         time.Now(),
+		UpdatedAt:         time.Now(),
 	}
 
 	// Save the transaction category to the database

@@ -89,6 +89,7 @@ func CreateJournalEntry(c *gin.Context) {
 			ID:          uuid.New(),
 			JournalID:   journal.ID,
 			AccountID:   trxCategory.DebitAccountID,
+			AccountName: trxCategory.DebitAccount.Name,
 			CompanyID:   journal.CompanyID,
 			Debit:       input.Amount,
 			Credit:      0,
