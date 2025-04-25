@@ -4,43 +4,44 @@ import (
 	"ayana/db"
 	"ayana/dto"
 	"ayana/models"
+	"ayana/utils/helper"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
-
 	"gorm.io/gorm"
 )
 
 func GetJournalEntriesByCategory(c *gin.Context) {
-	transactionCategoryID := c.DefaultQuery("transaction_category_id", "")
-	companyID := c.DefaultQuery("company_id", "")
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	// Ambil query params
+	companyIDStr := c.DefaultQuery("company_id", "")
+	transactionCategoryIDStr := c.Query("transaction_category_id")
 
-	if transactionCategoryID == "" || companyID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Transaction category ID and Company ID are required"})
-		return
+	// Validasi Company ID
+	companyID, valid := helper.ValidateAndParseCompanyID(companyIDStr, c)
+	if !valid {
+		return // Sudah ada response di helper
 	}
 
-	if page < 1 {
-		page = 1
+	// Validasi Transaction Category ID
+	transactionCategoryID, valid := helper.ValidateAndParseTransactionCategoryID(transactionCategoryIDStr, c)
+	if !valid {
+		return // Sudah ada response di helper
 	}
-	if limit < 1 {
-		limit = 10
-	}
-	offset := (page - 1) * limit
 
+	// Ambil paginasi
+	pagination := helper.GetPagination(c)
+
+	// Query untuk mengambil journal entries dengan relasi "Lines"
 	var journalEntries []models.JournalEntry
-
 	err := db.DB.
 		Preload("Lines").
 		Where("transaction_category_id = ? AND company_id = ?", transactionCategoryID, companyID).
-		Limit(limit).
-		Offset(offset).
+		Limit(pagination.Limit).
+		Offset(pagination.Offset).
 		Find(&journalEntries).Error
 
+	// Handle error query
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			c.JSON(http.StatusNotFound, gin.H{
@@ -53,7 +54,7 @@ func GetJournalEntriesByCategory(c *gin.Context) {
 		return
 	}
 
-	// Mapping ke response DTO
+	// Mapping data ke DTO response
 	var responseData []dto.JournalEntryResponse
 	for _, entry := range journalEntries {
 		var lines []dto.JournalEntryLineItem
@@ -69,12 +70,13 @@ func GetJournalEntriesByCategory(c *gin.Context) {
 			})
 		}
 
-		// Untuk field `Amount` (int64 ke float64), `TransactionType` (models.TransactionType ke string), `Status` (models.Status ke string), dan `DateInputed` (pointer *time.Time ke time.Time)
+		// Mengonversi DateInputed jika tidak nil
 		var dateInputed time.Time
 		if entry.DateInputed != nil {
 			dateInputed = *entry.DateInputed // Jika tidak nil, ambil nilai waktu
 		}
 
+		// Menambahkan entry ke response data
 		responseData = append(responseData, dto.JournalEntryResponse{
 			ID:                    entry.ID.String(), // Mengonversi UUID ke string
 			Invoice:               entry.Invoice,
@@ -93,10 +95,11 @@ func GetJournalEntriesByCategory(c *gin.Context) {
 		})
 	}
 
+	// Mengirimkan response
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
-		"page":   page,
-		"limit":  limit,
+		"page":   pagination.Page,
+		"limit":  pagination.Limit,
 		"data":   responseData,
 	})
 }

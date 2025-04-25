@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func GetExpenseSummary(c *gin.Context) {
+func GetAssetSummary(c *gin.Context) {
 	// Ambil parameter company_id
 	companyIDStr := c.Query("company_id")
 	companyID, valid := helper.ValidateAndParseCompanyID(companyIDStr, c)
@@ -19,15 +19,16 @@ func GetExpenseSummary(c *gin.Context) {
 		return
 	}
 
+	// Mengecek apakah hanya summary yang diminta
 	if c.Query("summary_only") == "true" {
-		totalExpense, err := service.GetExpenseSummaryOnly(companyID.String())
+		totalAsset, err := service.GetAssetSummaryOnly(companyID.String())
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to calculate summary total"})
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{
 			"data": gin.H{
-				"total_expense": totalExpense,
+				"total_asset": totalAsset,
 			},
 			"message": "Asset summary retrieved successfully",
 			"status":  "success",
@@ -43,9 +44,9 @@ func GetExpenseSummary(c *gin.Context) {
 	if err := db.DB.Model(&models.JournalLine{}).
 		Joins("JOIN journal_entries ON journal_entries.id = journal_lines.journal_id").
 		Joins("JOIN transaction_categories ON transaction_categories.id = journal_entries.transaction_category_id").
-		Where("journal_entries.company_id = ? AND journal_entries.status = ? AND journal_entries.is_repaid = ? AND transaction_categories.debit_account_type = ?", companyID, "paid", true, "Expense").
+		Where("journal_entries.company_id = ? AND journal_entries.status = ? AND journal_entries.is_repaid = ? AND transaction_categories.debit_account_type = ?", companyID, "paid", true, "Asset").
 		Count(&total).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to count expenses"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to count assets"})
 		return
 	}
 
@@ -56,7 +57,7 @@ func GetExpenseSummary(c *gin.Context) {
 		Preload("Journal").
 		Joins("JOIN journal_entries ON journal_entries.id = journal_lines.journal_id").
 		Joins("JOIN transaction_categories ON transaction_categories.id = journal_entries.transaction_category_id").
-		Where("journal_entries.company_id = ? AND journal_entries.status = ? AND journal_entries.is_repaid = ? AND transaction_categories.debit_account_type = ?", companyID, "paid", true, "Expense").
+		Where("journal_entries.company_id = ? AND journal_entries.status = ? AND journal_entries.is_repaid = ? AND transaction_categories.debit_account_type = ?", companyID, "paid", true, "Asset").
 		Limit(pagination.Limit).
 		Offset(pagination.Offset).
 		Find(&journalLines).Error; err != nil {
@@ -64,8 +65,8 @@ func GetExpenseSummary(c *gin.Context) {
 		return
 	}
 
-	totalExpense := int64(0)
-	expenseList := make([]map[string]interface{}, 0)
+	totalAsset := int64(0)
+	assetList := make([]map[string]interface{}, 0)
 
 	// Hindari duplikasi dengan cek ID
 	seen := make(map[uuid.UUID]bool)
@@ -73,30 +74,30 @@ func GetExpenseSummary(c *gin.Context) {
 	for _, line := range journalLines {
 		if line.Debit > 0 && !seen[line.ID] {
 			seen[line.ID] = true
-			totalExpense += line.Debit
+			totalAsset += line.Debit
 
-			expenseList = append(expenseList, map[string]interface{}{
+			assetList = append(assetList, map[string]interface{}{
 				"id":           line.ID,
 				"account_name": line.Account.Name,
 				"account_type": line.Account.Type,
 
-				"category":     line.Account.Category,
-				"description":  line.Journal.Note,
-				"amount":       line.Debit,
-				"date_inputed": line.CreatedAt.Format("2006-01-02"),
+				"category":    line.Account.Category,
+				"description": line.Journal.Note,
+				"amount":      line.Debit,
+				"date":        line.CreatedAt.Format("2006-01-02"),
 			})
 		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
-			"expenseList":   expenseList,
-			"total_expense": totalExpense,
-			"page":          pagination.Page,
-			"limit":         pagination.Limit,
-			"total":         total,
+			"assetList":   assetList,
+			"total_asset": totalAsset,
+			"page":        pagination.Page,
+			"limit":       pagination.Limit,
+			"total":       total,
 		},
-		"message": "Expense summary retrieved successfully",
+		"message": "Asset summary retrieved successfully",
 		"status":  "success",
 	})
 }

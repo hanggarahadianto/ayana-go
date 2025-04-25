@@ -4,31 +4,22 @@ import (
 	"ayana/db"
 	"ayana/dto"
 	"ayana/models"
+	"ayana/utils/helper"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 func GetAccount(c *gin.Context) {
-	companyID := c.Query("company_id")
+	companyIDStr := c.Query("company_id")
 	accountType := c.Query("type")
 
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
-
-	if companyID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Company ID is required"})
-		return
+	// Panggil helper untuk validasi dan parsing UUID
+	companyID, valid := helper.ValidateAndParseCompanyID(companyIDStr, c)
+	if !valid {
+		return // Sudah ada response di helper
 	}
-
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 {
-		limit = 10
-	}
-	offset := (page - 1) * limit
+	pagination := helper.GetPagination(c)
 
 	var accounts []models.Account
 	query := db.DB.Model(&models.Account{}).Where("company_id = ?", companyID)
@@ -39,8 +30,8 @@ func GetAccount(c *gin.Context) {
 
 	if err := query.
 		Order("code ASC").
-		Limit(limit).
-		Offset(offset).
+		Limit(pagination.Limit).
+		Offset(pagination.Offset).
 		Find(&accounts).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch accounts"})
 		return
@@ -69,8 +60,8 @@ func GetAccount(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
-		"page":   page,
-		"limit":  limit,
+		"page":   pagination.Page,
+		"limit":  pagination.Limit,
 		"total":  total,
 		"data":   responseData,
 	})

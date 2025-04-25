@@ -2,32 +2,14 @@ package controller
 
 import (
 	"ayana/db"
+	"ayana/dto"
 	"ayana/models"
 	"ayana/service"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )
-
-type JournalEntryResponse struct {
-	ID                    string     `json:"id"`
-	Invoice               string     `json:"invoice"`
-	Description           string     `json:"description"`
-	TransactionCategoryID string     `json:"transaction_category_id"`
-	Amount                int64      `json:"amount"`
-	Partner               string     `json:"partner"`
-	TransactionType       string     `json:"transaction_type"`
-	Status                string     `json:"status"`
-	CompanyID             string     `json:"company_id"`
-	DateInputed           *time.Time `json:"date_inputed"`
-	DueDate               *time.Time `json:"due_date"`
-	IsRepaid              bool       `json:"is_repaid"`
-	Installment           int        `json:"installment"`
-	Note                  string     `json:"note"`
-	Lines                 any        `json:"lines"` // bisa diganti []JournalLine jika ingin lebih spesifik
-}
 
 func GetOutstandingDebts(c *gin.Context) {
 	companyID := c.Query("company_id")
@@ -75,7 +57,7 @@ func GetOutstandingDebts(c *gin.Context) {
 		Count(&total).Error; err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"data": gin.H{
-				"debtList":   []JournalEntryResponse{},
+				"debtList":   []dto.JournalEntryResponse{},
 				"total_debt": 0,
 				"page":       page,
 				"limit":      limit,
@@ -93,7 +75,7 @@ func GetOutstandingDebts(c *gin.Context) {
 		Select("COALESCE(SUM(amount), 0)").Scan(&totalDebt).Error; err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"data": gin.H{
-				"debtList":   []JournalEntryResponse{},
+				"debtList":   []dto.JournalEntryResponse{},
 				"total_debt": 0,
 				"page":       page,
 				"limit":      limit,
@@ -116,24 +98,24 @@ func GetOutstandingDebts(c *gin.Context) {
 	}
 
 	// Buat response
-	var responseData []JournalEntryResponse
+	var responseData []dto.JournalEntryResponse
 	for _, entry := range entries {
-		responseData = append(responseData, JournalEntryResponse{
+		responseData = append(responseData, dto.JournalEntryResponse{
 			ID:                    entry.ID.String(),
 			Invoice:               entry.Invoice,
 			Description:           entry.Description,
 			TransactionCategoryID: entry.TransactionCategoryID.String(),
-			Amount:                entry.Amount,
+			Amount:                float64(entry.Amount),
 			Partner:               entry.Partner,
 			TransactionType:       string(entry.TransactionType),
 			Status:                string(entry.Status),
 			CompanyID:             entry.CompanyID.String(),
-			DateInputed:           entry.DateInputed,
-			DueDate:               entry.DueDate,
+			DateInputed:           *entry.DateInputed,
+			DueDate:               *entry.DueDate,
 			IsRepaid:              entry.IsRepaid,
 			Installment:           entry.Installment,
 			Note:                  entry.Note,
-			Lines:                 nil, // kalau perlu isi pakai Preload
+			Lines:                 nil,
 		})
 	}
 

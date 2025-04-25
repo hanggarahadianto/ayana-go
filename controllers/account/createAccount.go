@@ -18,7 +18,7 @@ func CreateAccount(c *gin.Context) {
 		return
 	}
 
-	if !helper.ValidateCompanyID(input.CompanyID, c) {
+	if !helper.ValidateCompanyExist(input.CompanyID, c) {
 		return
 	}
 

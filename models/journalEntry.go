@@ -40,6 +40,9 @@ type JournalEntry struct {
 
 	Note string `gorm:"type:varchar(100)" json:"note"`
 
+	DebitAccountType  string `gorm:"type:varchar(100)" json:"debit_account_type"`
+	CreditAccountType string `gorm:"type:varchar(100)" json:"credit_account_type"`
+
 	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 
