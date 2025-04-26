@@ -41,6 +41,17 @@ func GetTransactionCategory(c *gin.Context) {
 		tx = tx.Where("transaction_categories.id = ?", id)
 	}
 
+	// if transactionType == "payin" {
+	// 	tx = tx.Where("LOWER(debit.type) LIKE ?", "asset%")
+	// } else if transactionType == "payout" {
+	// 	tx = tx.Joins("JOIN accounts AS credit ON credit.id = transaction_categories.credit_account_id").
+	// 		Where("LOWER(credit.type) LIKE ?", "asset%")
+	// }
+	if transactionType == "payin" {
+		tx = tx.Joins("JOIN accounts AS credit ON credit.id = transaction_categories.credit_account_id").
+			Where("LOWER(credit.type) NOT LIKE ?", "asset%")
+	}
+
 	if transactionType == "payin" {
 		tx = tx.Where("LOWER(debit.type) LIKE ?", "asset%")
 	} else if transactionType == "payout" {
