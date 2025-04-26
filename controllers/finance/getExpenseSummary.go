@@ -29,7 +29,7 @@ func GetExpenseSummary(c *gin.Context) {
 			"data": gin.H{
 				"total_expense": totalExpense,
 			},
-			"message": "Asset summary retrieved successfully",
+			"message": "Expense summary retrieved successfully",
 			"status":  "success",
 		})
 		return

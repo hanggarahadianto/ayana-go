@@ -81,10 +81,10 @@ func GetAssetSummary(c *gin.Context) {
 				"account_name": line.Account.Name,
 				"account_type": line.Account.Type,
 
-				"category":    line.Account.Category,
-				"description": line.Journal.Note,
-				"amount":      line.Debit,
-				"date":        line.CreatedAt.Format("2006-01-02"),
+				"category":     line.Account.Category,
+				"description":  line.Journal.Note,
+				"amount":       line.Debit,
+				"date_inputed": line.CreatedAt.Format("2006-01-02"),
 			})
 		}
 	}
