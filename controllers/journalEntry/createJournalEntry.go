@@ -62,8 +62,8 @@ func CreateJournalEntry(c *gin.Context) {
 		Description:           input.Note,
 		TransactionCategoryID: input.TransactionCategoryID,
 		Amount:                input.Amount,
-		DebitAccountType:      trxCategory.DebitAccount.Type,
-		CreditAccountType:     trxCategory.CreditAccount.Type,
+		DebitAccountType:      trxCategory.DebitAccountType, // Menggunakan field langsung dari TransactionCategory
+		CreditAccountType:     trxCategory.CreditAccountType,
 		Partner:               input.Partner,
 		TransactionType:       input.TransactionType,
 		Status:                input.Status,

@@ -18,12 +18,10 @@ func GetAssetSummary(c *gin.Context) {
 	if !valid {
 		return
 	}
-
-	// Mengecek apakah hanya summary yang diminta
 	if c.Query("summary_only") == "true" {
 		totalAsset, err := service.GetAssetSummaryOnly(companyID.String())
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to calculate summary total"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{
