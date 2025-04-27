@@ -116,7 +116,7 @@ func GetCashSummary(c *gin.Context) {
 			"id":               line.ID,
 			"description":      account.Name,
 			"amount":           balance,
-			"date":             line.CreatedAt.Format("2006-01-02"),
+			"date":             line.Journal.DateInputed,
 			"status":           line.Journal.Status,
 			"transaction_type": transactionType,
 			"note":             line.Journal.Note,
