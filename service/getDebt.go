@@ -10,10 +10,11 @@ import (
 )
 
 type DebtFilterParams struct {
-	CompanyID  string
-	Status     string
-	Pagination helper.Pagination
-	DateFilter helper.DateFilter
+	CompanyID string
+
+	Pagination  helper.Pagination
+	DateFilter  helper.DateFilter
+	SummaryOnly bool // Menambahkan SummaryOnly
 }
 
 // Mengambil list + summary debt
@@ -29,7 +30,7 @@ func GetOutstandingDebts(params DebtFilterParams) ([]dto.JournalEntryResponse, i
 		Where("credit > 0 AND company_id = ?", params.CompanyID)
 
 	baseQuery := db.DB.Model(&models.JournalEntry{}).
-		Where("id IN (?) AND status = ? AND is_repaid = false", subQuery, params.Status)
+		Where("id IN (?) AND status = ? AND is_repaid = false", subQuery, "unpaid")
 
 	// Tambahkan filter tanggal kalau ada
 	if params.DateFilter.StartDate != nil {
@@ -49,7 +50,12 @@ func GetOutstandingDebts(params DebtFilterParams) ([]dto.JournalEntryResponse, i
 		return nil, 0, 0, err
 	}
 
-	// 3. Ambil list data + order by due_date
+	// Jika SummaryOnly = true, kembalikan hanya total dan totalDebt, tanpa mengambil data list
+	if params.SummaryOnly {
+		return nil, totalDebt, total, nil
+	}
+
+	// 3. Ambil list data + order by due_date (jika SummaryOnly = false)
 	dataQuery := baseQuery.Session(&gorm.Session{}).
 		Order("due_date ASC").
 		Limit(params.Pagination.Limit).

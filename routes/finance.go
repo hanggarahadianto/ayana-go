@@ -10,7 +10,6 @@ func SetupFianceRouter(r *gin.Engine) {
 	finance := r.Group("/finance")
 	{
 		finance.GET("/get-outstanding-debt", financeController.GetOutstandingDebts)
-		finance.GET("/get-cash-summary", financeController.GetCashSummary)
 		finance.GET("/get-expense-summary", financeController.GetExpenseSummary)
 		finance.GET("/get-asset-summary", financeController.GetAssetSummary)
 

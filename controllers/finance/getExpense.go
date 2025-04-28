@@ -19,6 +19,17 @@ func GetExpenseSummary(c *gin.Context) {
 		return
 	}
 
+	summaryOnlyStr := c.DefaultQuery("summary_only", "false")
+
+	summaryOnly := false
+	if summaryOnlyStr == "true" {
+		summaryOnly = true
+	} else if summaryOnlyStr != "false" {
+		// Menangani kasus di mana nilai selain "true" atau "false" diberikan
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Parameter summary_only harus bernilai 'true' atau 'false'."})
+		return
+	}
+
 	// Ambil filter tanggal
 	dateFilter, err := helper.GetDateFilter(c)
 	if err != nil {
@@ -26,31 +37,14 @@ func GetExpenseSummary(c *gin.Context) {
 		return
 	}
 
-	// Cek apakah hanya ingin summary
-	if c.Query("summary_only") == "true" {
-		totalExpense, err := service.GetExpenseSummaryOnly(companyIDStr, dateFilter)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menghitung total pengeluaran"})
-			return
-		}
-
-		c.JSON(http.StatusOK, gin.H{
-			"data": gin.H{
-				"total_expense": totalExpense,
-			},
-			"message": "Ringkasan pengeluaran berhasil diambil",
-			"status":  "sukses",
-		})
-		return
-	}
-
 	// Jika ingin daftar pengeluaran beserta summary
 	pagination := helper.GetPagination(c)
 
 	params := service.ExpenseFilterParams{
-		CompanyID:  companyID.String(),
-		Pagination: pagination,
-		DateFilter: dateFilter,
+		CompanyID:   companyID.String(),
+		Pagination:  pagination,
+		DateFilter:  dateFilter,
+		SummaryOnly: summaryOnly,
 	}
 
 	data, totalExpense, total, err := service.GetExpenses(params)

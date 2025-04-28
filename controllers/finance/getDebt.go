@@ -10,14 +10,26 @@ import (
 
 func GetOutstandingDebts(c *gin.Context) {
 
-	status := c.Query("status")
-
 	companyIDStr := c.Query("company_id")
+
+	// Mendapatkan parameter summary_only
+	summaryOnlyStr := c.DefaultQuery("summary_only", "false")
+
+	// Menangani logika untuk summary_only
+	summaryOnly := false
+	if summaryOnlyStr == "true" {
+		summaryOnly = true
+	} else if summaryOnlyStr != "false" {
+		// Menangani kasus di mana nilai selain "true" atau "false" diberikan
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Parameter summary_only harus bernilai 'true' atau 'false'."})
+		return
+	}
 
 	companyID, valid := helper.ValidateAndParseCompanyID(companyIDStr, c)
 	if !valid {
 		return
 	}
+
 	// Ambil date filter
 	dateFilter, err := helper.GetDateFilter(c)
 	if err != nil {
@@ -25,32 +37,14 @@ func GetOutstandingDebts(c *gin.Context) {
 		return
 	}
 
-	// Jika hanya ingin summary
-	if c.Query("summary_only") == "true" {
-		totalOutstandingDebt, err := service.GetOutstandingDebtSummaryOnly(companyID.String(), dateFilter)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to calculate summary total"})
-			return
-		}
-
-		c.JSON(http.StatusOK, gin.H{
-			"data": gin.H{
-				"total_outstandingDebt": totalOutstandingDebt,
-			},
-			"message": "Outstanding debt summary retrieved successfully",
-			"status":  "success",
-		})
-		return
-	}
-
-	// Jika ingin data list + summary
 	pagination := helper.GetPagination(c)
 
 	params := service.DebtFilterParams{
-		CompanyID:  companyID.String(),
-		Status:     status,
-		Pagination: pagination,
-		DateFilter: dateFilter,
+		CompanyID: companyID.String(),
+
+		Pagination:  pagination,
+		DateFilter:  dateFilter,
+		SummaryOnly: summaryOnly, // Menambahkan summaryOnly pada parameter
 	}
 
 	data, totalDebt, total, err := service.GetOutstandingDebts(params)

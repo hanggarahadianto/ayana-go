@@ -10,11 +10,13 @@ import (
 	"gorm.io/gorm"
 )
 
+// Mengambil list dan summary pengeluaran
 // ExpenseFilterParams adalah parameter untuk filter pengeluaran
 type ExpenseFilterParams struct {
-	CompanyID  string
-	Pagination helper.Pagination
-	DateFilter helper.DateFilter
+	CompanyID   string
+	Pagination  helper.Pagination
+	DateFilter  helper.DateFilter
+	SummaryOnly bool // Menambahkan parameter SummaryOnly
 }
 
 // Mengambil list dan summary pengeluaran
@@ -51,7 +53,12 @@ func GetExpenses(params ExpenseFilterParams) ([]dto.JournalEntryResponse, int64,
 		return nil, 0, 0, err
 	}
 
-	// 3. Ambil list data + order by date_inputed
+	// Jika summaryOnly = true, hanya kembalikan total dan totalExpense tanpa mengambil data list
+	if params.SummaryOnly {
+		return nil, totalExpense, total, nil
+	}
+
+	// 3. Ambil list data + order by date_inputed (jika summaryOnly = false)
 	dataQuery := baseQuery.Session(&gorm.Session{}).
 		Order("date_inputed ASC").
 		Limit(params.Pagination.Limit).
@@ -87,7 +94,6 @@ func GetExpenses(params ExpenseFilterParams) ([]dto.JournalEntryResponse, int64,
 			Installment:           entry.Installment,
 			Note:                  entry.Note,
 		})
-
 	}
 
 	return responseData, totalExpense, total, nil
