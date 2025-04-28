@@ -62,6 +62,7 @@ func createJournalEntryService(input models.JournalEntry) (models.JournalEntry, 
 
 	journal := models.JournalEntry{
 		ID:                    journalID,
+		Transaction_ID:        input.Transaction_ID,
 		Invoice:               input.Invoice,
 		Description:           input.Note,
 		TransactionCategoryID: input.TransactionCategoryID,

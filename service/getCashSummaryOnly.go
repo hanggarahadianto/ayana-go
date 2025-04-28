@@ -2,24 +2,22 @@ package service
 
 import (
 	"ayana/db"
-	"database/sql"
+	"ayana/models"
+	"ayana/utils/helper"
 )
 
-// GetSummaryOnlyCashIn calculates the total cash in for a given company
-func GetCashinSummaryOnly(companyID string) (int64, error) {
-	var totalCashIn sql.NullInt64
-	err := db.DB.Table("journal_entries").
+func GetCashSummaryOnly(companyID string, dateFilter helper.DateFilter) (int64, error) {
+	var total int64
+
+	err := db.DB.Model(&models.JournalEntry{}).
 		Where("company_id = ? AND transaction_type = ?", companyID, "payin").
-		Select("SUM(amount)").
-		Row().Scan(&totalCashIn)
+		Where("date_inputed BETWEEN ? AND ?", dateFilter.StartDate, dateFilter.EndDate).
+		Select("SUM(amount)").Scan(&total).Error
 
 	if err != nil {
-		return 0, err // hanya jika query gagal, bukan karena NULL result
+		// Kalau error, tetap balikin 0
+		return 0, nil
 	}
 
-	if totalCashIn.Valid {
-		return totalCashIn.Int64, nil
-	}
-
-	return 0, nil // jika NULL (tidak ada data), kembalikan 0
+	return total, nil
 }

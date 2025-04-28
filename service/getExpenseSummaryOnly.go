@@ -3,19 +3,37 @@ package service
 import (
 	"ayana/db"
 	"ayana/models"
+	"ayana/utils/helper"
+	"errors"
+
+	"github.com/google/uuid"
 )
 
-func GetExpenseSummaryOnly(companyID string) (int64, error) {
+func GetExpenseSummaryOnly(companyID string, dateFilter helper.DateFilter) (int64, error) {
+	// Convert companyID ke UUID
+	companyUUID, err := uuid.Parse(companyID)
+	if err != nil {
+		return 0, errors.New("format company_id tidak valid")
+	}
+
+	// Query untuk menghitung total pengeluaran
 	var totalExpense int64
+	query := db.DB.Model(&models.JournalEntry{}).
+		Where("company_id = ?", companyUUID).
+		Where("status = ?", "paid").
+		Where("transaction_type = ?", "payout").
+		Where("is_repaid = ?", true).
+		Where("debit_account_type = ?", "Expense")
 
-	err := db.DB.Model(&models.JournalLine{}).
-		Select("COALESCE(SUM(journal_lines.debit), 0)").
-		Joins("JOIN journal_entries ON journal_entries.id = journal_lines.journal_id").
-		Joins("JOIN transaction_categories ON transaction_categories.id = journal_entries.transaction_category_id").
-		Where("journal_entries.company_id = ? AND journal_entries.status = ? AND journal_entries.is_repaid = ? AND transaction_categories.debit_account_type = ? AND journal_lines.debit > 0",
-			companyID, "paid", true, "Expense").
-		Scan(&totalExpense).Error
+	// Filter berdasarkan tanggal
+	if dateFilter.StartDate != nil {
+		query = query.Where("date_inputed >= ?", dateFilter.StartDate)
+	}
+	if dateFilter.EndDate != nil {
+		query = query.Where("date_inputed <= ?", dateFilter.EndDate)
+	}
 
+	err = query.Select("SUM(amount)").Scan(&totalExpense).Error
 	if err != nil {
 		return 0, err
 	}

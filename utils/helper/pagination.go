@@ -3,6 +3,7 @@ package helper
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -42,4 +43,39 @@ func ValidatePagination(p Pagination, c *gin.Context) bool {
 		return false
 	}
 	return true
+}
+
+type DateFilter struct {
+	StartDate *time.Time
+	EndDate   *time.Time
+}
+
+func GetDateFilter(c *gin.Context) (DateFilter, error) {
+	layout := "2006-01-02" // format yyyy-mm-dd
+
+	startDateStr := c.Query("start_date")
+	endDateStr := c.Query("end_date")
+
+	var startDate, endDate *time.Time
+
+	if startDateStr != "" {
+		sd, err := time.Parse(layout, startDateStr)
+		if err != nil {
+			return DateFilter{}, err
+		}
+		startDate = &sd
+	}
+
+	if endDateStr != "" {
+		ed, err := time.Parse(layout, endDateStr)
+		if err != nil {
+			return DateFilter{}, err
+		}
+		endDate = &ed
+	}
+
+	return DateFilter{
+		StartDate: startDate,
+		EndDate:   endDate,
+	}, nil
 }
