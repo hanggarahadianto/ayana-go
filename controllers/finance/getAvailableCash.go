@@ -14,7 +14,7 @@ func GetAvailableCashHandler(c *gin.Context) {
 		return
 	}
 
-	availableCash, err := service.GetAvailableCash(companyID.String())
+	totalCashIn, totalCashOut, availableCash, err := service.GetAvailableCash(companyID.String())
 	if err != nil {
 		c.JSON(500, gin.H{"error": "failed to get available cash"})
 		return
@@ -23,7 +23,9 @@ func GetAvailableCashHandler(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"status": "sukses",
 		"data": gin.H{
-			"total_asset": availableCash,
+			"total_cash_in":  totalCashIn,
+			"total_cash_out": totalCashOut,
+			"available_cash": availableCash,
 		},
 	})
 }
