@@ -12,5 +12,6 @@ func SetupJournalEntryRouter(r *gin.Engine) {
 		journalEntry.GET("/get", journalEntryController.GetJournalEntriesByCategory)
 
 		journalEntry.POST("/post", journalEntryController.CreateJournalEntry)
+		journalEntry.POST("/reversed-post", journalEntryController.CreateReversedJournalEntry)
 	}
 }

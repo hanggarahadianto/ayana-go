@@ -70,6 +70,7 @@ func GetOutstandingDebts(params DebtFilterParams) ([]dto.JournalEntryResponse, i
 	for _, entry := range entries {
 		responseData = append(responseData, dto.JournalEntryResponse{
 			ID:                    entry.ID.String(),
+			TransactionID:         entry.Transaction_ID,
 			Invoice:               entry.Invoice,
 			Description:           entry.Description,
 			TransactionCategoryID: entry.TransactionCategoryID.String(),

@@ -93,3 +93,11 @@ func MapToJournalEntryResponses(journalEntries []models.JournalEntry) []JournalE
 	}
 	return responses
 }
+
+func MapToJournalEntryResponseList(entries []models.JournalEntry) []JournalEntryResponse {
+	var responseList []JournalEntryResponse
+	for _, entry := range entries {
+		responseList = append(responseList, MapToJournalEntryResponse(entry))
+	}
+	return responseList
+}
