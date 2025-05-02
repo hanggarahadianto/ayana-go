@@ -23,40 +23,24 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalLineRespons
 	var total int64
 	var totalDebt int64
 
-	// Build base query
+	// Build base query tanpa Limit dan Offset untuk Count dan Sum
 	baseQuery := db.DB.Model(&models.JournalLine{}).
 		Joins("JOIN journal_entries ON journal_entries.id = journal_lines.journal_id").
-		Where("journal_entries.company_id = ?", params.CompanyID).
-		Limit(params.Pagination.Limit).
-		Offset(params.Pagination.Offset)
+		Where("journal_entries.company_id = ?", params.CompanyID)
 
 	// Filter Debt type
 	switch params.DebtStatus {
 	case "going":
 		baseQuery = baseQuery.
 			Where("journal_lines.credit > 0").
-			// Where("journal_entries.is_repaid = ? AND journal_entries.status = ? AND journal_entries.transaction_type = ?", false, "unpaid", "payout")
 			Where("journal_entries.is_repaid = ? AND journal_entries.status = ?", false, "unpaid")
-
 	case "done":
 		baseQuery = baseQuery.
 			Where("journal_lines.credit > 0").
-			// Where("journal_entries.transaction_type = ?", "payout").
-			// Where("journal_entries.is_repaid = ? AND journal_entries.status = ? AND journal_entries.transaction_type = ?", true, "done", "payout")
 			Where("journal_entries.is_repaid = ? AND journal_entries.status = ?", true, "done")
-
-		// case "cashout":
-		// 	baseQuery = baseQuery.
-		// 		Where("journal_lines.credit > 0").
-		// 		Where("journal_entries.transaction_type = ?", "payout").
-		// 		Where("journal_lines.credit_account_type = ?", "Debt")
-		// case "receivable":
-		// 	baseQuery = baseQuery.
-		// 		Where("journal_entries.is_repaid = ? AND journal_entries.status = ? AND journal_entries.transaction_type = ?", false, "unpaid", "payot")
 	}
 
 	// Filter date
-	// Filter tanggal
 	if params.DateFilter.StartDate != nil {
 		baseQuery = baseQuery.Where("journal_entries.date_inputed >= ?", params.DateFilter.StartDate)
 	}
@@ -64,56 +48,55 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalLineRespons
 		baseQuery = baseQuery.Where("journal_entries.date_inputed <= ?", params.DateFilter.EndDate)
 	}
 
-	// Hitung total baris data (jumlah baris)
+	// Hitung total baris
 	if err := baseQuery.Session(&gorm.Session{}).Count(&total).Error; err != nil {
 		return nil, 0, 0, err
 	}
 
-	// Sum total Debt (Fix query to avoid duplicate JOIN)
+	// Hitung total debt
 	if err := baseQuery.Session(&gorm.Session{}).
 		Select("COALESCE(SUM(journal_entries.amount), 0)").
 		Scan(&totalDebt).Error; err != nil {
 		return nil, 0, 0, err
 	}
 
-	// If summary_only = false, fetch data
-	if !params.SummaryOnly {
-		dataQuery := baseQuery.Session(&gorm.Session{}).
-			Preload("Journal"). // Memuat relasi dengan JournalEntry
-			Where("journal_entries.company_id = ?", params.CompanyID).
-			Order("journal_entries.date_inputed ASC").
-			Limit(params.Pagination.Limit).
-			Offset(params.Pagination.Offset)
-
-		if err := dataQuery.Find(&lines).Error; err != nil {
-			return nil, 0, 0, err
-		}
-
-		var response []dto.JournalLineResponse
-		for _, line := range lines {
-			// Langsung menggunakan CreditAccountType yang sudah ada di JournalLine
-			response = append(response, dto.JournalLineResponse{
-				ID:                line.ID.String(),
-				JournalEntryID:    line.JournalID.String(), // <- Use JournalID
-				Invoice:           line.Journal.Invoice,    // <- Use Journal.Invoice
-				Description:       line.Journal.Description,
-				Partner:           line.Journal.Partner,
-				Amount:            float64(line.Debit - line.Credit), // Debit - Credit
-				TransactionType:   string(line.TransactionType),
-				DebitAccountType:  line.DebitAccountType,
-				CreditAccountType: line.CreditAccountType, // Ambil langsung dari JournalLine
-				Status:            string(line.Journal.Status),
-				CompanyID:         line.CompanyID.String(),
-				DateInputed:       *line.Journal.DateInputed,
-				DueDate:           helper.SafeDueDate(line.Journal.DueDate),
-				IsRepaid:          line.Journal.IsRepaid,
-				Installment:       line.Journal.Installment,
-				Note:              line.Journal.Note,
-			})
-		}
-
-		return response, totalDebt, total, nil
+	// Jika SummaryOnly = true, kembalikan hanya total dan totalDebt
+	if params.SummaryOnly {
+		return nil, totalDebt, total, nil
 	}
 
-	return nil, totalDebt, total, nil
+	// Query untuk mengambil data dengan pagination
+	dataQuery := baseQuery.Session(&gorm.Session{}).
+		Preload("Journal").
+		Order("journal_entries.date_inputed ASC").
+		Limit(params.Pagination.Limit).
+		Offset(params.Pagination.Offset)
+
+	if err := dataQuery.Find(&lines).Error; err != nil {
+		return nil, 0, 0, err
+	}
+
+	var response []dto.JournalLineResponse
+	for _, line := range lines {
+		response = append(response, dto.JournalLineResponse{
+			ID:                line.ID.String(),
+			JournalEntryID:    line.JournalID.String(),
+			Invoice:           line.Journal.Invoice,
+			Description:       line.Journal.Description,
+			Partner:           line.Journal.Partner,
+			Amount:            float64(line.Debit - line.Credit),
+			TransactionType:   string(line.TransactionType),
+			DebitAccountType:  line.DebitAccountType,
+			CreditAccountType: line.CreditAccountType,
+			Status:            string(line.Journal.Status),
+			CompanyID:         line.CompanyID.String(),
+			DateInputed:       *line.Journal.DateInputed,
+			DueDate:           helper.SafeDueDate(line.Journal.DueDate),
+			IsRepaid:          line.Journal.IsRepaid,
+			Installment:       line.Journal.Installment,
+			Note:              line.Journal.Note,
+		})
+	}
+
+	return response, totalDebt, total, nil
 }
