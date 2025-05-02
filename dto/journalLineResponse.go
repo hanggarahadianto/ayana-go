@@ -5,7 +5,9 @@ import "time"
 type JournalLineResponse struct {
 	ID                string    `json:"id"`
 	JournalEntryID    string    `json:"journal_entry_id"`
+	Transaction_ID    string    `json:"transaction_id"`
 	Invoice           string    `json:"invoice"`
+	Partner           string    `json:"partner"`
 	Description       string    `json:"description"`
 	Amount            float64   `json:"amount"`
 	TransactionType   string    `json:"transaction_type"`

@@ -10,82 +10,110 @@ import (
 )
 
 type DebtFilterParams struct {
-	CompanyID string
-
+	CompanyID   string
 	Pagination  helper.Pagination
 	DateFilter  helper.DateFilter
-	SummaryOnly bool // Menambahkan SummaryOnly
+	SummaryOnly bool
+	DebtStatus  string // <-- tetap ada
+
 }
 
-// Mengambil list + summary debt
-func GetOutstandingDebts(params DebtFilterParams) ([]dto.JournalEntryResponse, int64, int64, error) {
-	var entries []models.JournalEntry
+func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalLineResponse, int64, int64, error) {
+	var lines []models.JournalLine
 	var total int64
 	var totalDebt int64
 
-	// SubQuery untuk filter journal_id
-	subQuery := db.DB.
-		Model(&models.JournalLine{}).
-		Select("journal_id").
-		Where("credit > 0 AND company_id = ?", params.CompanyID)
-
-	baseQuery := db.DB.Model(&models.JournalEntry{}).
-		Where("id IN (?) AND status = ? AND is_repaid = false", subQuery, "unpaid")
-
-	// Tambahkan filter tanggal kalau ada
-	if params.DateFilter.StartDate != nil {
-		baseQuery = baseQuery.Where("due_date >= ?", params.DateFilter.StartDate)
-	}
-	if params.DateFilter.EndDate != nil {
-		baseQuery = baseQuery.Where("due_date <= ?", params.DateFilter.EndDate)
-	}
-
-	// 1. Hitung total jumlah data
-	if err := baseQuery.Count(&total).Error; err != nil {
-		return nil, 0, 0, err
-	}
-
-	// 2. Hitung total hutang (tanpa ORDER BY, biar ga error)
-	if err := baseQuery.Session(&gorm.Session{}).Select("COALESCE(SUM(amount), 0)").Scan(&totalDebt).Error; err != nil {
-		return nil, 0, 0, err
-	}
-
-	// Jika SummaryOnly = true, kembalikan hanya total dan totalDebt, tanpa mengambil data list
-	if params.SummaryOnly {
-		return nil, totalDebt, total, nil
-	}
-
-	// 3. Ambil list data + order by due_date (jika SummaryOnly = false)
-	dataQuery := baseQuery.Session(&gorm.Session{}).
-		Order("due_date ASC").
+	// Build base query
+	baseQuery := db.DB.Model(&models.JournalLine{}).
+		Joins("JOIN journal_entries ON journal_entries.id = journal_lines.journal_id").
+		Where("journal_entries.company_id = ?", params.CompanyID).
 		Limit(params.Pagination.Limit).
 		Offset(params.Pagination.Offset)
 
-	if err := dataQuery.Find(&entries).Error; err != nil {
+	// Filter Debt type
+	switch params.DebtStatus {
+	case "going":
+		baseQuery = baseQuery.
+			Where("journal_lines.credit > 0").
+			// Where("journal_entries.is_repaid = ? AND journal_entries.status = ? AND journal_entries.transaction_type = ?", false, "unpaid", "payout")
+			Where("journal_entries.is_repaid = ? AND journal_entries.status = ?", false, "unpaid")
+
+	case "done":
+		baseQuery = baseQuery.
+			Where("journal_lines.credit > 0").
+			// Where("journal_entries.transaction_type = ?", "payout").
+			// Where("journal_entries.is_repaid = ? AND journal_entries.status = ? AND journal_entries.transaction_type = ?", true, "done", "payout")
+			Where("journal_entries.is_repaid = ? AND journal_entries.status = ?", true, "done")
+
+		// case "cashout":
+		// 	baseQuery = baseQuery.
+		// 		Where("journal_lines.credit > 0").
+		// 		Where("journal_entries.transaction_type = ?", "payout").
+		// 		Where("journal_lines.credit_account_type = ?", "Debt")
+		// case "receivable":
+		// 	baseQuery = baseQuery.
+		// 		Where("journal_entries.is_repaid = ? AND journal_entries.status = ? AND journal_entries.transaction_type = ?", false, "unpaid", "payot")
+	}
+
+	// Filter date
+	// Filter tanggal
+	if params.DateFilter.StartDate != nil {
+		baseQuery = baseQuery.Where("journal_entries.date_inputed >= ?", params.DateFilter.StartDate)
+	}
+	if params.DateFilter.EndDate != nil {
+		baseQuery = baseQuery.Where("journal_entries.date_inputed <= ?", params.DateFilter.EndDate)
+	}
+
+	// Hitung total baris data (jumlah baris)
+	if err := baseQuery.Session(&gorm.Session{}).Count(&total).Error; err != nil {
 		return nil, 0, 0, err
 	}
 
-	// Mapping ke DTO
-	var responseData []dto.JournalEntryResponse
-	for _, entry := range entries {
-		responseData = append(responseData, dto.JournalEntryResponse{
-			ID:                    entry.ID.String(),
-			TransactionID:         entry.Transaction_ID,
-			Invoice:               entry.Invoice,
-			Description:           entry.Description,
-			TransactionCategoryID: entry.TransactionCategoryID.String(),
-			Amount:                float64(entry.Amount),
-			Partner:               entry.Partner,
-			TransactionType:       string(entry.TransactionType),
-			Status:                string(entry.Status),
-			CompanyID:             entry.CompanyID.String(),
-			DateInputed:           *entry.DateInputed,
-			DueDate:               *entry.DueDate,
-			IsRepaid:              entry.IsRepaid,
-			Installment:           entry.Installment,
-			Note:                  entry.Note,
-		})
+	// Sum total Debt (Fix query to avoid duplicate JOIN)
+	if err := baseQuery.Session(&gorm.Session{}).
+		Select("COALESCE(SUM(journal_entries.amount), 0)").
+		Scan(&totalDebt).Error; err != nil {
+		return nil, 0, 0, err
 	}
 
-	return responseData, totalDebt, total, nil
+	// If summary_only = false, fetch data
+	if !params.SummaryOnly {
+		dataQuery := baseQuery.Session(&gorm.Session{}).
+			Preload("Journal"). // Memuat relasi dengan JournalEntry
+			Where("journal_entries.company_id = ?", params.CompanyID).
+			Order("journal_entries.date_inputed ASC").
+			Limit(params.Pagination.Limit).
+			Offset(params.Pagination.Offset)
+
+		if err := dataQuery.Find(&lines).Error; err != nil {
+			return nil, 0, 0, err
+		}
+
+		var response []dto.JournalLineResponse
+		for _, line := range lines {
+			// Langsung menggunakan CreditAccountType yang sudah ada di JournalLine
+			response = append(response, dto.JournalLineResponse{
+				ID:                line.ID.String(),
+				JournalEntryID:    line.JournalID.String(), // <- Use JournalID
+				Invoice:           line.Journal.Invoice,    // <- Use Journal.Invoice
+				Description:       line.Journal.Description,
+				Partner:           line.Journal.Partner,
+				Amount:            float64(line.Debit - line.Credit), // Debit - Credit
+				TransactionType:   string(line.TransactionType),
+				DebitAccountType:  line.DebitAccountType,
+				CreditAccountType: line.CreditAccountType, // Ambil langsung dari JournalLine
+				Status:            string(line.Journal.Status),
+				CompanyID:         line.CompanyID.String(),
+				DateInputed:       *line.Journal.DateInputed,
+				DueDate:           helper.SafeDueDate(line.Journal.DueDate),
+				IsRepaid:          line.Journal.IsRepaid,
+				Installment:       line.Journal.Installment,
+				Note:              line.Journal.Note,
+			})
+		}
+
+		return response, totalDebt, total, nil
+	}
+
+	return nil, totalDebt, total, nil
 }

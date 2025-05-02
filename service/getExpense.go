@@ -5,96 +5,116 @@ import (
 	"ayana/dto"
 	"ayana/models"
 	"ayana/utils/helper"
-	"time"
 
 	"gorm.io/gorm"
 )
 
-// Mengambil list dan summary pengeluaran
-// ExpenseFilterParams adalah parameter untuk filter pengeluaran
 type ExpenseFilterParams struct {
-	CompanyID   string
-	Pagination  helper.Pagination
-	DateFilter  helper.DateFilter
-	SummaryOnly bool // Menambahkan parameter SummaryOnly
+	CompanyID     string
+	Pagination    helper.Pagination
+	DateFilter    helper.DateFilter
+	SummaryOnly   bool
+	ExpenseStatus string // <-- tetap ada
+
 }
 
-// Mengambil list dan summary pengeluaran
-func GetExpenses(params ExpenseFilterParams) ([]dto.JournalEntryResponse, int64, int64, error) {
-	var entries []models.JournalEntry
+func GetExpensesFromJournalLines(params ExpenseFilterParams) ([]dto.JournalLineResponse, int64, int64, error) {
+	var lines []models.JournalLine
 	var total int64
-	var totalExpense int64
+	var totalexpense int64
 
-	// SubQuery untuk filter journal_id
-	subQuery := db.DB.
-		Model(&models.JournalLine{}).
-		Select("journal_id").
-		Where("credit > 0 AND company_id = ?", params.CompanyID).
-		Where("debit_account_type = ?", "Expense")
-
-	baseQuery := db.DB.Model(&models.JournalEntry{}).
-		Where("id IN (?) AND status = ? AND transaction_type = ? AND is_repaid = ?", subQuery, "paid", "payout", true)
-
-	// Tambahkan filter tanggal kalau ada
-	if params.DateFilter.StartDate != nil {
-		baseQuery = baseQuery.Where("date_inputed >= ?", params.DateFilter.StartDate)
-	}
-	if params.DateFilter.EndDate != nil {
-		baseQuery = baseQuery.Where("date_inputed <= ?", params.DateFilter.EndDate)
-	}
-
-	// 1. Hitung total jumlah data
-	if err := baseQuery.Count(&total).Error; err != nil {
-		return nil, 0, 0, err
-	}
-
-	// 2. Hitung total pengeluaran (tanpa ORDER BY, biar ga error)
-	if err := baseQuery.Session(&gorm.Session{}).Select("COALESCE(SUM(amount), 0)").Scan(&totalExpense).Error; err != nil {
-		return nil, 0, 0, err
-	}
-
-	// Jika summaryOnly = true, hanya kembalikan total dan totalExpense tanpa mengambil data list
-	if params.SummaryOnly {
-		return nil, totalExpense, total, nil
-	}
-
-	// 3. Ambil list data + order by date_inputed (jika summaryOnly = false)
-	dataQuery := baseQuery.Session(&gorm.Session{}).
-		Order("date_inputed ASC").
+	// Build base query
+	baseQuery := db.DB.Model(&models.JournalLine{}).
+		Joins("JOIN journal_entries ON journal_entries.id = journal_lines.journal_id").
+		Where("journal_entries.company_id = ?", params.CompanyID).
+		Where("journal_lines.debit_account_type = ?", "Expense").
 		Limit(params.Pagination.Limit).
 		Offset(params.Pagination.Offset)
 
-	if err := dataQuery.Find(&entries).Error; err != nil {
+	// Filter expense type
+	switch params.ExpenseStatus {
+	case "base":
+		baseQuery = baseQuery.
+			Where("journal_lines.credit > 0").
+			Where("journal_entries.transaction_type = ?", "payout").
+			Where("journal_entries.is_repaid = ? AND journal_entries.status = ? AND journal_entries.transaction_type = ?", true, "paid", "payout")
+
+		// case "done":
+		// 	baseQuery = baseQuery.
+		// 		Where("journal_lines.credit > 0").
+		// 		Where("journal_entries.transaction_type = ?", "payout").
+		// 		Where("journal_entries.is_repaid = ? AND journal_entries.status = ? AND journal_entries.transaction_type = ?", true, "done", "payout")
+
+		// case "cashout":
+		// 	baseQuery = baseQuery.
+		// 		Where("journal_lines.credit > 0").
+		// 		Where("journal_entries.transaction_type = ?", "payout").
+		// 		Where("journal_lines.credit_account_type = ?", "expense")
+		// case "receivable":
+		// 	baseQuery = baseQuery.
+		// 		Where("journal_entries.is_repaid = ? AND journal_entries.status = ? AND journal_entries.transaction_type = ?", false, "unpaid", "payot")
+	}
+
+	// Filter date
+	if params.DateFilter.StartDate != nil {
+		baseQuery = baseQuery.Where("journal_entries.date_inputed >= ?", params.DateFilter.StartDate)
+	}
+	if params.DateFilter.EndDate != nil {
+		baseQuery = baseQuery.Where("journal_entries.date_inputed <= ?", params.DateFilter.EndDate)
+	}
+
+	// Count total
+	if err := baseQuery.Session(&gorm.Session{}).
+		Select("COALESCE(SUM(journal_lines.debit - journal_lines.credit), 0)").
+		Scan(&totalexpense).Error; err != nil {
 		return nil, 0, 0, err
 	}
 
-	// Mapping ke DTO
-	var responseData []dto.JournalEntryResponse
-	for _, entry := range entries {
-		var dueDate time.Time
-		if entry.DueDate != nil {
-			dueDate = *entry.DueDate // Menggunakan nilai sebenarnya
-		} else {
-			dueDate = time.Time{} // Nilai default untuk time.Time, yaitu zero value
-		}
-
-		responseData = append(responseData, dto.JournalEntryResponse{
-			ID:                    entry.ID.String(),
-			Invoice:               entry.Invoice,
-			Description:           entry.Description,
-			TransactionCategoryID: entry.TransactionCategoryID.String(),
-			Amount:                float64(entry.Amount),
-			Partner:               entry.Partner,
-			TransactionType:       string(entry.TransactionType),
-			Status:                string(entry.Status),
-			CompanyID:             entry.CompanyID.String(),
-			DateInputed:           *entry.DateInputed,
-			DueDate:               dueDate, // Sekarang menggunakan tipe time.Time
-			IsRepaid:              entry.IsRepaid,
-			Installment:           entry.Installment,
-			Note:                  entry.Note,
-		})
+	// Sum total expense (Fix query to avoid duplicate JOIN)
+	if err := baseQuery.Session(&gorm.Session{}).
+		Select("COALESCE(SUM(journal_entries.amount), 0)").
+		Scan(&totalexpense).Error; err != nil {
+		return nil, 0, 0, err
 	}
 
-	return responseData, totalExpense, total, nil
+	// If summary_only = false, fetch data
+	if !params.SummaryOnly {
+		dataQuery := baseQuery.Session(&gorm.Session{}).
+			Preload("Journal"). // Memuat relasi dengan JournalEntry
+			Where("journal_entries.company_id = ?", params.CompanyID).
+			Order("journal_entries.date_inputed ASC").
+			Limit(params.Pagination.Limit).
+			Offset(params.Pagination.Offset)
+
+		if err := dataQuery.Find(&lines).Error; err != nil {
+			return nil, 0, 0, err
+		}
+
+		var response []dto.JournalLineResponse
+		for _, line := range lines {
+			// Langsung menggunakan CreditAccountType yang sudah ada di JournalLine
+			response = append(response, dto.JournalLineResponse{
+				ID:                line.ID.String(),
+				JournalEntryID:    line.JournalID.String(), // <- Use JournalID
+				Invoice:           line.Journal.Invoice,    // <- Use Journal.Invoice
+				Description:       line.Journal.Description,
+				Partner:           line.Journal.Partner,
+				Amount:            float64(line.Debit - line.Credit), // Debit - Credit
+				TransactionType:   string(line.TransactionType),
+				DebitAccountType:  line.DebitAccountType,
+				CreditAccountType: line.CreditAccountType, // Ambil langsung dari JournalLine
+				Status:            string(line.Journal.Status),
+				CompanyID:         line.CompanyID.String(),
+				DateInputed:       *line.Journal.DateInputed,
+				DueDate:           helper.SafeDueDate(line.Journal.DueDate),
+				IsRepaid:          line.Journal.IsRepaid,
+				Installment:       line.Journal.Installment,
+				Note:              line.Journal.Note,
+			})
+		}
+
+		return response, totalexpense, total, nil
+	}
+
+	return nil, totalexpense, total, nil
 }

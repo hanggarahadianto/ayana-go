@@ -47,8 +47,9 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalLineRespo
 	case "cashout":
 		baseQuery = baseQuery.
 			Where("journal_lines.credit > 0").
-			Where("journal_entries.transaction_type = ?", "payout").
-			Where("journal_lines.credit_account_type = ?", "Asset")
+			Where("journal_lines.credit_account_type = ?", "Asset").
+			// Where("journal_entries.is_repaid = ? AND journal_entries.status = ? AND journal_entries.transaction_type = ?", true, "paid", "payout")
+			Where("journal_entries.is_repaid = ? AND journal_entries.status IN (?, ?) AND journal_entries.transaction_type = ?", true, "paid", "done", "payout")
 	case "receivable":
 		baseQuery = baseQuery.
 			Where("journal_entries.is_repaid = ? AND journal_entries.status = ? AND journal_entries.transaction_type = ?", false, "unpaid", "payot")
@@ -95,7 +96,9 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalLineRespo
 			response = append(response, dto.JournalLineResponse{
 				ID:                line.ID.String(),
 				JournalEntryID:    line.JournalID.String(), // <- Use JournalID
-				Invoice:           line.Journal.Invoice,    // <- Use Journal.Invoice
+				Transaction_ID:    line.Journal.Transaction_ID,
+				Partner:           line.Journal.Partner,
+				Invoice:           line.Journal.Invoice, // <- Use Journal.Invoice
 				Description:       line.Journal.Description,
 				Amount:            float64(line.Debit - line.Credit), // Debit - Credit
 				TransactionType:   string(line.TransactionType),

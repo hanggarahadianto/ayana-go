@@ -25,6 +25,7 @@ func CreateInstallmentJournals(input models.JournalEntry) ([]models.JournalEntry
 	mainJournal := models.JournalEntry{
 		ID:                    mainJournalID,
 		Invoice:               input.Invoice,
+		Transaction_ID:        input.Transaction_ID,
 		Description:           input.Description,
 		TransactionCategoryID: input.TransactionCategoryID,
 		Amount:                input.Amount,
@@ -75,6 +76,7 @@ func CreateInstallmentJournals(input models.JournalEntry) ([]models.JournalEntry
 		journal := models.JournalEntry{
 			ID:                    journalID,
 			Invoice:               fmt.Sprintf("%s-%02d", "Tempo "+input.Invoice, i+1),
+			Transaction_ID:        input.Transaction_ID,
 			Description:           fmt.Sprintf("%s - Cicilan %d", input.Note, i+1),
 			TransactionCategoryID: input.TransactionCategoryID,
 			Amount:                amount,
