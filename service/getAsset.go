@@ -47,7 +47,10 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalLineRespo
 			Where("journal_entries.is_repaid = ? AND journal_entries.status IN (?, ?) AND journal_entries.transaction_type = ?", true, "paid", "done", "payout")
 	case "receivable":
 		baseQuery = baseQuery.
-			Where("journal_entries.is_repaid = ? AND journal_entries.status = ? AND journal_entries.transaction_type = ?", false, "unpaid", "payin") // Fix typo: "payot" -> "payin"
+			Where("journal_lines.debit > 0").
+			Where("journal_lines.debit_account_type = ?", "Asset").
+			Where("journal_lines.credit_account_type = ?", "Asset").
+			Where("journal_entries.is_repaid = ? AND journal_entries.status = ? AND journal_entries.transaction_type = ?", false, "unpaid", "payin")
 	}
 
 	// Filter date
