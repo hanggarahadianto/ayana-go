@@ -49,8 +49,9 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalLineRespo
 		baseQuery = baseQuery.
 			Where("journal_lines.debit > 0").
 			Where("journal_lines.debit_account_type = ?", "Asset").
-			Where("journal_lines.credit_account_type = ?", "Asset").
+			Where("journal_lines.credit_account_type = ?", "Revenue").
 			Where("journal_entries.is_repaid = ? AND journal_entries.status = ? AND journal_entries.transaction_type = ?", false, "unpaid", "payin")
+
 	}
 
 	// Filter date

@@ -60,6 +60,7 @@ func CreateTransactionCategory(c *gin.Context) {
 		DebitAccountType:  debitAccount.Type,
 		CreditAccountID:   input.CreditAccountID,
 		CreditAccountType: creditAccount.Type,
+		TransactionType:   input.TransactionType,
 		Category:          input.Category,
 		Description:       input.Description,
 		CompanyID:         input.CompanyID,
