@@ -13,6 +13,7 @@ func GetAvailableCash(companyID string) (totalCashIn int64, totalCashOut int64, 
 		Where("journal_lines.debit > 0").
 		Where("journal_lines.debit_account_type = ?", "Asset").
 		Where("journal_entries.transaction_type = ?", "payin").
+		Where("NOT (journal_lines.credit_account_type = 'Revenue' AND journal_entries.status = 'unpaid')").
 		Select("COALESCE(SUM(journal_lines.debit), 0)").
 		Scan(&totalCashIn).Error
 	if err != nil {
@@ -28,6 +29,7 @@ func GetAvailableCash(companyID string) (totalCashIn int64, totalCashOut int64, 
 		Where("journal_entries.status = ?", "paid").
 		Where("journal_lines.credit_account_type = ?", "Asset").
 		Where("journal_entries.transaction_type = ?", "payout").
+		Where("NOT (journal_lines.credit_account_type = 'Revenue' AND journal_entries.status = 'unpaid')").
 		Scan(&totalCashOut).Error
 	if err != nil {
 		return

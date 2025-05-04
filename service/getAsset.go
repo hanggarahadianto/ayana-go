@@ -23,7 +23,11 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalLineRespo
 	var total int64
 	var totalAsset int64
 
-	// Build base query tanpa Limit dan Offset untuk Count dan Sum
+	// baseQuery := db.DB.Model(&models.JournalLine{}).
+	// 	Joins("JOIN journal_entries ON journal_entries.id = journal_lines.journal_id").
+	// 	Joins("LEFT JOIN transaction_categories ON transaction_categories.id = journal_entries.transaction_category_id").
+	// 	Where("journal_entries.company_id = ?", params.CompanyID)
+
 	baseQuery := db.DB.Model(&models.JournalLine{}).
 		Joins("JOIN journal_entries ON journal_entries.id = journal_lines.journal_id").
 		Where("journal_entries.company_id = ?", params.CompanyID)
@@ -34,7 +38,13 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalLineRespo
 		baseQuery = baseQuery.
 			Where("journal_lines.debit > 0").
 			Where("journal_entries.transaction_type = ?", "payin").
-			Where("journal_lines.debit_account_type = ?", "Asset")
+			Where("journal_lines.debit_account_type = ?", "Asset").
+			Where("NOT (journal_lines.credit_account_type = 'Revenue' AND journal_entries.status = 'unpaid')")
+
+		// Where("journal_entries.status = ?", "paid").
+		// Where("journal_entries.is_repaid = ?", true).
+		// Where("LOWER(journal_lines.credit_account_type) IN (?, ?)", "revenue", "equity")
+
 	case "fixed_asset":
 		baseQuery = baseQuery.
 			Where("journal_lines.debit > 0").
@@ -45,12 +55,14 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalLineRespo
 			Where("journal_lines.credit > 0").
 			Where("journal_lines.credit_account_type = ?", "Asset").
 			Where("journal_entries.is_repaid = ? AND journal_entries.status IN (?, ?) AND journal_entries.transaction_type = ?", true, "paid", "done", "payout")
+
 	case "receivable":
 		baseQuery = baseQuery.
 			Where("journal_lines.debit > 0").
 			Where("journal_lines.debit_account_type = ?", "Asset").
 			Where("journal_lines.credit_account_type = ?", "Revenue").
 			Where("journal_entries.is_repaid = ? AND journal_entries.status = ? AND journal_entries.transaction_type = ?", false, "unpaid", "payin")
+		// Where("LOWER(transaction_category.category) ILIKE ?", "%piutang%") // Hanya untuk 'receivable'
 
 	}
 

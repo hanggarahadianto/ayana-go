@@ -20,13 +20,13 @@ func GetJournalEntriesByCategory(c *gin.Context) {
 	// Validasi Company ID
 	companyID, valid := helper.ValidateAndParseCompanyID(companyIDStr, c)
 	if !valid {
-		return // Sudah ada response di helper
+		return
 	}
 
 	// Validasi Transaction Category ID
 	transactionCategoryID, valid := helper.ValidateAndParseTransactionCategoryID(transactionCategoryIDStr, c)
 	if !valid {
-		return // Sudah ada response di helper
+		return
 	}
 
 	// Ambil paginasi
@@ -81,6 +81,7 @@ func GetJournalEntriesByCategory(c *gin.Context) {
 			ID:                    entry.ID.String(), // Mengonversi UUID ke string
 			Invoice:               entry.Invoice,
 			Description:           entry.Description,
+			TransactionID:         entry.Transaction_ID,
 			TransactionCategoryID: entry.TransactionCategoryID.String(), // Mengonversi UUID ke string
 			Amount:                float64(entry.Amount),                // Konversi dari int64 ke float64
 			Partner:               entry.Partner,

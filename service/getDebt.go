@@ -33,11 +33,18 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalLineRespons
 	case "going":
 		baseQuery = baseQuery.
 			Where("journal_lines.credit > 0").
-			Where("journal_entries.is_repaid = ? AND journal_entries.status = ?", false, "unpaid")
+			Where("journal_entries.is_repaid = ? AND journal_entries.status = ?", false, "unpaid").
+			// Filter untuk memastikan bahwa hutang terdaftar di akun Liability, bukan Revenue
+			Where("LOWER(journal_lines.credit_account_type) = ?", "liability").
+			Where("LOWER(journal_lines.debit_account_type) != ?", "revenue")
+
 	case "done":
 		baseQuery = baseQuery.
 			Where("journal_lines.credit > 0").
-			Where("journal_entries.is_repaid = ? AND journal_entries.status = ?", true, "done")
+			Where("journal_entries.is_repaid = ? AND journal_entries.status = ?", true, "done").
+			// Filter untuk memastikan bahwa hutang terdaftar di akun Liability, bukan Revenue
+			Where("LOWER(journal_lines.credit_account_type) = ?", "liability").
+			Where("LOWER(journal_lines.debit_account_type) != ?", "revenue")
 	}
 
 	// Filter date
@@ -81,6 +88,7 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalLineRespons
 		response = append(response, dto.JournalLineResponse{
 			ID:                line.ID.String(),
 			JournalEntryID:    line.JournalID.String(),
+			Transaction_ID:    line.Journal.Transaction_ID,
 			Invoice:           line.Journal.Invoice,
 			Description:       line.Journal.Description,
 			Partner:           line.Journal.Partner,

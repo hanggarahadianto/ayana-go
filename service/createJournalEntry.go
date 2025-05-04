@@ -18,11 +18,30 @@ func ProcessMultipleJournalEntries(inputs []models.JournalEntry) ([]models.Journ
 	var results []models.JournalEntry
 
 	for _, input := range inputs {
-		entry, err := createJournalEntryService(input)
-		if err != nil {
-			return nil, err
+		if input.ID != uuid.Nil {
+			// Update journal existing
+			err := updateJournalStatus(input.ID)
+			if err != nil {
+				return nil, err
+			}
+
+			var updatedJournal models.JournalEntry
+			if err := db.DB.Preload("Lines.Account").
+				Preload("TransactionCategory.DebitAccount").
+				Preload("TransactionCategory.CreditAccount").
+				First(&updatedJournal, "id = ?", input.ID).Error; err != nil {
+				return nil, err
+			}
+
+			results = append(results, updatedJournal)
+		} else {
+			// Create new journal
+			entry, err := createJournalEntryService(input)
+			if err != nil {
+				return nil, err
+			}
+			results = append(results, entry)
 		}
-		results = append(results, entry)
 	}
 
 	return results, nil
