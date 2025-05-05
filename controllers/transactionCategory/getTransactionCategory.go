@@ -10,49 +10,38 @@ import (
 )
 
 func GetTransactionCategory(c *gin.Context) {
-	// Mendapatkan parameter untuk pagination
-	pagination := helper.GetPagination(c)
-	companyID := c.Query("company_id")
-	transactionType := c.Query("transaction_type")
-	category := c.Query("category")
-	status := c.Query("status")
 
-	// Menyusun filter parameter untuk query
-	params := service.TransactionCategoryFilterParams{
-		CompanyID:       companyID,
-		TransactionType: transactionType,
-		Category:        category,
-		Status:          status,
+	pagination := helper.GetPagination(c)
+
+	filterParams := service.TransactionCategoryFilterParams{
+		CompanyID:       c.Query("company_id"),
+		TransactionType: c.Query("transaction_type"),
+		Category:        c.Query("category"),
+		Status:          c.Query("status"),
+		All:             c.Query("all") == "true",
 		Pagination:      pagination,
 	}
 
-	// Panggil service untuk mendapatkan data berdasarkan parameter
 	var data []dto.TransactionCategoryResponse
 	var total int64
 	var err error
 
-	// Jika pagination limit 0, berarti kita ingin ambil semua data
-	if pagination.Limit == 0 {
-		data, err := service.GetTransactionCategoriesWithoutPagination(companyID, transactionType, category)
+	if pagination.Limit == 0 && !filterParams.All {
+		data, err := service.GetTransactionCategoriesWithoutPagination(filterParams)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch transaction categories"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{
-			"status": "success",
-			"data":   data,
-		})
-
-	} else {
-		data, total, err = service.GetTransactionCategories(params)
+		c.JSON(http.StatusOK, gin.H{"status": "success", "data": data})
+		return
 	}
 
+	data, total, err = service.GetTransactionCategories(filterParams)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch transaction categories"})
 		return
 	}
 
-	// Kirimkan response
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
 		"page":   pagination.Page,

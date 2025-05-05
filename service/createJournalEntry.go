@@ -47,7 +47,6 @@ func ProcessMultipleJournalEntries(inputs []models.JournalEntry) ([]models.Journ
 	return results, nil
 }
 
-// Core logic create journal
 func createJournalEntryService(input models.JournalEntry) (models.JournalEntry, error) {
 	if input.TransactionCategoryID == uuid.Nil || input.Amount <= 0 || input.CompanyID == uuid.Nil {
 		return models.JournalEntry{}, fmt.Errorf("missing required fields")
