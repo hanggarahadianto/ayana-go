@@ -21,7 +21,7 @@ func ApplyTransactionFilters(tx *gorm.DB, transactionType, category, status stri
 	if status == "unpaid" {
 		// Uang keluar tapi belum dibayar → hutang
 		tx = tx.
-			Where("transaction_categories.debit_account_type = ?", "Asset").
+			// Where("transaction_categories.debit_account_type = ?", "Asset").
 			Where("transaction_categories.credit_account_type = ?", "Liability")
 
 	} else if status == "paid" {
