@@ -19,4 +19,6 @@ type Project struct {
 
 	CreatedAt time.Time `gorm:"type:timestamp;default:now()" json:"created_at"`
 	UpdatedAt time.Time `gorm:"type:timestamp;default:now()" json:"updated_at"`
+
+	Infos []Info `gorm:"foreignKey:ProjectID" json:"infos"`
 }

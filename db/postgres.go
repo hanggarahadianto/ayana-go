@@ -58,7 +58,6 @@ func InitializeDb(config *utilsEnv.Config) {
 		&models.User{},
 		&models.Company{},
 		&models.Home{},
-		&models.Info{},
 		&models.NearBy{},
 		&models.Reservation{},
 		&models.Project{},
@@ -67,12 +66,12 @@ func InitializeDb(config *utilsEnv.Config) {
 		&models.Material{},
 		&models.CashFlow{},
 		&models.Goods{},
-		// &models.Payout{},
 		&models.Account{},
 		&models.JournalEntry{},
 		&models.JournalLine{},
 		&models.TransactionCategory{},
 		&models.Installment{},
+		&models.HomeImage{},
 	}
 
 	for _, model := range modelsToMigrate {

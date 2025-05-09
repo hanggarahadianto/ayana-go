@@ -7,13 +7,14 @@ import (
 )
 
 type Info struct {
-	ID         uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primary_key" json:"id"`
-	Maps       string    `json:"maps"`
-	StartPrice float64   `json:"start_price"`
+	ID        uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primary_key" json:"id"`
+	ProjectID uuid.UUID `gorm:"type:uuid;not null" json:"project_id"`
 
-	HomeID uuid.UUID `gorm:"type:uuid;constraint:OnDelete:CASCADE;" json:"home_id"`
+	Title       string    `gorm:"type:varchar(255);not null" json:"title"`
+	Description string    `gorm:"type:text" json:"description"`
+	CreatedAt   time.Time `gorm:"type:timestamp;default:now()" json:"created_at"`
+	UpdatedAt   time.Time `gorm:"type:timestamp;default:now()" json:"updated_at"`
 
-	NearBy    []NearBy  `gorm:"foreignKey:InfoID" json:"near_by"`
-	CreatedAt time.Time `gorm:"type:timestamp;default:current_timestamp" json:"created_at"`
-	UpdatedAt time.Time `gorm:"type:timestamp;default:current_timestamp" json:"updated_at"`
+	// Relasi ke Project
+	Project Project `gorm:"foreignKey:ProjectID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"-"`
 }
