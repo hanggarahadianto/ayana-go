@@ -57,6 +57,7 @@ func InitializeDb(config *utilsEnv.Config) {
 	modelsToMigrate := []interface{}{
 		&models.User{},
 		&models.Company{},
+		&models.Cluster{},
 		&models.Home{},
 		&models.NearBy{},
 		&models.Reservation{},

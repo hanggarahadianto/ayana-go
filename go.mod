@@ -9,8 +9,6 @@ require (
 	gorm.io/gorm v1.25.12
 )
 
-require github.com/lib/pq v1.10.9 
-
 require (
 	github.com/bytedance/sonic v1.12.6 // indirect
 	github.com/bytedance/sonic/loader v0.2.1 // indirect

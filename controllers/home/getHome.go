@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"ayana/db"
+	"ayana/utils/helper"
+
 	"ayana/models"
 	"log"
 	"net/http"
@@ -10,9 +12,25 @@ import (
 )
 
 func GetHomes(c *gin.Context) {
-	var homeList []models.Home
+	pagination := helper.GetPagination(c)
 
-	result := db.DB.Order("created_at desc, updated_at desc").Find(&homeList)
+	// Validasi parameter pagination
+	if !helper.ValidatePagination(pagination, c) {
+		return
+	}
+
+	var homeList []models.Home
+	var total int64
+
+	// Hitung total data
+	db.DB.Model(&models.Home{}).Count(&total)
+
+	// Ambil data dengan limit dan offset
+	result := db.DB.Order("created_at desc, updated_at desc").
+		Limit(pagination.Limit).
+		Offset(pagination.Offset).
+		Find(&homeList)
+
 	if result.Error != nil {
 		log.Printf("Database error: %v", result.Error)
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -21,9 +39,13 @@ func GetHomes(c *gin.Context) {
 		})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"data":   homeList,
-	})
 
+	c.JSON(http.StatusOK, gin.H{
+		"data":       homeList,
+		"page":       pagination.Page,
+		"limit":      pagination.Limit,
+		"total_data": total,
+		"total_page": (total + int64(pagination.Limit) - 1) / int64(pagination.Limit), // pembulatan ke atas
+		"status":     "success",
+	})
 }
