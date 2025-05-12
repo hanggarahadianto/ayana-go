@@ -20,12 +20,13 @@ func HomeListByClusterId(c *gin.Context) {
 	// Hitung total data
 	db.DB.Model(&models.Home{}).Where("cluster_id = ?", clusterId).Count(&total)
 
-	// Ambil data dengan limit dan offset
+	// Ambil data dengan NearBies saja, tanpa preload Images
 	result := db.DB.
 		Where("cluster_id = ?", clusterId).
 		Limit(pagination.Limit).
 		Offset(pagination.Offset).
-		Order("created_at DESC").
+		Order("sequence asc").
+		Preload("NearBies").
 		Find(&homes)
 
 	if result.Error != nil {

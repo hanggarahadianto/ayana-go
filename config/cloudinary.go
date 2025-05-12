@@ -2,6 +2,7 @@ package config
 
 import (
 	utilsEnv "ayana/utils/env"
+	"strings"
 
 	"github.com/cloudinary/cloudinary-go/v2"
 )
@@ -26,4 +27,16 @@ func EnvCloudUploadFolderHome(config *utilsEnv.Config) string {
 func EnvCloudDeleteFolderHome(config *utilsEnv.Config) string {
 	return config.CLOUDINARY_HOME_FOLDER
 
+}
+
+func GetPublicIDFromURL(url string, folder string) string {
+	// Contoh: https://res.cloudinary.com/demo/image/upload/v1234567890/folder_name/image_abc123.jpg
+	// Maka: publicID = folder_name/image_abc123
+	start := strings.Index(url, folder)
+	if start == -1 {
+		return ""
+	}
+
+	withoutExt := strings.Split(url[start:], ".")[0] // Hapus ekstensi .jpg/.png
+	return withoutExt
 }

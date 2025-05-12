@@ -20,9 +20,7 @@ func CreateHome(c *gin.Context) {
 	home := models.Home{
 		ID:         uuid.New(),
 		Title:      input.Title,
-		Location:   input.Location,
 		Content:    input.Content,
-		Image:      input.Image,
 		Bathroom:   input.Bathroom,
 		Bedroom:    input.Bedroom,
 		Square:     input.Square,
@@ -31,6 +29,7 @@ func CreateHome(c *gin.Context) {
 		Status:     input.Status,
 		Sequence:   input.Sequence,
 		StartPrice: input.StartPrice,
+		ClusterID:  input.ClusterID,
 		CreatedAt:  time.Now(),
 		UpdatedAt:  time.Now(),
 	}

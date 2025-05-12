@@ -12,7 +12,7 @@ func DeleteCluster(c *gin.Context) {
 	id := c.Param("id")
 
 	var cluster models.Cluster
-	if err := db.DB.Where("id = ?", id).First(&cluster).Error; err != nil {
+	if err := db.DB.Preload("Homes").Where("id = ?", id).First(&cluster).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Cluster not found"})
 		return
 	}

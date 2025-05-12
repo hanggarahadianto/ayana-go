@@ -26,7 +26,7 @@ func GetHomes(c *gin.Context) {
 	db.DB.Model(&models.Home{}).Count(&total)
 
 	// Ambil data dengan limit dan offset
-	result := db.DB.Order("created_at desc, updated_at desc").
+	result := db.DB.Order("sequence asc").
 		Limit(pagination.Limit).
 		Offset(pagination.Offset).
 		Find(&homeList)
