@@ -22,6 +22,8 @@ type Home struct {
 	CreatedAt  time.Time  `gorm:"not null" json:"created_at"`
 	UpdatedAt  time.Time  `gorm:"not null" json:"updated_at"`
 
+	Cluster *Cluster `json:"cluster"` // tambah ini
+
 	NearBies []NearBy    `gorm:"foreignKey:HomeID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"near_bies"`
 	Images   []HomeImage `gorm:"foreignKey:HomeID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"images"`
 }
