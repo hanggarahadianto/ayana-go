@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"ayana/db"
+	"ayana/dto"
 	"ayana/utils/helper"
 
 	"ayana/models"
@@ -9,28 +10,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
-
-type HomeByClusterResponse struct {
-	ID       string          `json:"id"`
-	Title    string          `json:"title"`
-	Type     string          `json:"type"`
-	Content  string          `json:"content"`
-	Price    float64         `json:"price"`
-	Status   string          `json:"status"`
-	Square   float64         `json:"square"`
-	Cluster  ClusterResponse `json:"cluster"`
-	NearBies []NearBy        `json:"near_bies"`
-}
-
-type ClusterResponse struct {
-	Location string `json:"location"`
-	Maps     string `json:"maps"`
-}
-
-type NearBy struct {
-	Name     string `json:"name"`
-	Distance string `json:"distance"`
-}
 
 func HomeListByClusterId(c *gin.Context) {
 	clusterId := c.Param("cluster_id")
@@ -52,9 +31,9 @@ func HomeListByClusterId(c *gin.Context) {
 		Preload("Cluster"). // <= tambahkan ini
 		Find(&homes)
 
-	var homeResponses []HomeByClusterResponse
+	var homeResponses []dto.HomeByClusterResponse
 	for _, home := range homes {
-		homeResponse := HomeByClusterResponse{
+		homeResponse := dto.HomeByClusterResponse{
 			ID:      home.ID.String(),
 			Type:    home.Type,
 			Title:   home.Title,
@@ -62,14 +41,14 @@ func HomeListByClusterId(c *gin.Context) {
 			Content: home.Content,
 			Price:   home.Price,
 			Square:  home.Square,
-			Cluster: ClusterResponse{
+			Cluster: dto.ClusterResponse{
 				Location: home.Cluster.Location,
 				Maps:     home.Cluster.Maps,
 			},
-			NearBies: func() []NearBy {
-				var nearBies []NearBy
+			NearBies: func() []dto.NearBy {
+				var nearBies []dto.NearBy
 				for _, nb := range home.NearBies {
-					nearBies = append(nearBies, NearBy{
+					nearBies = append(nearBies, dto.NearBy{
 						Name:     nb.Name,
 						Distance: nb.Distance,
 					})
