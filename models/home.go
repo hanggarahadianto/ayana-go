@@ -9,6 +9,7 @@ import (
 type Home struct {
 	ID         uuid.UUID  `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
 	ClusterID  *uuid.UUID `gorm:"type:uuid;index" json:"cluster_id"`
+	Type       string     `gorm:"type:varchar(255);not null" json:"type" form:"type"`
 	Title      string     `gorm:"type:varchar(255);not null" json:"title" form:"title"`
 	Content    string     `gorm:"type:varchar(255);not null" json:"content" form:"content"`
 	Bathroom   float64    `gorm:"type:bigint;not null"  json:"bathroom" form:"bathroom"`

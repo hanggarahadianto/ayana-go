@@ -13,8 +13,10 @@ import (
 type HomeByClusterResponse struct {
 	ID       string          `json:"id"`
 	Title    string          `json:"title"`
+	Type     string          `json:"type"`
 	Content  string          `json:"content"`
 	Price    float64         `json:"price"`
+	Status   string          `json:"status"`
 	Square   float64         `json:"square"`
 	Cluster  ClusterResponse `json:"cluster"`
 	NearBies []NearBy        `json:"near_bies"`
@@ -54,7 +56,9 @@ func HomeListByClusterId(c *gin.Context) {
 	for _, home := range homes {
 		homeResponse := HomeByClusterResponse{
 			ID:      home.ID.String(),
+			Type:    home.Type,
 			Title:   home.Title,
+			Status:  home.Status,
 			Content: home.Content,
 			Price:   home.Price,
 			Square:  home.Square,

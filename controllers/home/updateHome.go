@@ -4,98 +4,63 @@ import (
 	"ayana/db"
 	"ayana/models"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 func UpdateHome(c *gin.Context) {
-	id := c.Param("id")
-	var home models.Home
-
-	// Cari data berdasarkan ID
-	if err := db.DB.First(&home, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"status":  "failed",
-			"message": "Home not found",
-		})
+	var input models.Home
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// // Ambil nilai dari form
-	// title := c.Request.PostFormValue("title")
-	// location := c.Request.PostFormValue("location")
-	// content := c.Request.PostFormValue("content")
-	// address := c.Request.PostFormValue("address")
-	// bathroom := c.Request.PostFormValue("bathroom")
-	// bedroom := c.Request.PostFormValue("bedroom")
-	// square := c.Request.PostFormValue("square")
-	// priceStr := c.Request.PostFormValue("price")
-	// quantityStr := c.Request.PostFormValue("quantity")
-	// status := c.Request.PostFormValue("status")
-	// sequenceStr := c.Request.PostFormValue("sequence")
+	if input.ID == uuid.Nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID tidak ditemukan dalam payload"})
+		return
+	}
 
-	// // Validasi dan konversi numerik
-	// price, err := strconv.Atoi(priceStr)
-	// if err != nil {
-	// 	c.JSON(http.StatusBadRequest, gin.H{"status": "failed", "message": "Invalid price"})
-	// 	return
-	// }
-	// quantity, err := strconv.Atoi(quantityStr)
-	// if err != nil {
-	// 	c.JSON(http.StatusBadRequest, gin.H{"status": "failed", "message": "Invalid quantity"})
-	// 	return
-	// }
-	// sequence, err := strconv.Atoi(sequenceStr)
-	// if err != nil {
-	// 	c.JSON(http.StatusBadRequest, gin.H{"status": "failed", "message": "Invalid sequence"})
-	// 	return
-	// }
+	var home models.Home
+	if err := db.DB.Preload("NearBies").First(&home, "id = ?", input.ID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Home tidak ditemukan"})
+		return
+	}
 
-	// // Cek apakah file baru diunggah
-	// file, header, err := c.Request.FormFile("file")
-	// var imageUrl string
-	// if err == nil {
-	// 	defer file.Close()
+	// Perbarui field
+	home.Title = input.Title
+	home.Content = input.Content
+	home.Bathroom = input.Bathroom
+	home.Bedroom = input.Bedroom
+	home.Square = input.Square
+	home.Price = input.Price
+	home.Quantity = input.Quantity
+	home.Status = input.Status
+	home.Sequence = input.Sequence
+	home.StartPrice = input.StartPrice
+	home.ClusterID = input.ClusterID
+	home.UpdatedAt = time.Now()
 
-	// 	// Upload file baru
-	// 	imageUrl, err = uploadClaudinary.UploadToCloudinary(file, header.Filename)
-	// 	if err != nil {
-	// 		c.JSON(http.StatusInternalServerError, gin.H{"status": "failed", "message": "Failed to upload image"})
-	// 		return
-	// 	}
+	// Hapus data NearBies yang lama
+	if err := db.DB.Where("home_id = ?", home.ID).Delete(&models.NearBy{}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menghapus NearBies lama"})
+		return
+	}
 
-	// 	// Hapus gambar lama
-	// 	if home.Image != "" {
-	// 		_ = uploadClaudinary.DeleteFromCloudinary(home.Image)
-	// 	}
-	// } else {
-	// 	// Jika tidak upload file, gunakan gambar lama
-	// 	imageUrl = home.Image
-	// }
+	// Masukkan data NearBies yang baru
+	for i := range input.NearBies {
+		input.NearBies[i].ID = uuid.New()
+		input.NearBies[i].HomeID = home.ID
+	}
+	home.NearBies = input.NearBies
 
-	// // Update data
-	// home.Title = title
-	// home.Location = location
-	// home.Content = content
-	// home.Address = address
-	// home.Bathroom = bathroom
-	// home.Bedroom = bedroom
-	// home.Square = square
-	// home.Price = float64(price)
-	// home.Quantity = quantity
-	// home.Status = status
-	// home.Sequence = sequence
-	// home.Image = imageUrl
-	// home.UpdatedAt = time.Now()
+	// Simpan data home yang sudah diperbarui
+	if err := db.DB.Session(&gorm.Session{FullSaveAssociations: true}).Save(&home).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal memperbarui home"})
+		return
+	}
 
-	// if err := db.DB.Save(&home).Error; err != nil {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"status": "failed", "message": "Failed to update home"})
-	// 	return
-	// }
-
-	c.JSON(http.StatusOK, gin.H{
-		"status":  "success",
-		"message": "Home updated successfully",
-		"data":    home,
-	})
+	c.JSON(http.StatusOK, home)
 }

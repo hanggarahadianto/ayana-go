@@ -20,6 +20,7 @@ func CreateHome(c *gin.Context) {
 	home := models.Home{
 		ID:         uuid.New(),
 		Title:      input.Title,
+		Type:       input.Type,
 		Content:    input.Content,
 		Bathroom:   input.Bathroom,
 		Bedroom:    input.Bedroom,
