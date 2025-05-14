@@ -34,13 +34,14 @@ func HomeListByClusterId(c *gin.Context) {
 	var homeResponses []dto.HomeByClusterResponse
 	for _, home := range homes {
 		homeResponse := dto.HomeByClusterResponse{
-			ID:      home.ID.String(),
-			Type:    home.Type,
-			Title:   home.Title,
-			Status:  home.Status,
-			Content: home.Content,
-			Price:   home.Price,
-			Square:  home.Square,
+			ID:         home.ID.String(),
+			Type:       home.Type,
+			Title:      home.Title,
+			Status:     home.Status,
+			Content:    home.Content,
+			Price:      home.Price,
+			Square:     home.Square,
+			StartPrice: home.StartPrice,
 			Cluster: dto.ClusterResponse{
 				Location: home.Cluster.Location,
 				Maps:     home.Cluster.Maps,

@@ -23,14 +23,17 @@ func HomeById(c *gin.Context) {
 
 	// Map model ke DTO
 	response := dto.HomeByClusterResponse{
-		ID:      home.ID.String(),
-		Title:   home.Title,
-		Type:    home.Type,
-		Maps:    home.Cluster.Maps,
-		Content: home.Content,
-		Price:   home.Price,
-		Status:  home.Status,
-		Square:  home.Square,
+		ID:         home.ID.String(),
+		Title:      home.Title,
+		Type:       home.Type,
+		Maps:       home.Cluster.Maps,
+		Content:    home.Content,
+		Price:      home.Price,
+		Status:     home.Status,
+		Square:     home.Square,
+		Bedroom:    home.Bedroom,
+		Bathroom:   home.Bathroom,
+		StartPrice: home.StartPrice,
 		Cluster: dto.ClusterResponse{
 			ID:       home.Cluster.ID.String(),
 			Name:     home.Cluster.Name,
