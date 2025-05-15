@@ -42,35 +42,6 @@ func UploadToCloudinary(file multipart.File, filePath string) (string, error) {
 	return result.SecureURL, nil
 }
 
-// func ExtractPublicID(imageURL string) (string, error) {
-// 	parsedURL, err := url.Parse(imageURL)
-// 	if err != nil {
-// 		return "", err
-// 	}
-
-// 	// Hapus '/upload/vXYZ/' → ambil bagian setelahnya
-// 	segments := strings.Split(parsedURL.Path, "/upload/")
-// 	if len(segments) < 2 {
-// 		return "", fmt.Errorf("format URL tidak valid")
-// 	}
-
-// 	publicID := segments[1]
-// 	publicID = strings.TrimPrefix(publicID, "v")   // kadang masih ada v123/
-// 	publicID = strings.SplitN(publicID, "/", 2)[1] // buang version
-// 	publicID, _ = url.QueryUnescape(publicID)      // decode %20 → spasi
-
-// 	// Hapus ekstensi ganda .png.png jika perlu
-// 	publicID = strings.ReplaceAll(publicID, ".png.png", ".png")
-
-// 	return publicID, nil
-// }
-
-// type CloudinaryConfig struct {
-// 	CloudName string
-// 	ApiKey    string
-// 	ApiSecret string
-// }
-
 func DeleteFromCloudinary(publicID string) error {
 	// Load .env config
 	env, err := utilsEnv.LoadConfig(".")

@@ -15,7 +15,8 @@ func SetupHomeRouter(r *gin.Engine) {
 		home.GET("/getByClusterId/:cluster_id", homeController.HomeListByClusterId) //
 		home.DELETE("deleteById/:homeId", homeController.DeleteHome)
 		home.PUT("/update", homeController.UpdateHome)
-		home.POST("/:homeId/images", homeController.UploadProductImage)
+		home.POST("/create/images/:homeId", homeController.UploadProductImage)
+		home.PUT("/update/images/:homeId", homeController.UpdateProductImages)
 		home.GET("/:homeId/images", homeController.GetHomeImages)
 	}
 }

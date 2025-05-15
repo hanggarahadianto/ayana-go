@@ -34,6 +34,8 @@ func HomeById(c *gin.Context) {
 		Bedroom:    home.Bedroom,
 		Bathroom:   home.Bathroom,
 		StartPrice: home.StartPrice,
+		Quantity:   home.Quantity,
+		Sequence:   home.Sequence,
 		Cluster: dto.ClusterResponse{
 			ID:       home.Cluster.ID.String(),
 			Name:     home.Cluster.Name,

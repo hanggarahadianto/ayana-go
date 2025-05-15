@@ -8,6 +8,8 @@ type HomeByClusterResponse struct {
 	Maps       string          `json:"maps"`
 	Price      float64         `json:"price"`
 	Status     string          `json:"status"`
+	Quantity   float64         `json:"quantity"`
+	Sequence   int             `json:"sequence"`
 	Square     float64         `json:"square"`
 	Bathroom   float64         `json:"bathroom"`
 	Bedroom    float64         `json:"bedroom"`

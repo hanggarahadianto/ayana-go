@@ -3,9 +3,8 @@ package controllers
 import (
 	"ayana/db"
 	"ayana/dto"
-	"ayana/utils/helper"
-
 	"ayana/models"
+	"ayana/utils/helper"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -38,11 +37,18 @@ func HomeListByClusterId(c *gin.Context) {
 			Type:       home.Type,
 			Title:      home.Title,
 			Status:     home.Status,
+			Maps:       home.Cluster.Maps,
+			Quantity:   home.Quantity,
+			Sequence:   home.Sequence,
+			Bathroom:   home.Bathroom,
+			Bedroom:    home.Bedroom,
 			Content:    home.Content,
 			Price:      home.Price,
 			Square:     home.Square,
 			StartPrice: home.StartPrice,
 			Cluster: dto.ClusterResponse{
+				ID:       home.Cluster.ID.String(),
+				Name:     home.Cluster.Name,
 				Location: home.Cluster.Location,
 				Maps:     home.Cluster.Maps,
 			},
@@ -50,6 +56,7 @@ func HomeListByClusterId(c *gin.Context) {
 				var nearBies []dto.NearBy
 				for _, nb := range home.NearBies {
 					nearBies = append(nearBies, dto.NearBy{
+						ID:       nb.ID.String(),
 						Name:     nb.Name,
 						Distance: nb.Distance,
 					})

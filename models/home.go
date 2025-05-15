@@ -37,9 +37,8 @@ type NearBy struct {
 }
 
 type HomeImage struct {
-	ID     uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey"`
-	HomeID uuid.UUID `gorm:"type:uuid;not null;index"`
-
-	ImageURL  string `gorm:"not null"`
+	ID        uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey"`
+	HomeID    uuid.UUID `gorm:"type:uuid;not null;index"`
+	ImageURL  string    `gorm:"not null"`
 	CreatedAt time.Time
 }

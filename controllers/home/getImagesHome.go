@@ -38,15 +38,19 @@ func GetHomeImages(c *gin.Context) {
 		thumbnail = homeImages[0].ImageURL
 	}
 
-	// Collect all image URLs
-	var imageUrls []string
+	// Build array of objects with id + url
+	var imageData []gin.H
 	for _, image := range homeImages {
-		imageUrls = append(imageUrls, image.ImageURL)
+		imageData = append(imageData, gin.H{
+			"id":  image.ID,
+			"url": image.ImageURL,
+		})
 	}
 
 	// Return the home images and the thumbnail
 	c.JSON(http.StatusOK, gin.H{
-		"images":    imageUrls,
+		"images":    imageData,
 		"thumbnail": thumbnail,
 	})
+
 }
