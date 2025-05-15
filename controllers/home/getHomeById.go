@@ -29,6 +29,7 @@ func HomeById(c *gin.Context) {
 		Maps:       home.Cluster.Maps,
 		Content:    home.Content,
 		Price:      home.Price,
+		Location:   home.Cluster.Location,
 		Status:     home.Status,
 		Square:     home.Square,
 		Bedroom:    home.Bedroom,
@@ -37,10 +38,9 @@ func HomeById(c *gin.Context) {
 		Quantity:   home.Quantity,
 		Sequence:   home.Sequence,
 		Cluster: dto.ClusterResponse{
-			ID:       home.Cluster.ID.String(),
-			Name:     home.Cluster.Name,
-			Location: home.Cluster.Location,
-			Maps:     home.Cluster.Maps,
+			ID:   home.Cluster.ID.String(),
+			Name: home.Cluster.Name,
+			Maps: home.Cluster.Maps,
 		},
 	}
 

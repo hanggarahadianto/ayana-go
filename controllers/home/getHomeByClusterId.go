@@ -47,10 +47,9 @@ func HomeListByClusterId(c *gin.Context) {
 			Square:     home.Square,
 			StartPrice: home.StartPrice,
 			Cluster: dto.ClusterResponse{
-				ID:       home.Cluster.ID.String(),
-				Name:     home.Cluster.Name,
-				Location: home.Cluster.Location,
-				Maps:     home.Cluster.Maps,
+				ID:   home.Cluster.ID.String(),
+				Name: home.Cluster.Name,
+				Maps: home.Cluster.Maps,
 			},
 			NearBies: func() []dto.NearBy {
 				var nearBies []dto.NearBy

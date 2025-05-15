@@ -6,6 +6,7 @@ type HomeByClusterResponse struct {
 	Type       string          `json:"type"`
 	Content    string          `json:"content"`
 	Maps       string          `json:"maps"`
+	Location   string          `json:"location"`
 	Price      float64         `json:"price"`
 	Status     string          `json:"status"`
 	Quantity   float64         `json:"quantity"`
@@ -19,10 +20,9 @@ type HomeByClusterResponse struct {
 }
 
 type ClusterResponse struct {
-	ID       string `json:"id"`
-	Name     string `json:"name"`
-	Location string `json:"location"`
-	Maps     string `json:"maps"`
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	Maps string `json:"maps"`
 }
 
 type NearBy struct {

@@ -6,9 +6,7 @@ import (
 	"ayana/models"
 	uploadClaudinary "ayana/utils/cloudinary-folder"
 	utilsEnv "ayana/utils/env"
-	"mime/multipart"
 
-	"fmt"
 	"net/http"
 	"time"
 
@@ -150,27 +148,27 @@ func deleteUnwantedImages(keepImageIds []string, allImages []models.HomeImage, e
 	}
 }
 
-func uploadNewImages(files []*multipart.FileHeader, homeId uuid.UUID) {
-	for _, fileHeader := range files {
-		file, err := fileHeader.Open()
-		if err != nil {
-			continue
-		}
-		defer file.Close()
+// func uploadNewImages(files []*multipart.FileHeader, homeId uuid.UUID) {
+// 	for _, fileHeader := range files {
+// 		file, err := fileHeader.Open()
+// 		if err != nil {
+// 			continue
+// 		}
+// 		defer file.Close()
 
-		// Upload path
-		filePath := fmt.Sprintf("products/%s/image_%d", homeId.String(), time.Now().UnixNano())
-		url, err := uploadClaudinary.UploadToCloudinary(file, filePath)
-		if err != nil {
-			continue
-		}
+// 		// Upload path
+// 		filePath := fmt.Sprintf("products/%s/image_%d", homeId.String(), time.Now().UnixNano())
+// 		url, err := uploadClaudinary.UploadToCloudinary(file, filePath)
+// 		if err != nil {
+// 			continue
+// 		}
 
-		// Simpan gambar ke DB
-		newImage := models.HomeImage{
-			HomeID:    homeId,
-			ImageURL:  url,
-			CreatedAt: time.Now(),
-		}
-		_ = db.DB.Create(&newImage)
-	}
-}
+// 		// Simpan gambar ke DB
+// 		newImage := models.HomeImage{
+// 			HomeID:    homeId,
+// 			ImageURL:  url,
+// 			CreatedAt: time.Now(),
+// 		}
+// 		_ = db.DB.Create(&newImage)
+// 	}
+// }
