@@ -32,6 +32,7 @@ func UpdateHome(c *gin.Context) {
 	// Perbarui field
 	home.Title = input.Title
 	home.Content = input.Content
+	home.Type = input.Type
 	home.Bathroom = input.Bathroom
 	home.Bedroom = input.Bedroom
 	home.Square = input.Square
