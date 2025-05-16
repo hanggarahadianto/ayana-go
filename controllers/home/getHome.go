@@ -19,14 +19,32 @@ func GetHomes(c *gin.Context) {
 		return
 	}
 
+	// Ambil filter status dari query
+	status := c.Query("status")
+
 	var homeList []models.Home
 	var total int64
 
-	// Hitung total data
-	db.DB.Model(&models.Home{}).Count(&total)
+	// Mulai query DB
+	query := db.DB.Model(&models.Home{})
 
-	// Ambil data dengan limit dan offset
-	result := db.DB.Order("sequence asc").
+	// Filter berdasarkan status jika ada
+	if status != "" {
+		query = query.Where("status = ?", status)
+	}
+
+	// Hitung total data dengan filter
+	if err := query.Count(&total).Error; err != nil {
+		log.Printf("Count error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "Gagal menghitung data",
+		})
+		return
+	}
+
+	// Ambil data dengan limit, offset, dan order
+	result := query.Order("sequence asc").
 		Limit(pagination.Limit).
 		Offset(pagination.Offset).
 		Find(&homeList)
