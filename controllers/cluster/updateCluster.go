@@ -11,24 +11,22 @@ import (
 )
 
 func UpdateCluster(c *gin.Context) {
-	var input models.Cluster
 	id := c.Param("id")
 
-	// Bind JSON input
+	var input models.Cluster
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
+	// Ambil cluster yang ingin diupdate
 	var cluster models.Cluster
-
-	// Cari cluster berdasarkan ID
-	if err := db.DB.First(&cluster, "id = ?", id).Error; err != nil {
+	if err := db.DB.Preload("NearBies").First(&cluster, "id = ?", id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Cluster tidak ditemukan"})
 		return
 	}
 
-	// Update field yang diizinkan
+	// Update field utama
 	cluster.Name = input.Name
 	cluster.Location = input.Location
 	cluster.Square = input.Square
@@ -39,17 +37,60 @@ func UpdateCluster(c *gin.Context) {
 	cluster.Maps = input.Maps
 	cluster.UpdatedAt = time.Now()
 
-	for i := range input.NearBies {
-		input.NearBies[i].ID = uuid.New()
-		input.NearBies[i].ClusterID = cluster.ID
-	}
-	cluster.NearBies = input.NearBies
-
-	// Simpan perubahan
 	if err := db.DB.Save(&cluster).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengupdate cluster"})
 		return
 	}
 
-	c.JSON(http.StatusOK, cluster)
+	// ================================
+	// Proses NearBies: Create/Update/Delete
+	// ================================
+	// 1. Buat map ID NearBies dari input
+	inputNearByMap := make(map[uuid.UUID]models.NearBy)
+	for _, nb := range input.NearBies {
+		if nb.ID != uuid.Nil {
+			inputNearByMap[nb.ID] = nb
+		}
+	}
+
+	// 2. Update atau Delete NearBies yang lama
+	for _, existing := range cluster.NearBies {
+		if inputNb, found := inputNearByMap[existing.ID]; found {
+			// Update NearBy
+			existing.Name = inputNb.Name
+			existing.Distance = inputNb.Distance
+			if err := db.DB.Save(&existing).Error; err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal update NearBy"})
+				return
+			}
+			delete(inputNearByMap, existing.ID) // tandai sudah diproses
+		} else {
+			// Hapus NearBy yang tidak ada lagi di input
+			if err := db.DB.Delete(&existing).Error; err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal hapus NearBy lama"})
+				return
+			}
+		}
+	}
+
+	// 3. Tambah NearBies baru (yang belum punya ID)
+	for _, nb := range input.NearBies {
+		if nb.ID == uuid.Nil {
+			nb.ID = uuid.New()
+			nb.ClusterID = cluster.ID
+			if err := db.DB.Create(&nb).Error; err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menambahkan NearBy baru"})
+				return
+			}
+		}
+	}
+
+	// Ambil data terbaru
+	var updated models.Cluster
+	if err := db.DB.Preload("NearBies").First(&updated, "id = ?", cluster.ID).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil cluster terbaru"})
+		return
+	}
+
+	c.JSON(http.StatusOK, updated)
 }

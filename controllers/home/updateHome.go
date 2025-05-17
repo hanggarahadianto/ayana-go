@@ -24,7 +24,7 @@ func UpdateHome(c *gin.Context) {
 	}
 
 	var home models.Home
-	if err := db.DB.Preload("NearBies").First(&home, "id = ?", input.ID).Error; err != nil {
+	if err := db.DB.First(&home, "id = ?", input.ID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Home tidak ditemukan"})
 		return
 	}
@@ -43,14 +43,6 @@ func UpdateHome(c *gin.Context) {
 	home.StartPrice = input.StartPrice
 	home.ClusterID = input.ClusterID
 	home.UpdatedAt = time.Now()
-
-	// Hapus data NearBies yang lama
-	if err := db.DB.Where("home_id = ?", home.ID).Delete(&models.NearBy{}).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menghapus NearBies lama"})
-		return
-	}
-
-	// Masukkan data NearBies yang baru
 
 	// Simpan data home yang sudah diperbarui
 	if err := db.DB.Session(&gorm.Session{FullSaveAssociations: true}).Save(&home).Error; err != nil {
