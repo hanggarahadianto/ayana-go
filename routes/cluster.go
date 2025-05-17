@@ -11,6 +11,7 @@ func SetupClusterRouter(r *gin.Engine) {
 	{
 		cluster.GET("/get", clusterController.GetCluster)
 		cluster.POST("/post", clusterController.CreateCluster)
+		cluster.PUT("/update/:id", clusterController.UpdateCluster)
 		cluster.GET("/getById/:id", clusterController.GetClusterByID)
 		cluster.DELETE("deleteById/:id", clusterController.DeleteCluster)
 

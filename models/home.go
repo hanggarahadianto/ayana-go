@@ -25,15 +25,7 @@ type Home struct {
 
 	Cluster *Cluster `json:"cluster"` // tambah ini
 
-	NearBies []NearBy    `gorm:"foreignKey:HomeID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"near_bies"`
-	Images   []HomeImage `gorm:"foreignKey:HomeID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"images"`
-}
-
-type NearBy struct {
-	ID       uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
-	Name     string    `json:"name" form:"name"`
-	Distance string    `json:"distance" form:"distance"`
-	HomeID   uuid.UUID `gorm:"type:uuid;not null;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"home_id"`
+	Images []HomeImage `gorm:"foreignKey:HomeID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"images"`
 }
 
 type HomeImage struct {

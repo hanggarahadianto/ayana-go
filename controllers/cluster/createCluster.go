@@ -32,6 +32,13 @@ func CreateCluster(c *gin.Context) {
 		UpdatedAt: time.Now(),
 	}
 
+	for i := range input.NearBies {
+		input.NearBies[i].ID = uuid.New()
+		input.NearBies[i].ClusterID = cluster.ID
+	}
+
+	cluster.NearBies = input.NearBies
+
 	if err := db.DB.Create(&cluster).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create cluster"})
 		return

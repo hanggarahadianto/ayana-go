@@ -12,7 +12,9 @@ import (
 func GetCluster(c *gin.Context) {
 	var clusterList []models.Cluster
 
-	result := db.DB.Order("sequence asc").Find(&clusterList)
+	result := db.DB.
+		Preload("NearBies").
+		Order("sequence asc").Find(&clusterList)
 	if result.Error != nil {
 		log.Printf("Database error: %v", result.Error)
 		c.JSON(http.StatusBadRequest, gin.H{

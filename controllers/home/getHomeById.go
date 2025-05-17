@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"ayana/db"
-	"ayana/dto" // ✅ pakai dto
+	"ayana/dto"
 	"ayana/models"
 	"net/http"
 
@@ -13,7 +13,11 @@ func HomeById(c *gin.Context) {
 	homeId := c.Param("id")
 
 	var home models.Home
-	if err := db.DB.Preload("NearBies").Preload("Cluster").First(&home, "id = ?", homeId).Error; err != nil {
+	if err := db.DB.
+		Preload("Cluster").
+		Preload("Cluster.NearBies").
+		First(&home, "id = ?", homeId).Error; err != nil {
+
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "failed",
 			"message": "Home id doesn't exist",
@@ -21,7 +25,26 @@ func HomeById(c *gin.Context) {
 		return
 	}
 
-	// Map model ke DTO
+	// Validasi jika Cluster tidak ada
+	if home.Cluster == nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"status":  "failed",
+			"message": "Cluster for this home not found",
+		})
+		return
+	}
+
+	// Map NearBies ke DTO
+	var nearBiesDTO []dto.NearBy
+	for _, nearby := range home.Cluster.NearBies {
+		nearBiesDTO = append(nearBiesDTO, dto.NearBy{
+			ID:       nearby.ID.String(),
+			Name:     nearby.Name,
+			Distance: nearby.Distance,
+		})
+	}
+
+	// Map Home + Cluster + NearBies ke response DTO
 	response := dto.HomeByClusterResponse{
 		ID:         home.ID.String(),
 		Title:      home.Title,
@@ -42,15 +65,7 @@ func HomeById(c *gin.Context) {
 			Name: home.Cluster.Name,
 			Maps: home.Cluster.Maps,
 		},
-	}
-
-	// Map nearbies
-	for _, nearby := range home.NearBies {
-		response.NearBies = append(response.NearBies, dto.NearBy{
-			ID:       nearby.ID.String(),
-			Name:     nearby.Name,
-			Distance: nearby.Distance,
-		})
+		NearBies: nearBiesDTO,
 	}
 
 	c.JSON(http.StatusOK, gin.H{

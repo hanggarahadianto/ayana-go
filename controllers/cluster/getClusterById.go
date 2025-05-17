@@ -14,7 +14,9 @@ func GetClusterByID(c *gin.Context) {
 
 	var cluster models.Cluster
 
-	result := db.DB.Order("sequence asc").First(&cluster, "id = ?", id)
+	result := db.DB.
+		Preload("NearBies").
+		Order("sequence asc").First(&cluster, "id = ?", id)
 	if result.Error != nil {
 		log.Printf("Database error: %v", result.Error)
 		c.JSON(http.StatusNotFound, gin.H{

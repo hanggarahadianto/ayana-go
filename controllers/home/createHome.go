@@ -35,13 +35,6 @@ func CreateHome(c *gin.Context) {
 		UpdatedAt:  time.Now(),
 	}
 
-	for i := range input.NearBies {
-		input.NearBies[i].ID = uuid.New()
-		input.NearBies[i].HomeID = home.ID
-	}
-
-	home.NearBies = input.NearBies
-
 	if err := db.DB.Create(&home).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create home"})
 		return

@@ -19,5 +19,13 @@ type Cluster struct {
 	CreatedAt time.Time `gorm:"not null" json:"created_at"`
 	UpdatedAt time.Time `gorm:"not null" json:"updated_at"`
 
-	Homes []Home `gorm:"foreignKey:ClusterID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"homes"`
+	Homes    []Home   `gorm:"foreignKey:ClusterID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"homes"`
+	NearBies []NearBy `gorm:"foreignKey:ClusterID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"near_bies"`
+}
+
+type NearBy struct {
+	ID        uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
+	Name      string    `json:"name" form:"name"`
+	Distance  string    `json:"distance" form:"distance"`
+	ClusterID uuid.UUID `gorm:"type:uuid;not null;index;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"cluster_id"`
 }

@@ -51,11 +51,6 @@ func UpdateHome(c *gin.Context) {
 	}
 
 	// Masukkan data NearBies yang baru
-	for i := range input.NearBies {
-		input.NearBies[i].ID = uuid.New()
-		input.NearBies[i].HomeID = home.ID
-	}
-	home.NearBies = input.NearBies
 
 	// Simpan data home yang sudah diperbarui
 	if err := db.DB.Session(&gorm.Session{FullSaveAssociations: true}).Save(&home).Error; err != nil {

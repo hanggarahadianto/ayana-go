@@ -20,18 +20,30 @@ func HomeListByClusterId(c *gin.Context) {
 	// Hitung total data
 	db.DB.Model(&models.Home{}).Where("cluster_id = ?", clusterId).Count(&total)
 
-	// Ambil data dengan NearBies saja, tanpa preload Images
+	// Ambil data termasuk relasi Cluster dan NearBies (yang berasal dari Cluster)
 	db.DB.
 		Where("cluster_id = ?", clusterId).
 		Limit(pagination.Limit).
 		Offset(pagination.Offset).
 		Order("sequence asc").
-		Preload("NearBies").
-		Preload("Cluster"). // <= tambahkan ini
+		Preload("Cluster.NearBies").
+		Preload("Cluster").
 		Find(&homes)
 
 	var homeResponses []dto.HomeByClusterResponse
+
 	for _, home := range homes {
+		// Mapping NearBies dari model ke DTO
+		var nearBiesDTO []dto.NearBy
+		for _, nearby := range home.Cluster.NearBies {
+			nearBiesDTO = append(nearBiesDTO, dto.NearBy{
+				ID:       nearby.ID.String(),
+				Name:     nearby.Name,
+				Distance: nearby.Distance,
+			})
+		}
+
+		// Mapping Home + Cluster + NearBies
 		homeResponse := dto.HomeByClusterResponse{
 			ID:         home.ID.String(),
 			Type:       home.Type,
@@ -51,18 +63,9 @@ func HomeListByClusterId(c *gin.Context) {
 				Name: home.Cluster.Name,
 				Maps: home.Cluster.Maps,
 			},
-			NearBies: func() []dto.NearBy {
-				var nearBies []dto.NearBy
-				for _, nb := range home.NearBies {
-					nearBies = append(nearBies, dto.NearBy{
-						ID:       nb.ID.String(),
-						Name:     nb.Name,
-						Distance: nb.Distance,
-					})
-				}
-				return nearBies
-			}(), // Map models.NearBy to controllers.NearBy
+			NearBies: nearBiesDTO,
 		}
+
 		homeResponses = append(homeResponses, homeResponse)
 	}
 
