@@ -11,7 +11,7 @@ type Home struct {
 	ClusterID  *uuid.UUID `gorm:"type:uuid;index" json:"cluster_id"`
 	Type       string     `gorm:"type:varchar(255);not null" json:"type" form:"type"`
 	Title      string     `gorm:"type:varchar(255);not null" json:"title" form:"title"`
-	Content    string     `gorm:"type:varchar(255);not null" json:"content" form:"content"`
+	Content    string     `gorm:"type:text;not null" json:"content" form:"content"`
 	Bathroom   float64    `gorm:"type:bigint;not null"  json:"bathroom" form:"bathroom"`
 	Bedroom    float64    `gorm:"type:bigint;not null"  json:"bedroom" form:"bedroom"`
 	Square     float64    `gorm:"type:bigint;not null"  json:"square" form:"square"`

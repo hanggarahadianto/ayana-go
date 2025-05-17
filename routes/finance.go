@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupFianceRouter(r *gin.Engine) {
+func SetupFinanceRouter(r *gin.Engine) {
 	finance := r.Group("/finance")
 	{
 		finance.GET("/get-outstanding-debt", financeController.GetOutstandingDebts)
