@@ -12,6 +12,7 @@ func SetupCustomerRouter(r *gin.Engine) {
 		customer.GET("/get", customerController.GetCustomers)
 		customer.POST("/post", customerController.CreateCustomer)
 		customer.PUT("/update/:id", customerController.UpdateCustomer)
+		customer.DELETE("/delete/:id", customerController.DeleteCustomer)
 
 		// cluster.PUT("/update/:id", clusterController.UpdateCluster)
 		// cluster.GET("/getById/:id", clusterController.GetClusterByID)
