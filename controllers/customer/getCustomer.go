@@ -28,6 +28,7 @@ func GetCustomers(c *gin.Context) {
 
 	// Ambil data dengan pagination
 	if err := db.DB.Preload("Home").
+		Order("updated_at DESC").
 		Limit(pagination.Limit).
 		Offset(pagination.Offset).
 		Find(&customers).Error; err != nil {

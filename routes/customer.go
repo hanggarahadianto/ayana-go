@@ -7,10 +7,12 @@ import (
 )
 
 func SetupCustomerRouter(r *gin.Engine) {
-	cluster := r.Group("/customer")
+	customer := r.Group("/customer")
 	{
-		cluster.GET("/get", customerController.GetCustomers)
-		cluster.POST("/post", customerController.CreateCustomer)
+		customer.GET("/get", customerController.GetCustomers)
+		customer.POST("/post", customerController.CreateCustomer)
+		customer.PUT("/update/:id", customerController.UpdateCustomer)
+
 		// cluster.PUT("/update/:id", clusterController.UpdateCluster)
 		// cluster.GET("/getById/:id", clusterController.GetClusterByID)
 		// cluster.DELETE("deleteById/:id", clusterController.DeleteCluster)
