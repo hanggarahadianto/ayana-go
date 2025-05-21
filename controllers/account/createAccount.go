@@ -28,11 +28,12 @@ func CreateAccount(c *gin.Context) {
 	}
 
 	// Validasi apakah kode akun sudah ada
+	// Validasi apakah kode akun sudah ada untuk perusahaan yang sama
 	var existingAccount models.Account
-	if err := db.DB.Where("code = ?", input.Code).First(&existingAccount).Error; err == nil {
+	if err := db.DB.Where("code = ? AND company_id = ?", input.Code, input.CompanyID).First(&existingAccount).Error; err == nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "error",
-			"message": "Kode sudah tersedia",
+			"message": "Kode sudah tersedia untuk perusahaan ini",
 		})
 		return
 	}

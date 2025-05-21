@@ -28,19 +28,6 @@ func GetTransactionCategories(params TransactionCategoryFilterParams) ([]dto.Tra
 		// ➕ Hanya gunakan filter jika All == false
 		tx = helper.ApplyTransactionFilters(tx, params.TransactionType, params.Category, params.Status)
 
-		// if params.Status == "unpaid" {
-		// 	tx = tx.
-		// 		Where("transaction_categories.debit_account_type = ?", "Asset").
-		// 		Where("transaction_categories.credit_account_type = ?", "Liability")
-		// } else {
-		// 	tx = tx.Where(`
-		// 		NOT (
-		// 			transaction_categories.debit_account_type = 'Asset'
-		// 			AND transaction_categories.credit_account_type = 'Asset'
-		// 		)
-		// 	`).Where("transaction_categories.debit_account_type = ?", "Asset").
-		// 		Where("transaction_categories.credit_account_type = ?", "Asset")
-		// }
 	}
 
 	var total int64
@@ -50,6 +37,7 @@ func GetTransactionCategories(params TransactionCategoryFilterParams) ([]dto.Tra
 
 	var transactions []models.TransactionCategory
 	if err := tx.Preload("DebitAccount").Preload("CreditAccount").
+		Order("updated_at DESC").
 		Limit(params.Pagination.Limit).
 		Offset(params.Pagination.Offset).
 		Find(&transactions).Error; err != nil {
@@ -59,22 +47,6 @@ func GetTransactionCategories(params TransactionCategoryFilterParams) ([]dto.Tra
 	responses := dto.MapToTransactionCategoryDTO(transactions)
 	return responses, total, nil
 }
-
-// func GetTransactionCategoriesWithoutPagination(companyID, transactionType, category string) ([]dto.TransactionCategoryResponse, error) {
-// 	tx := db.DB.Model(&models.TransactionCategory{}).
-// 		Joins("JOIN accounts AS debit ON debit.id = transaction_categories.debit_account_id").
-// 		Where("transaction_categories.company_id = ?", companyID)
-
-// 	tx = helper.ApplyTransactionFilters(tx, transactionType, category)
-
-// 	var transactions []models.TransactionCategory
-// 	if err := tx.Preload("DebitAccount").Preload("CreditAccount").Find(&transactions).Error; err != nil {
-// 		return nil, err
-// 	}
-
-// 	responses := dto.MapToTransactionCategoryDTO(transactions)
-// 	return responses, nil
-// }
 
 func GetTransactionCategoriesWithoutPagination(params TransactionCategoryFilterParams) ([]dto.TransactionCategoryResponse, error) {
 	tx := db.DB.Model(&models.TransactionCategory{}).

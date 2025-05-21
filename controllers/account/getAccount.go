@@ -65,7 +65,7 @@ func GetAccount(c *gin.Context) {
 		// ✅ Gunakan paginasi
 		pagination := helper.GetPagination(c)
 		if err := query.
-			Order("code ASC").
+			Order("CAST(code AS INTEGER) ASC").
 			Limit(pagination.Limit).
 			Offset(pagination.Offset).
 			Find(&accounts).Error; err != nil {
