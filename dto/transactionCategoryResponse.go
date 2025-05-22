@@ -12,6 +12,8 @@ import (
 type TransactionCategoryResponse struct {
 	ID                uuid.UUID       `json:"id"`
 	Name              string          `json:"name"`
+	Status            string          `json:"status"`
+	TransactionLabel  string          `json:"transaction_label"`
 	DebitAccountID    uuid.UUID       `json:"debit_account_id"`
 	DebitAccountType  string          `json:"debit_account_type"`
 	CreditAccountID   uuid.UUID       `json:"credit_account_id"`
@@ -28,9 +30,12 @@ type TransactionCategoryResponse struct {
 func MapToTransactionCategoryDTO(transactions []models.TransactionCategory) []TransactionCategoryResponse {
 	var responses []TransactionCategoryResponse
 	for _, t := range transactions {
+
 		res := TransactionCategoryResponse{
 			ID:                t.ID,
 			Name:              t.Name,
+			Status:            t.Status,
+			TransactionLabel:  t.TransactionLabel,
 			DebitAccountID:    t.DebitAccountID,
 			DebitAccountType:  t.DebitAccountType,
 			CreditAccountID:   t.CreditAccountID,

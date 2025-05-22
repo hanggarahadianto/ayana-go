@@ -11,7 +11,7 @@ func SetupTransactionCategoryRouter(r *gin.Engine) {
 	{
 		transactionController.POST("/post", transactionCategory.CreateTransactionCategory)
 		transactionController.GET("/get", transactionCategory.GetTransactionCategory)
-		transactionController.PUT("/edit", transactionCategory.UpdateTransactionCategory)
+		transactionController.PUT("/edit/:id", transactionCategory.UpdateTransactionCategory)
 		transactionController.DELETE("/delete/:id", transactionCategory.DeleteTransactionCategory)
 
 	}

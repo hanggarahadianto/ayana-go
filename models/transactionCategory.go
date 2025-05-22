@@ -8,8 +8,11 @@ import (
 
 // TransactionCategory adalah model untuk kategori transaksi
 type TransactionCategory struct {
-	ID                uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primary_key" json:"id"`
-	Name              string    `gorm:"type:varchar(100);not null" json:"name"`            // Nama kategori transaksi, misal: "Investor", "Kreditur"
+	ID               uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primary_key" json:"id"`
+	Name             string    `gorm:"type:varchar(100);not null" json:"name"`  // Nama kategori transaksi, misal: "Investor", "Kreditur"
+	Status           string    `gorm:"type:varchar(10);not null" json:"status"` // Nilai: "paid" atau "unpaid"
+	TransactionLabel string    `gorm:"type:varchar(50);not null" json:"transaction_label"`
+
 	DebitAccountID    uuid.UUID `gorm:"type:uuid;not null" json:"debit_account_id"`        // Foreign key untuk akun debit
 	DebitAccountType  string    `gorm:"type:varchar(100)" json:"debit_account_type"`       // Nama akun debit
 	CreditAccountID   uuid.UUID `gorm:"type:uuid;not null" json:"credit_account_id"`       // Foreign key untuk akun kredit

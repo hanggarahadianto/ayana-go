@@ -56,6 +56,8 @@ func CreateTransactionCategory(c *gin.Context) {
 	transactionCategory := models.TransactionCategory{
 		ID:                uuid.New(),
 		Name:              input.Name,
+		Status:            input.Status,
+		TransactionLabel:  input.TransactionLabel,
 		DebitAccountID:    input.DebitAccountID,
 		DebitAccountType:  debitAccount.Type,
 		CreditAccountID:   input.CreditAccountID,

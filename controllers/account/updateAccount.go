@@ -44,10 +44,9 @@ func EditAccount(c *gin.Context) {
 		return
 	}
 
-	// Cek jika code berubah, pastikan tidak duplikat
 	if input.Code != existingAccount.Code {
 		var otherAccount models.Account
-		if err := db.DB.Where("code = ?", input.Code).First(&otherAccount).Error; err == nil {
+		if err := db.DB.Where("code = ? AND company_id = ?", input.Code, input.CompanyID).First(&otherAccount).Error; err == nil {
 			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Kode sudah tersedia"})
 			return
 		}
