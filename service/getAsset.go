@@ -16,6 +16,7 @@ type AssetFilterParams struct {
 	SummaryOnly     bool
 	AssetType       string
 	TransactionType string
+	Category        string
 }
 
 func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalLineResponse, int64, int64, error) {
@@ -23,16 +24,11 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalLineRespo
 	var total int64
 	var totalAsset int64
 
-	// baseQuery := db.DB.Model(&models.JournalLine{}).
-	// 	Joins("JOIN journal_entries ON journal_entries.id = journal_lines.journal_id").
-	// 	Joins("LEFT JOIN transaction_categories ON transaction_categories.id = journal_entries.transaction_category_id").
-	// 	Where("journal_entries.company_id = ?", params.CompanyID)
-
 	baseQuery := db.DB.Model(&models.JournalLine{}).
 		Joins("JOIN journal_entries ON journal_entries.id = journal_lines.journal_id").
+		Joins("LEFT JOIN transaction_categories ON journal_entries.transaction_category_id = transaction_categories.id").
 		Where("journal_entries.company_id = ?", params.CompanyID)
 
-	// Filter asset type
 	switch params.AssetType {
 	case "cashin":
 		baseQuery = baseQuery.
@@ -40,10 +36,6 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalLineRespo
 			Where("journal_entries.transaction_type = ?", "payin").
 			Where("journal_lines.debit_account_type = ?", "Asset").
 			Where("NOT (journal_lines.credit_account_type = 'Revenue' AND journal_entries.status = 'unpaid')")
-
-		// Where("journal_entries.status = ?", "paid").
-		// Where("journal_entries.is_repaid = ?", true).
-		// Where("LOWER(journal_lines.credit_account_type) IN (?, ?)", "revenue", "equity")
 
 	case "fixed_asset":
 		baseQuery = baseQuery.
@@ -64,6 +56,10 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalLineRespo
 			Where("journal_entries.is_repaid = ? AND journal_entries.status = ? AND journal_entries.transaction_type = ?", false, "unpaid", "payin")
 		// Where("LOWER(transaction_category.category) ILIKE ?", "%piutang%") // Hanya untuk 'receivable'
 
+	}
+
+	if params.Category != "" {
+		baseQuery = baseQuery.Where("transaction_categories.category ILIKE ?", "%"+params.Category+"%")
 	}
 
 	// Filter date
@@ -94,6 +90,7 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalLineRespo
 	// Query untuk mengambil data dengan pagination
 	dataQuery := baseQuery.Session(&gorm.Session{}).
 		Preload("Journal").
+		Preload("Journal.TransactionCategory"). // ✅ Tambahkan ini
 		Order("journal_entries.date_inputed ASC").
 		Limit(params.Pagination.Limit).
 		Offset(params.Pagination.Offset)
@@ -108,6 +105,7 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalLineRespo
 			ID:                line.ID.String(),
 			JournalEntryID:    line.JournalID.String(),
 			Transaction_ID:    line.Journal.Transaction_ID,
+			Category:          line.Journal.TransactionCategory.Category,
 			Partner:           line.Journal.Partner,
 			Invoice:           line.Journal.Invoice,
 			Description:       line.Journal.Description,

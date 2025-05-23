@@ -9,21 +9,47 @@ import (
 )
 
 // TransactionCategoryResponse adalah response DTO untuk kategori transaksi
+type TransactionCategorySelectResponse struct {
+	ID                uuid.UUID `json:"id"`
+	Name              string    `json:"name"`
+	Status            string    `json:"status"`
+	TransactionType   string    `json:"transaction_type"`
+	TransactionLabel  string    `json:"transaction_label"`
+	DebitAccountType  string    `json:"debit_account_type"`
+	CreditAccountType string    `json:"credit_account_type"`
+	Description       string    `json:"description"`
+}
+
+func MapToTransactionCategorySelectDTO(data []models.TransactionCategory) []TransactionCategorySelectResponse {
+	var result []TransactionCategorySelectResponse
+	for _, item := range data {
+		result = append(result, TransactionCategorySelectResponse{
+			ID:                item.ID,
+			Name:              item.Name,
+			TransactionType:   item.TransactionType,
+			Status:            item.Status,
+			Description:       item.Description,
+			TransactionLabel:  item.TransactionLabel, // hapus jika tidak perlu
+			DebitAccountType:  item.DebitAccountType,
+			CreditAccountType: item.CreditAccountType,
+		})
+	}
+	return result
+}
+
 type TransactionCategoryResponse struct {
-	ID                uuid.UUID       `json:"id"`
-	Name              string          `json:"name"`
-	Status            string          `json:"status"`
-	TransactionLabel  string          `json:"transaction_label"`
-	DebitAccountID    uuid.UUID       `json:"debit_account_id"`
-	DebitAccountType  string          `json:"debit_account_type"`
-	CreditAccountID   uuid.UUID       `json:"credit_account_id"`
-	CreditAccountType string          `json:"credit_account_type"`
-	TransactionType   string          `json:"transaction_type"`
-	Category          string          `json:"category"`
-	Description       string          `json:"description"`
-	CompanyID         uuid.UUID       `json:"company_id"`
-	DebitAccount      AccountResponse `json:"debit_account"`
-	CreditAccount     AccountResponse `json:"credit_account"`
+	ID                uuid.UUID `json:"id"`
+	Name              string    `json:"name"`
+	TransactionType   string    `json:"transaction_type"`
+	Status            string    `json:"status"`
+	TransactionLabel  string    `json:"transaction_label"`
+	DebitAccountID    uuid.UUID `json:"debit_account_id"`
+	DebitAccountType  string    `json:"debit_account_type"`
+	CreditAccountID   uuid.UUID `json:"credit_account_id"`
+	CreditAccountType string    `json:"credit_account_type"`
+	Category          string    `json:"category"`
+	Description       string    `json:"description"`
+	CompanyID         uuid.UUID `json:"company_id"`
 }
 
 // MapToTransactionCategoryDTO memetakan data transaksi ke DTO
@@ -44,24 +70,6 @@ func MapToTransactionCategoryDTO(transactions []models.TransactionCategory) []Tr
 			Category:          t.Category,
 			Description:       t.Description,
 			CompanyID:         t.CompanyID,
-			DebitAccount: AccountResponse{
-				ID:          t.DebitAccount.ID,
-				Code:        t.DebitAccount.Code,
-				Name:        t.DebitAccount.Name,
-				Type:        t.DebitAccount.Type,
-				Category:    t.DebitAccount.Category,
-				Description: t.DebitAccount.Description,
-				CompanyID:   t.DebitAccount.CompanyID,
-			},
-			CreditAccount: AccountResponse{
-				ID:          t.CreditAccount.ID,
-				Code:        t.CreditAccount.Code,
-				Name:        t.CreditAccount.Name,
-				Type:        t.CreditAccount.Type,
-				Category:    t.CreditAccount.Category,
-				Description: t.CreditAccount.Description,
-				CompanyID:   t.CreditAccount.CompanyID,
-			},
 		}
 		responses = append(responses, res)
 	}

@@ -17,6 +17,8 @@ func GetAssetSummary(c *gin.Context) {
 
 	summaryOnlyStr := c.DefaultQuery("summary_only", "false")
 	summaryOnly := summaryOnlyStr == "true"
+	category := c.Query("category")
+
 	if summaryOnlyStr != "true" && summaryOnlyStr != "false" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Parameter summary_only harus 'true' atau 'false'."})
 		return
@@ -39,6 +41,7 @@ func GetAssetSummary(c *gin.Context) {
 		AssetType:       assetType,
 		TransactionType: transactionType,
 		SummaryOnly:     summaryOnly,
+		Category:        category,
 	}
 
 	data, totalAsset, total, err := service.GetAssetsFromJournalLines(params)

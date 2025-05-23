@@ -19,15 +19,17 @@ func CreateCustomer(c *gin.Context) {
 	}
 
 	customer := models.Customer{
-		ID:        uuid.New(),
-		Name:      input.Name,
-		Address:   input.Address,
-		Phone:     input.Phone, // Tambahkan ini
-		Status:    input.Status,
-		Marketer:  input.Marketer,
-		HomeID:    input.HomeID,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		ID:            uuid.New(),
+		Name:          input.Name,
+		Address:       input.Address,
+		Phone:         input.Phone, // Tambahkan ini
+		Status:        input.Status,
+		PaymentMethod: input.PaymentMethod,
+		Amount:        input.Amount,
+		Marketer:      input.Marketer,
+		HomeID:        input.HomeID,
+		CreatedAt:     time.Now(),
+		UpdatedAt:     time.Now(),
 	}
 
 	if err := db.DB.Create(&customer).Error; err != nil {

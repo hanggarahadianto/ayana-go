@@ -7,27 +7,62 @@ import (
 	"ayana/dto"
 	"ayana/models"
 	"ayana/utils/helper"
-	"errors"
 )
 
 type TransactionCategoryFilterParams struct {
-	CompanyID       string            `json:"company_id"`
-	TransactionType string            `json:"transaction_type"`
-	Category        string            `json:"category"`
-	Status          string            `json:"status"`
-	All             bool              `json:"all"` // ➕ baru
-	Pagination      helper.Pagination `json:"pagination"`
+	CompanyID       string
+	TransactionType string
+	Category        string
+	Status          string
+	All             bool
+	SelectOnly      bool
+	Pagination      helper.Pagination
 }
 
-func GetTransactionCategories(params TransactionCategoryFilterParams) ([]dto.TransactionCategoryResponse, int64, error) {
+func GetTransactionCategoriesAll() ([]dto.TransactionCategoryResponse, error) {
+	var categories []models.TransactionCategory
+	err := db.DB.Find(&categories).Error
+	if err != nil {
+		return nil, err
+	}
+	return dto.MapToTransactionCategoryDTO(categories), nil
+}
+
+func GetTransactionCategoriesForSelect(params TransactionCategoryFilterParams) ([]dto.TransactionCategorySelectResponse, error) {
+	tx := db.DB.Model(&models.TransactionCategory{})
+
+	// Wajib filter CompanyID & optional filter lainnya
+	tx = tx.Where("company_id = ?", params.CompanyID)
+
+	if params.TransactionType != "" {
+		tx = tx.Where("transaction_type = ?", params.TransactionType)
+	}
+	if params.Status != "" {
+		tx = tx.Where("status = ?", params.Status)
+	}
+	if params.Category != "" {
+		tx = tx.Where("category = ?", params.Category)
+	}
+
+	var categories []models.TransactionCategory
+	if err := tx.Find(&categories).Error; err != nil {
+		return nil, err
+	}
+	return dto.MapToTransactionCategorySelectDTO(categories), nil
+}
+
+func GetTransactionCategoriesWithPagination(params TransactionCategoryFilterParams) ([]dto.TransactionCategoryResponse, int64, error) {
 	tx := db.DB.Model(&models.TransactionCategory{}).
-		Joins("JOIN accounts AS debit ON debit.id = transaction_categories.debit_account_id").
-		Where("transaction_categories.company_id = ?", params.CompanyID)
+		Where("company_id = ?", params.CompanyID)
 
-	if !params.All {
-		// ➕ Hanya gunakan filter jika All == false
-		tx = helper.ApplyTransactionFilters(tx, params.TransactionType, params.Category, params.Status)
-
+	if params.TransactionType != "" {
+		tx = tx.Where("transaction_type = ?", params.TransactionType)
+	}
+	if params.Status != "" {
+		tx = tx.Where("status = ?", params.Status)
+	}
+	if params.Category != "" {
+		tx = tx.Where("category = ?", params.Category)
 	}
 
 	var total int64
@@ -35,43 +70,32 @@ func GetTransactionCategories(params TransactionCategoryFilterParams) ([]dto.Tra
 		return nil, 0, err
 	}
 
-	var transactions []models.TransactionCategory
-	if err := tx.Preload("DebitAccount").Preload("CreditAccount").
-		Order("updated_at DESC").
+	var categories []models.TransactionCategory
+	if err := tx.Order("updated_at DESC").
 		Limit(params.Pagination.Limit).
 		Offset(params.Pagination.Offset).
-		Find(&transactions).Error; err != nil {
+		Find(&categories).Error; err != nil {
 		return nil, 0, err
 	}
 
-	responses := dto.MapToTransactionCategoryDTO(transactions)
-	return responses, total, nil
+	return dto.MapToTransactionCategoryDTO(categories), total, nil
 }
 
-func GetTransactionCategoriesWithoutPagination(params TransactionCategoryFilterParams) ([]dto.TransactionCategoryResponse, error) {
+func GetUniqueCategories(params TransactionCategoryFilterParams) ([]string, error) {
 	tx := db.DB.Model(&models.TransactionCategory{}).
-		Joins("JOIN accounts AS debit ON debit.id = transaction_categories.debit_account_id")
+		Select("DISTINCT category").
+		Where("company_id = ?", params.CompanyID)
 
-	// ✅ Pastikan minimal 1 filter aktif
-	if params.CompanyID == "" && params.TransactionType == "" && params.Category == "" {
-		return nil, errors.New("at least one filter (company_id, transaction_type, category) is required")
-	}
-
-	// ✅ Tambahkan filter sesuai yang dikirim
-	if params.CompanyID != "" {
-		tx = tx.Where("transaction_categories.company_id = ?", params.CompanyID)
-	}
 	if params.TransactionType != "" {
-		tx = tx.Where("transaction_categories.transaction_type = ?", params.TransactionType)
+		tx = tx.Where("transaction_type = ?", params.TransactionType)
 	}
-	if params.Category != "" {
-		tx = tx.Where("transaction_categories.category = ?", params.Category)
+	if params.Status != "" {
+		tx = tx.Where("status = ?", params.Status)
 	}
 
-	var transactions []models.TransactionCategory
-	if err := tx.Preload("DebitAccount").Preload("CreditAccount").Find(&transactions).Error; err != nil {
+	var categories []string
+	if err := tx.Pluck("category", &categories).Error; err != nil {
 		return nil, err
 	}
-
-	return dto.MapToTransactionCategoryDTO(transactions), nil
+	return categories, nil
 }

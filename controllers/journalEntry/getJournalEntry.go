@@ -36,6 +36,7 @@ func GetJournalEntriesByCategory(c *gin.Context) {
 	var journalEntries []models.JournalEntry
 	err := db.DB.
 		Preload("Lines").
+		Preload("TransactionCategory"). // 👈 tambahkan preload ini
 		Where("transaction_category_id = ? AND company_id = ?", transactionCategoryID, companyID).
 		Limit(pagination.Limit).
 		Offset(pagination.Offset).
@@ -82,6 +83,7 @@ func GetJournalEntriesByCategory(c *gin.Context) {
 			Invoice:               entry.Invoice,
 			Description:           entry.Description,
 			TransactionID:         entry.Transaction_ID,
+			Category:              entry.TransactionCategory.Category,
 			TransactionCategoryID: entry.TransactionCategoryID.String(), // Mengonversi UUID ke string
 			Amount:                float64(entry.Amount),                // Konversi dari int64 ke float64
 			Partner:               entry.Partner,

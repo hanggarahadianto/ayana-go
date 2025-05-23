@@ -6,23 +6,23 @@ import (
 )
 
 type JournalEntryResponse struct {
-	ID                    string    `json:"id"`
-	Invoice               string    `json:"invoice"`
-	TransactionID         string    `json:"transaction_id"`
-	Description           string    `json:"description"`
-	TransactionCategoryID string    `json:"transaction_category_id"`
-	Amount                float64   `json:"amount"`
-	Partner               string    `json:"partner"`
-	TransactionType       string    `json:"transaction_type"`
-	Status                string    `json:"status"`
-	CompanyID             string    `json:"company_id"`
-	DateInputed           time.Time `json:"date_inputed"`
-	DueDate               time.Time `json:"due_date"`
-
-	IsRepaid    bool                   `json:"is_repaid"`
-	Installment int                    `json:"installment"`
-	Note        string                 `json:"note"`
-	Lines       []JournalEntryLineItem `json:"lines"`
+	ID                    string                 `json:"id"`
+	Invoice               string                 `json:"invoice"`
+	TransactionID         string                 `json:"transaction_id"`
+	Category              string                 `json:"category"`
+	Description           string                 `json:"description"`
+	TransactionCategoryID string                 `json:"transaction_category_id"`
+	Amount                float64                `json:"amount"`
+	Partner               string                 `json:"partner"`
+	TransactionType       string                 `json:"transaction_type"`
+	Status                string                 `json:"status"`
+	CompanyID             string                 `json:"company_id"`
+	DateInputed           time.Time              `json:"date_inputed"`
+	DueDate               time.Time              `json:"due_date"`
+	IsRepaid              bool                   `json:"is_repaid"`
+	Installment           int                    `json:"installment"`
+	Note                  string                 `json:"note"`
+	Lines                 []JournalEntryLineItem `json:"lines"`
 }
 
 type JournalEntryLineItem struct {
@@ -69,6 +69,7 @@ func MapToJournalEntryResponse(journalEntry models.JournalEntry) JournalEntryRes
 		ID:                    journalEntry.ID.String(),
 		Invoice:               journalEntry.Invoice,
 		TransactionID:         journalEntry.Transaction_ID,
+		Category:              journalEntry.TransactionCategory.Category,
 		Description:           journalEntry.Description,
 		TransactionCategoryID: journalEntry.TransactionCategoryID.String(),
 		Amount:                float64(journalEntry.Amount),

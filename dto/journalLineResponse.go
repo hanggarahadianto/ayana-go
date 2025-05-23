@@ -7,6 +7,7 @@ type JournalLineResponse struct {
 	JournalEntryID    string    `json:"journal_entry_id"`
 	Transaction_ID    string    `json:"transaction_id"`
 	Invoice           string    `json:"invoice"`
+	Category          string    `json:"category"`
 	Partner           string    `json:"partner"`
 	Description       string    `json:"description"`
 	Amount            float64   `json:"amount"`
