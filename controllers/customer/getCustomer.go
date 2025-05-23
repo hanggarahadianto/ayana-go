@@ -37,9 +37,9 @@ func GetCustomers(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"data":       customers,
-		"page":       pagination.Page,
-		"limit":      pagination.Limit,
-		"total_data": total,
+		"data":  customers,
+		"page":  pagination.Page,
+		"limit": pagination.Limit,
+		"total": total,
 	})
 }
