@@ -34,6 +34,7 @@ func UpdateCustomer(c *gin.Context) {
 	customer.Status = input.Status
 	customer.PaymentMethod = input.PaymentMethod
 	customer.Amount = input.Amount
+	customer.DateInputed = input.DateInputed
 	customer.Marketer = input.Marketer
 	customer.HomeID = input.HomeID
 	customer.UpdatedAt = time.Now()

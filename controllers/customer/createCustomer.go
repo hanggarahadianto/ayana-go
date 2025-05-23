@@ -25,6 +25,7 @@ func CreateCustomer(c *gin.Context) {
 		Phone:         input.Phone, // Tambahkan ini
 		Status:        input.Status,
 		PaymentMethod: input.PaymentMethod,
+		DateInputed:   input.DateInputed,
 		Amount:        input.Amount,
 		Marketer:      input.Marketer,
 		HomeID:        input.HomeID,
