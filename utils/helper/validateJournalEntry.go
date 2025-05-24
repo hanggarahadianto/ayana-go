@@ -4,6 +4,7 @@ import (
 	"ayana/db"
 	"ayana/models"
 	"errors"
+	"fmt"
 
 	"github.com/google/uuid"
 )
@@ -11,7 +12,7 @@ import (
 // ValidateJournalEntry checks if the JournalEntry exists and transaction_id matches
 func ValidateJournalEntry(id uuid.UUID, transactionID string) error {
 	if id == uuid.Nil {
-		return errors.New("ID not found")
+		return errors.New("ID is required")
 	}
 
 	if transactionID == "" {
@@ -21,7 +22,7 @@ func ValidateJournalEntry(id uuid.UUID, transactionID string) error {
 	// Fetch JournalEntry by ID
 	var entry models.JournalEntry
 	if err := db.DB.First(&entry, "id = ?", id).Error; err != nil {
-		return errors.New("ID not found")
+		return fmt.Errorf("ID %s not found", id.String())
 	}
 
 	// Check if transaction_id matches exactly with database

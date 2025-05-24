@@ -42,11 +42,14 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalLineRespo
 			Where("journal_lines.debit > 0").
 			Where("journal_lines.debit_account_type = ?", "Asset").
 			Where("journal_entries.is_repaid = ? AND journal_entries.status = ? AND journal_entries.transaction_type = ?", true, "paid", "payout")
+
 	case "cashout":
 		baseQuery = baseQuery.
 			Where("journal_lines.credit > 0").
 			Where("journal_lines.credit_account_type = ?", "Asset").
-			Where("journal_entries.is_repaid = ? AND journal_entries.status IN (?, ?) AND journal_entries.transaction_type = ?", true, "paid", "done", "payout")
+			Where("journal_entries.is_repaid = ?", true).
+			Where("journal_entries.status IN ?", []string{"paid", "done"}).
+			Where("journal_entries.transaction_type = ?", "payout")
 
 	case "receivable":
 		baseQuery = baseQuery.

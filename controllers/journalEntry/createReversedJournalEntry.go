@@ -66,6 +66,7 @@ func CreateReversedJournalEntry(c *gin.Context) {
 		for _, entry := range inputEntries[1:] { // MULAI dari index ke-1
 			newEntry := models.JournalEntry{
 				Amount:                entry.Amount,
+				Transaction_ID:        entry.Transaction_ID,
 				CompanyID:             entry.CompanyID,
 				DateInputed:           entry.DateInputed,
 				Description:           entry.Description,
