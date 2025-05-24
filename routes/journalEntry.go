@@ -10,8 +10,9 @@ func SetupJournalEntryRouter(r *gin.Engine) {
 	journalEntry := r.Group("/journal-entry")
 	{
 		journalEntry.GET("/get", journalEntryController.GetJournalEntriesByCategory)
-
 		journalEntry.POST("/post", journalEntryController.CreateJournalEntry)
+		journalEntry.DELETE("/delete/:id", journalEntryController.DeleteJournalEntry)
+
 		journalEntry.POST("/reversed-post", journalEntryController.CreateReversedJournalEntry)
 	}
 }
