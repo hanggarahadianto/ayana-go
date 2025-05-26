@@ -43,8 +43,8 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalLineRespons
 			Where("journal_lines.credit > 0").
 			Where("journal_entries.is_repaid = ? AND journal_entries.status = ?", true, "done").
 			// Filter untuk memastikan bahwa hutang terdaftar di akun Liability, bukan Revenue
-			Where("LOWER(journal_lines.credit_account_type) = ?", "liability").
-			Where("LOWER(journal_lines.debit_account_type) != ?", "revenue")
+			Where("LOWER(journal_lines.debit_account_type) = ?", "liability").
+			Where("LOWER(journal_lines.credit_account_type) = ?", "asset")
 	}
 
 	// Filter date
