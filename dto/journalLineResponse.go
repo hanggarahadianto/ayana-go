@@ -21,4 +21,5 @@ type JournalLineResponse struct {
 	IsRepaid          bool      `json:"is_repaid"`
 	Installment       int       `json:"installment"`
 	Note              string    `json:"note"`
+	PaymentDateStatus string    `json:"payment_date_status,omitempty"`
 }

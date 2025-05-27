@@ -47,7 +47,7 @@ type JournalEntry struct {
 	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 
-	Lines []JournalLine `gorm:"foreignKey:JournalID" json:"lines"`
+	Lines []JournalLine `gorm:"foreignKey:JournalID;constraint:OnDelete:CASCADE;" json:"lines"`
 
 	TransactionCategory TransactionCategory `gorm:"foreignKey:TransactionCategoryID" json:"transaction_category"` // optional relasi
 	// Installments        []Installment       `json:"installments" gorm:"foreignKey:JournalID;references:ID"`

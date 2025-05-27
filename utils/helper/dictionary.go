@@ -3,6 +3,7 @@ package helper
 var ValidCategories = map[string][]string{
 	"Asset": {
 		"Kas & Bank",
+		"Barang Dagangan",
 		"Piutang",
 		"Perlengkapan",
 		"Aset Tetap",

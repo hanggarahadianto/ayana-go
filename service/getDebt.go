@@ -5,6 +5,7 @@ import (
 	"ayana/dto"
 	"ayana/models"
 	"ayana/utils/helper"
+	"fmt"
 
 	"gorm.io/gorm"
 )
@@ -14,8 +15,7 @@ type DebtFilterParams struct {
 	Pagination  helper.Pagination
 	DateFilter  helper.DateFilter
 	SummaryOnly bool
-	DebtStatus  string // <-- tetap ada
-
+	DebtStatus  string
 }
 
 func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalLineResponse, int64, int64, error) {
@@ -23,31 +23,26 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalLineRespons
 	var total int64
 	var totalDebt int64
 
-	// Build base query tanpa Limit dan Offset untuk Count dan Sum
+	// Build base query
 	baseQuery := db.DB.Model(&models.JournalLine{}).
 		Joins("JOIN journal_entries ON journal_entries.id = journal_lines.journal_id").
 		Where("journal_entries.company_id = ?", params.CompanyID)
 
-	// Filter Debt type
 	switch params.DebtStatus {
 	case "going":
 		baseQuery = baseQuery.
 			Where("journal_lines.credit > 0").
 			Where("journal_entries.is_repaid = ? AND journal_entries.status = ?", false, "unpaid").
-			// Filter untuk memastikan bahwa hutang terdaftar di akun Liability, bukan Revenue
 			Where("LOWER(journal_lines.credit_account_type) = ?", "liability").
 			Where("LOWER(journal_lines.debit_account_type) != ?", "revenue")
-
 	case "done":
 		baseQuery = baseQuery.
 			Where("journal_lines.credit > 0").
 			Where("journal_entries.is_repaid = ? AND journal_entries.status = ?", true, "done").
-			// Filter untuk memastikan bahwa hutang terdaftar di akun Liability, bukan Revenue
 			Where("LOWER(journal_lines.debit_account_type) = ?", "liability").
 			Where("LOWER(journal_lines.credit_account_type) = ?", "asset")
 	}
 
-	// Filter date
 	if params.DateFilter.StartDate != nil {
 		baseQuery = baseQuery.Where("journal_entries.date_inputed >= ?", params.DateFilter.StartDate)
 	}
@@ -55,24 +50,23 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalLineRespons
 		baseQuery = baseQuery.Where("journal_entries.date_inputed <= ?", params.DateFilter.EndDate)
 	}
 
-	// Hitung total baris
+	// Total count
 	if err := baseQuery.Session(&gorm.Session{}).Count(&total).Error; err != nil {
 		return nil, 0, 0, err
 	}
 
-	// Hitung total debt
+	// Total debt
 	if err := baseQuery.Session(&gorm.Session{}).
 		Select("COALESCE(SUM(journal_entries.amount), 0)").
 		Scan(&totalDebt).Error; err != nil {
 		return nil, 0, 0, err
 	}
 
-	// Jika SummaryOnly = true, kembalikan hanya total dan totalDebt
 	if params.SummaryOnly {
 		return nil, totalDebt, total, nil
 	}
 
-	// Query untuk mengambil data dengan pagination
+	// Data with pagination
 	dataQuery := baseQuery.Session(&gorm.Session{}).
 		Preload("Journal").
 		Order("journal_entries.date_inputed ASC").
@@ -85,6 +79,24 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalLineRespons
 
 	var response []dto.JournalLineResponse
 	for _, line := range lines {
+		var paymentDateStatus string
+
+		// Hitung payment status jika DebtStatus adalah "done"
+		if params.DebtStatus == "done" && line.Journal.DateInputed != nil && line.Journal.DueDate != nil {
+			due := *line.Journal.DueDate
+			input := *line.Journal.DateInputed
+
+			// Lewati jika due date kosong (zero time)
+			if !due.IsZero() {
+				diff := due.Sub(input).Hours() / 24
+				if diff >= 0 {
+					paymentDateStatus = fmt.Sprintf("Dibayar Tepat Waktu %.0f Hari Sebelum Jatuh Tempo", diff)
+				} else {
+					paymentDateStatus = fmt.Sprintf("Dibayar Terlambat %.0f Hari Setelah Jatuh Tempo", -diff)
+				}
+			}
+		}
+
 		response = append(response, dto.JournalLineResponse{
 			ID:                line.ID.String(),
 			JournalEntryID:    line.JournalID.String(),
@@ -103,6 +115,7 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalLineRespons
 			IsRepaid:          line.Journal.IsRepaid,
 			Installment:       line.Journal.Installment,
 			Note:              line.Journal.Note,
+			PaymentDateStatus: paymentDateStatus, // <-- Tambahan field baru
 		})
 	}
 

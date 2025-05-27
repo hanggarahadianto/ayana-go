@@ -23,8 +23,6 @@ func CreateReversedJournalEntry(c *gin.Context) {
 		})
 		return
 	}
-
-	// ✅ Validasi hanya object pertama
 	if len(inputEntries) == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "error",
