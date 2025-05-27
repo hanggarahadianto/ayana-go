@@ -11,8 +11,18 @@ import (
 )
 
 func UpdateJournalEntry(c *gin.Context) {
-	var input models.JournalEntry
+	idParam := c.Param("id")
+	id, err := uuid.Parse(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Invalid UUID in parameter",
+			"details": err.Error(),
+		})
+		return
+	}
 
+	var input models.JournalEntry
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "error",
@@ -22,14 +32,8 @@ func UpdateJournalEntry(c *gin.Context) {
 		return
 	}
 
-	// Validasi ID wajib ada
-	if input.ID == uuid.Nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":  "error",
-			"message": "Missing journal entry ID",
-		})
-		return
-	}
+	// Gunakan ID dari param, bukan dari input body
+	input.ID = id
 
 	updatedJournal, err := service.UpdateSingleJournalEntry(input)
 	if err != nil {

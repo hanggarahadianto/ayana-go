@@ -75,8 +75,7 @@ func GetExpensesFromJournalLines(params ExpenseFilterParams) ([]dto.JournalLineR
 	var response []dto.JournalLineResponse
 	for _, line := range lines {
 		response = append(response, dto.JournalLineResponse{
-			ID:                line.ID.String(),
-			JournalEntryID:    line.JournalID.String(),
+			ID:                line.JournalID.String(),
 			Invoice:           line.Journal.Invoice,
 			Transaction_ID:    line.Journal.Transaction_ID,
 			Description:       line.Journal.Description,

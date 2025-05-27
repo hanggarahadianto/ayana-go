@@ -98,8 +98,7 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalLineRespons
 		}
 
 		response = append(response, dto.JournalLineResponse{
-			ID:                line.ID.String(),
-			JournalEntryID:    line.JournalID.String(),
+			ID:                line.JournalID.String(),
 			Transaction_ID:    line.Journal.Transaction_ID,
 			Invoice:           line.Journal.Invoice,
 			Description:       line.Journal.Description,

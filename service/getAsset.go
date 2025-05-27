@@ -105,24 +105,27 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalLineRespo
 	var response []dto.JournalLineResponse
 	for _, line := range lines {
 		response = append(response, dto.JournalLineResponse{
-			ID:                line.ID.String(),
-			JournalEntryID:    line.JournalID.String(),
-			Transaction_ID:    line.Journal.Transaction_ID,
-			Category:          line.Journal.TransactionCategory.Category,
-			Partner:           line.Journal.Partner,
-			Invoice:           line.Journal.Invoice,
-			Description:       line.Journal.Description,
-			Amount:            float64(line.Debit - line.Credit),
-			TransactionType:   string(line.TransactionType),
-			DebitAccountType:  line.DebitAccountType,
-			CreditAccountType: line.CreditAccountType,
-			Status:            string(line.Journal.Status),
-			CompanyID:         line.CompanyID.String(),
-			DateInputed:       *line.Journal.DateInputed,
-			DueDate:           helper.SafeDueDate(line.Journal.DueDate),
-			IsRepaid:          line.Journal.IsRepaid,
-			Installment:       line.Journal.Installment,
-			Note:              line.Journal.Note,
+			ID:                       line.JournalID.String(),
+			Transaction_ID:           line.Journal.Transaction_ID,
+			TransactionCategoryID:    line.Journal.TransactionCategoryID.String(),
+			TramsactpionCategoryName: line.Journal.TransactionCategory.Name,
+			Category:                 line.Journal.TransactionCategory.Category,
+			Partner:                  line.Journal.Partner,
+			Invoice:                  line.Journal.Invoice,
+			Description:              line.Journal.Description,
+			Amount:                   float64(line.Debit - line.Credit),
+			TransactionType:          string(line.TransactionType),
+			DebitAccountType:         line.DebitAccountType,
+			CreditAccountType:        line.CreditAccountType,
+			Status:                   string(line.Journal.Status),
+			CompanyID:                line.CompanyID.String(),
+			DateInputed:              *line.Journal.DateInputed,
+			DueDate:                  helper.SafeDueDate(line.Journal.DueDate),
+			IsRepaid:                 line.Journal.IsRepaid,
+			Installment:              line.Journal.Installment,
+			Note:                     line.Journal.Note,
+			DebitLineId:              
+			DebitLineId:         
 		})
 	}
 
