@@ -5,47 +5,22 @@ import (
 	"ayana/models"
 	"errors"
 
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 func UpdateSingleJournalEntry(input models.JournalEntry) (models.JournalEntry, error) {
 	var existing models.JournalEntry
 
-	// Mulai transaksi
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		// Ambil data JournalEntry lama
-		if err := tx.Preload("Lines").First(&existing, "id = ?", input.ID).Error; err != nil {
+		// Ambil journal entry berdasarkan ID
+		if err := tx.First(&existing, "id = ?", input.ID).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return errors.New("journal entry not found")
 			}
 			return err
 		}
 
-		// Hapus JournalLine lama
-		if err := tx.Where("journal_id = ?", existing.ID).Delete(&models.JournalLine{}).Error; err != nil {
-			return err
-		}
-
-		// Sinkronisasi dan siapkan JournalLine baru
-		var newLines []models.JournalLine
-		for _, line := range input.Lines {
-			newLine := models.JournalLine{
-				ID:                uuid.New(),
-				JournalID:         existing.ID,
-				AccountID:         line.AccountID,
-				CompanyID:         input.CompanyID,
-				Debit:             line.Debit,
-				Credit:            line.Credit,
-				Description:       input.Description, // disamakan
-				TransactionType:   input.TransactionType,
-				DebitAccountType:  input.DebitAccountType,
-				CreditAccountType: input.CreditAccountType,
-			}
-			newLines = append(newLines, newLine)
-		}
-
-		// Update data JournalEntry
+		// Update fields sesuai payload
 		existing.Transaction_ID = input.Transaction_ID
 		existing.Invoice = input.Invoice
 		existing.Description = input.Description
@@ -60,28 +35,78 @@ func UpdateSingleJournalEntry(input models.JournalEntry) (models.JournalEntry, e
 		existing.IsRepaid = input.IsRepaid
 		existing.Installment = input.Installment
 		existing.Note = input.Note
-		existing.DebitAccountType = input.DebitAccountType
-		existing.CreditAccountType = input.CreditAccountType
+		if input.DebitAccountType != "" {
+			existing.DebitAccountType = input.DebitAccountType
+		}
 
-		if err := tx.Save(&existing).Error; err != nil {
+		if input.CreditAccountType != "" {
+			existing.CreditAccountType = input.CreditAccountType
+		}
+
+		updates := map[string]interface{}{
+			"transaction_type": input.TransactionType,
+		}
+
+		var lines []models.JournalLine
+		if err := tx.Where("journal_id = ?", input.ID).Find(&lines).Error; err != nil {
 			return err
 		}
 
-		// Simpan JournalLine baru
-		if len(newLines) > 0 {
-			if err := tx.Create(&newLines).Error; err != nil {
+		for _, line := range lines {
+			update := map[string]interface{}{
+				"transaction_type": input.TransactionType,
+			}
+
+			// Debit dan Credit logic
+			if line.Debit == 0 {
+				update["debit"] = int64(0)
+				update["credit"] = input.Amount
+			} else if line.Credit == 0 {
+				update["credit"] = int64(0)
+				update["debit"] = input.Amount
+			}
+
+			// Hanya update jika value disediakan
+			if input.DebitAccountType != "" {
+				update["debit_account_type"] = input.DebitAccountType
+			}
+			if input.CreditAccountType != "" {
+				update["credit_account_type"] = input.CreditAccountType
+			}
+
+			// Update per baris
+			if err := tx.Model(&models.JournalLine{}).
+				Where("id = ?", line.ID).
+				Updates(update).Error; err != nil {
 				return err
 			}
 		}
 
+		// Eksekusi update ke JournalLine
+		if err := tx.Model(&models.JournalLine{}).
+			Where("journal_id = ?", input.ID).
+			Updates(updates).Error; err != nil {
+			return err
+		}
+
+		// Update JournalLine berdasarkan journal_id, hanya field yang diperlukan
+		if len(updates) > 0 {
+			if err := tx.Model(&models.JournalLine{}).
+				Where("journal_id = ?", input.ID).
+				Updates(updates).Error; err != nil {
+				return err
+			}
+		}
+
+		// Simpan perubahan journal entry
+		if err := tx.Save(&existing).Error; err != nil {
+			return err
+		}
+
 		return nil
 	})
-	if err != nil {
-		return models.JournalEntry{}, err
-	}
 
-	// Ambil ulang dengan preload
-	if err := db.DB.Preload("Lines").First(&existing, "id = ?", existing.ID).Error; err != nil {
+	if err != nil {
 		return models.JournalEntry{}, err
 	}
 

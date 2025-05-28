@@ -124,8 +124,6 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalLineRespo
 			IsRepaid:                 line.Journal.IsRepaid,
 			Installment:              line.Journal.Installment,
 			Note:                     line.Journal.Note,
-			DebitLineId:              
-			DebitLineId:         
 		})
 	}
 

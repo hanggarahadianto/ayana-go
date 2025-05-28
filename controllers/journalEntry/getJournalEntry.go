@@ -67,7 +67,7 @@ func GetJournalEntriesByCategory(c *gin.Context) {
 				AccountName:    line.Account.Name,       // Mengambil nama akun dari relasi
 				Debit:          float64(line.Debit),     // Konversi ke float64
 				Credit:         float64(line.Credit),    // Konversi ke float64
-				Description:    line.Description,
+
 			})
 		}
 

@@ -46,7 +46,6 @@ func MapToJournalEntryResponse(journalEntry models.JournalEntry) JournalEntryRes
 			AccountName:    line.Account.Name,
 			Debit:          float64(line.Debit),
 			Credit:         float64(line.Credit),
-			Description:    line.Description,
 		})
 	}
 

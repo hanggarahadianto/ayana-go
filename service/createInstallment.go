@@ -51,7 +51,6 @@ func CreateInstallmentJournals(input models.JournalEntry) ([]models.JournalEntry
 				Credit:            0,
 				DebitAccountType:  trxCategory.DebitAccountType,
 				CreditAccountType: trxCategory.CreditAccountType,
-				Description:       input.Description,
 				TransactionType:   input.TransactionType,
 				CreatedAt:         time.Now(),
 				UpdatedAt:         time.Now(),
@@ -102,7 +101,6 @@ func CreateInstallmentJournals(input models.JournalEntry) ([]models.JournalEntry
 					Credit:            amount,
 					DebitAccountType:  trxCategory.DebitAccountType,
 					CreditAccountType: trxCategory.CreditAccountType,
-					Description:       fmt.Sprintf("Cicilan ke-%d", i+1),
 					TransactionType:   input.TransactionType,
 
 					CreatedAt: time.Now(),

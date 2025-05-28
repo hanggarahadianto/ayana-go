@@ -10,11 +10,10 @@ type JournalLine struct {
 	ID        uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
 	JournalID uuid.UUID `gorm:"type:uuid;not null;onDelete:CASCADE" json:"journal_id"` // Menambahkan onDelete: "CASCADE"
 
-	AccountID   uuid.UUID `gorm:"type:uuid;not null" json:"account_id"`
-	CompanyID   uuid.UUID `gorm:"type:uuid;not null" json:"company_id"` // Tambahkan kolom company_id
-	Debit       int64     `json:"debit"`
-	Credit      int64     `json:"credit"`
-	Description string    `gorm:"type:varchar(255)" json:"description"`
+	AccountID uuid.UUID `gorm:"type:uuid;not null" json:"account_id"`
+	CompanyID uuid.UUID `gorm:"type:uuid;not null" json:"company_id"` // Tambahkan kolom company_id
+	Debit     int64     `json:"debit"`
+	Credit    int64     `json:"credit"`
 
 	TransactionType TransactionType `gorm:"type:varchar(50)" json:"transaction_type"`
 
