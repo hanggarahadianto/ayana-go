@@ -23,7 +23,7 @@ func UpdateSingleJournalEntry(input models.JournalEntry) (models.JournalEntry, e
 		// Update fields sesuai payload
 		existing.Transaction_ID = input.Transaction_ID
 		existing.Invoice = input.Invoice
-		existing.Description = input.Description
+		existing.Description = input.Note
 		existing.TransactionCategoryID = input.TransactionCategoryID
 		existing.Amount = input.Amount
 		existing.Partner = input.Partner
