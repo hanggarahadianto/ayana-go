@@ -5,6 +5,7 @@ import (
 	"ayana/dto"
 	"ayana/models"
 	"ayana/utils/helper"
+	"math"
 
 	"gorm.io/gorm"
 )
@@ -25,6 +26,7 @@ func GetExpensesFromJournalLines(params ExpenseFilterParams) ([]dto.JournalLineR
 	// Build base query tanpa Limit dan Offset untuk Count dan Sum
 	baseQuery := db.DB.Model(&models.JournalLine{}).
 		Joins("JOIN journal_entries ON journal_entries.id = journal_lines.journal_id").
+		Joins("LEFT JOIN transaction_categories ON journal_entries.transaction_category_id = transaction_categories.id").
 		Where("journal_entries.company_id = ?", params.CompanyID).
 		Where("journal_lines.debit_account_type = ?", "Expense")
 
@@ -64,6 +66,7 @@ func GetExpensesFromJournalLines(params ExpenseFilterParams) ([]dto.JournalLineR
 	// Query untuk mengambil data dengan pagination
 	dataQuery := baseQuery.Session(&gorm.Session{}).
 		Preload("Journal").
+		Preload("Journal.TransactionCategory"). // ✅ Tambahkan ini
 		Order("journal_entries.date_inputed ASC").
 		Limit(params.Pagination.Limit).
 		Offset(params.Pagination.Offset)
@@ -74,13 +77,18 @@ func GetExpensesFromJournalLines(params ExpenseFilterParams) ([]dto.JournalLineR
 
 	var response []dto.JournalLineResponse
 	for _, line := range lines {
+
 		response = append(response, dto.JournalLineResponse{
-			ID:                line.JournalID.String(),
-			Invoice:           line.Journal.Invoice,
-			Transaction_ID:    line.Journal.Transaction_ID,
+			ID:                      line.JournalID.String(),
+			Invoice:                 line.Journal.Invoice,
+			Transaction_ID:          line.Journal.Transaction_ID,
+			TransactionCategoryID:   line.Journal.TransactionCategoryID.String(),
+			TransactionCategoryName: line.Journal.TransactionCategory.Name,
+			Category:                line.Journal.TransactionCategory.Category,
+
 			Description:       line.Journal.Description,
 			Partner:           line.Journal.Partner,
-			Amount:            -float64(line.Debit - line.Credit),
+			Amount:            math.Abs(float64(line.Debit - line.Credit)),
 			TransactionType:   string(line.TransactionType),
 			DebitAccountType:  line.DebitAccountType,
 			CreditAccountType: line.CreditAccountType,

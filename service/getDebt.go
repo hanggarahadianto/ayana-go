@@ -6,6 +6,7 @@ import (
 	"ayana/models"
 	"ayana/utils/helper"
 	"fmt"
+	"math"
 
 	"gorm.io/gorm"
 )
@@ -69,6 +70,7 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalLineRespons
 	// Data with pagination
 	dataQuery := baseQuery.Session(&gorm.Session{}).
 		Preload("Journal").
+		Preload("Journal.TransactionCategory").
 		Order("journal_entries.date_inputed ASC").
 		Limit(params.Pagination.Limit).
 		Offset(params.Pagination.Offset)
@@ -98,12 +100,16 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalLineRespons
 		}
 
 		response = append(response, dto.JournalLineResponse{
-			ID:                line.JournalID.String(),
-			Transaction_ID:    line.Journal.Transaction_ID,
+			ID:                      line.JournalID.String(),
+			Transaction_ID:          line.Journal.Transaction_ID,
+			TransactionCategoryID:   line.Journal.TransactionCategoryID.String(),
+			TransactionCategoryName: line.Journal.TransactionCategory.Name,
+			Category:                line.Journal.TransactionCategory.Category,
+
 			Invoice:           line.Journal.Invoice,
 			Description:       line.Journal.Description,
 			Partner:           line.Journal.Partner,
-			Amount:            float64(line.Debit - line.Credit),
+			Amount:            math.Abs(float64(line.Debit - line.Credit)),
 			TransactionType:   string(line.TransactionType),
 			DebitAccountType:  line.DebitAccountType,
 			CreditAccountType: line.CreditAccountType,

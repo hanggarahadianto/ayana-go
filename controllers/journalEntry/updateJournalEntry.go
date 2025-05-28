@@ -7,20 +7,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 func UpdateJournalEntry(c *gin.Context) {
-	idParam := c.Param("id")
-	id, err := uuid.Parse(idParam)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":  "error",
-			"message": "Invalid UUID in parameter",
-			"details": err.Error(),
-		})
-		return
-	}
 
 	var input models.JournalEntry
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -33,7 +22,6 @@ func UpdateJournalEntry(c *gin.Context) {
 	}
 
 	// Gunakan ID dari param, bukan dari input body
-	input.ID = id
 
 	updatedJournal, err := service.UpdateSingleJournalEntry(input)
 	if err != nil {
