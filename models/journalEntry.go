@@ -23,7 +23,7 @@ const (
 
 type JournalEntry struct {
 	ID                    uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
-	Transaction_ID        string    `gorm:"type:varchar(100) not null;unique" json:"transaction_id"`
+	Transaction_ID        string    `gorm:"type:varchar(100) not null" json:"transaction_id"`
 	Invoice               string    `gorm:"type:varchar(100)" json:"invoice"`
 	Description           string    `gorm:"type:text" json:"description"`
 	TransactionCategoryID uuid.UUID `gorm:"type:uuid" json:"transaction_category_id"`

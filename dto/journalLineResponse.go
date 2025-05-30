@@ -25,4 +25,5 @@ type JournalLineResponse struct {
 	PaymentDateStatus       string    `json:"payment_date_status,omitempty"`
 	DebitLineId             string    `json:"debit_line_id,omitempty"`  // optional, jika perlu
 	CreditLineId            string    `json:"credit_line_id,omitempty"` // optional, jika perlu
+	Label                   string    `json:"label,omitempty"`          // optional, jika perlu
 }
