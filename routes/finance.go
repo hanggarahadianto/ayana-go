@@ -12,7 +12,6 @@ func SetupFinanceRouter(r *gin.Engine) {
 		finance.GET("/get-outstanding-debt", financeController.GetOutstandingDebts)
 		finance.GET("/get-expense-summary", financeController.GetExpensesSummary)
 		finance.GET("/get-asset-summary", financeController.GetAssetSummary)
-		finance.GET("/get-available-cash", financeController.GetAvailableCashHandler)
 
 		// journalEntry.POST("/post", journalEntryController.CreateJournalEntry)
 	}

@@ -42,6 +42,7 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalLineRespo
 		baseQuery = baseQuery.
 			Where("journal_lines.debit > 0").
 			Where("journal_lines.debit_account_type = ?", "Asset").
+			Where("journal_entries.status = ?", "done").
 			Where("journal_entries.is_repaid = ? AND journal_entries.status = ? AND journal_entries.transaction_type = ?", true, "paid", "payout")
 
 	case "cashout":
@@ -58,7 +59,13 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalLineRespo
 			Where("journal_lines.debit_account_type = ?", "Asset").
 			Where("journal_lines.credit_account_type = ?", "Revenue").
 			Where("journal_entries.is_repaid = ? AND journal_entries.status = ? AND journal_entries.transaction_type = ?", false, "unpaid", "payin")
-		// Where("LOWER(transaction_category.category) ILIKE ?", "%piutang%") // Hanya untuk 'receivable'
+
+	case "receivable_history":
+		baseQuery = baseQuery.
+			Where("journal_lines.debit > 0").
+			Where("journal_lines.debit_account_type = ?", "Asset").
+			Where("journal_lines.credit_account_type = ?", "Revenue").
+			Where("journal_entries.is_repaid = ? AND journal_entries.status = ? AND journal_entries.transaction_type = ?", true, "done", "payin")
 
 	}
 
@@ -122,6 +129,7 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalLineRespo
 			CompanyID:               line.CompanyID.String(),
 			DateInputed:             *line.Journal.DateInputed,
 			DueDate:                 helper.SafeDueDate(line.Journal.DueDate),
+			RepaymentDate:           helper.SafeRepaymentDate(line.Journal.RepaymentDate),
 			IsRepaid:                line.Journal.IsRepaid,
 			Installment:             line.Journal.Installment,
 			Note:                    line.Journal.Note,

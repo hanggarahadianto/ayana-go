@@ -34,10 +34,11 @@ type JournalEntry struct {
 	Status          Status          `gorm:"not null" json:"status"`
 	CompanyID       uuid.UUID       `gorm:"type:uuid;not null" json:"company_id"`
 
-	DateInputed *time.Time `gorm:"type:timestamp;" json:"date_inputed"`      // Tanggal transaksi
-	DueDate     *time.Time `gorm:"type:timestamp" json:"due_date,omitempty"` // nullable, tergantung jenis transaksi
-	IsRepaid    bool       `json:"is_repaid"`
-	Installment int        `json:"installment"`
+	DateInputed   *time.Time `gorm:"type:timestamp;" json:"date_inputed"`            // Tanggal transaksi
+	DueDate       *time.Time `gorm:"type:timestamp" json:"due_date,omitempty"`       // nullable, tergantung jenis transaksi
+	RepaymentDate *time.Time `gorm:"type:timestamp" json:"repayment_date,omitempty"` // nullable, tergantung jenis transaksi
+	IsRepaid      bool       `json:"is_repaid"`
+	Installment   int        `json:"installment"`
 
 	Note string `gorm:"type:varchar(100)" json:"note"`
 

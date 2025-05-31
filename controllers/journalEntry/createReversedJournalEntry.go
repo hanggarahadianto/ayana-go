@@ -46,9 +46,10 @@ func CreateReversedJournalEntry(c *gin.Context) {
 	if err := db.DB.Model(&models.JournalEntry{}).
 		Where("id = ?", firstEntry.ID).
 		Updates(map[string]interface{}{
-			"invoice":   firstEntry.Invoice,
-			"status":    "paid",
-			"is_repaid": true,
+			"invoice":        firstEntry.Invoice,
+			"status":         firstEntry.Status,
+			"repayment_date": inputEntries[0].RepaymentDate,
+			"is_repaid":      true,
 		}).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",

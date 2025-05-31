@@ -9,3 +9,10 @@ func SafeDueDate(dueDate *time.Time) time.Time {
 	}
 	return time.Time{}
 }
+
+func SafeRepaymentDate(repaymentDate *time.Time) *time.Time {
+	if repaymentDate != nil {
+		return repaymentDate
+	}
+	return nil
+}
