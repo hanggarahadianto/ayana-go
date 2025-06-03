@@ -39,6 +39,9 @@ type Config struct {
 	SMTPPass  string `mapstructure:"SMTP_PASS"`
 	SMTPPort  int    `mapstructure:"SMTP_PORT"`
 	SMTPUser  string `mapstructure:"SMTP_USER"`
+
+	TYPESENSE_API_KEY string `mapstructure:"TYPESENSE_API_KEY"`
+	TYPESENSE_HOST    string `mapstructure:"TYPESENSE_HOST"`
 }
 
 func LoadConfig(path string) (config Config, err error) {

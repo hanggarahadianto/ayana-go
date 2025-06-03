@@ -51,7 +51,7 @@ type DateFilter struct {
 }
 
 func GetDateFilter(c *gin.Context) (DateFilter, error) {
-	layout := "2006-01-02" // format yyyy-mm-dd
+	layout := "2006-01-02"
 
 	startDateStr := c.Query("start_date")
 	endDateStr := c.Query("end_date")
@@ -71,6 +71,8 @@ func GetDateFilter(c *gin.Context) (DateFilter, error) {
 		if err != nil {
 			return DateFilter{}, err
 		}
+		// tambahkan waktu agar jadi akhir hari
+		ed = ed.Add(24*time.Hour - time.Nanosecond)
 		endDate = &ed
 	}
 

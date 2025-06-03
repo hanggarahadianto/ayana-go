@@ -3,6 +3,7 @@ package controller
 import (
 	"ayana/service"
 	"ayana/utils/helper"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -14,10 +15,10 @@ func GetAssetSummary(c *gin.Context) {
 	if !valid {
 		return
 	}
-
 	summaryOnlyStr := c.DefaultQuery("summary_only", "false")
 	summaryOnly := summaryOnlyStr == "true"
 	category := c.Query("category")
+	search := c.Query("search")
 
 	if summaryOnlyStr != "true" && summaryOnlyStr != "false" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Parameter summary_only harus 'true' atau 'false'."})
@@ -33,7 +34,6 @@ func GetAssetSummary(c *gin.Context) {
 	assetType := c.DefaultQuery("asset_type", "")
 	transactionType := c.DefaultQuery("transaction_type", "")
 	pagination := helper.GetPagination(c)
-
 	params := service.AssetFilterParams{
 		CompanyID:       companyID.String(),
 		Pagination:      pagination,
@@ -42,14 +42,15 @@ func GetAssetSummary(c *gin.Context) {
 		TransactionType: transactionType,
 		SummaryOnly:     summaryOnly,
 		Category:        category,
+		Search:          search,
 	}
 
 	data, totalAsset, total, err := service.GetAssetsFromJournalLines(params)
 	if err != nil {
+		log.Printf("GetAssetsFromJournalLines error: %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil data aset"})
 		return
 	}
-
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
 			"assetList":   data,

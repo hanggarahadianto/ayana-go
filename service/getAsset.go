@@ -5,6 +5,8 @@ import (
 	"ayana/dto"
 	"ayana/models"
 	"ayana/utils/helper"
+	"fmt"
+	"log"
 	"math"
 
 	"gorm.io/gorm"
@@ -18,12 +20,37 @@ type AssetFilterParams struct {
 	AssetType       string
 	TransactionType string
 	Category        string
+	Search          string // ⬅️ Tambahkan ini
 }
 
 func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalLineResponse, int64, int64, error) {
 	var lines []models.JournalLine
 	var total int64
 	var totalAsset int64
+
+	if params.Search != "" {
+		results, found, err := SearchJournalLines(params.Search, params.CompanyID, params.Pagination.Page, params.Pagination.Limit)
+		if err != nil {
+			log.Println("Error saat search ke Typesense:", err)
+			return nil, 0, 0, fmt.Errorf("gagal mengambil data aset: %w", err)
+		}
+
+		// Jika hanya summary diperlukan
+		if params.SummaryOnly {
+			var totalAsset int64 = 0
+			for _, line := range results {
+				totalAsset += int64(line.Amount)
+			}
+			return nil, totalAsset, int64(found), nil
+		}
+
+		var totalAsset int64 = 0
+		for _, line := range results {
+			totalAsset += int64(line.Amount)
+		}
+
+		return results, totalAsset, int64(found), nil
+	}
 
 	baseQuery := db.DB.Model(&models.JournalLine{}).
 		Joins("JOIN journal_entries ON journal_entries.id = journal_lines.journal_id").
@@ -74,11 +101,15 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalLineRespo
 	}
 
 	// Filter date
-	if params.DateFilter.StartDate != nil {
-		baseQuery = baseQuery.Where("journal_entries.date_inputed >= ?", params.DateFilter.StartDate)
-	}
-	if params.DateFilter.EndDate != nil {
-		baseQuery = baseQuery.Where("journal_entries.date_inputed <= ?", params.DateFilter.EndDate)
+	if params.DateFilter.StartDate != nil && params.DateFilter.EndDate != nil {
+		baseQuery = baseQuery.
+			Where("journal_entries.date_inputed BETWEEN ? AND ?", params.DateFilter.StartDate, params.DateFilter.EndDate)
+	} else if params.DateFilter.StartDate != nil {
+		baseQuery = baseQuery.
+			Where("journal_entries.date_inputed >= ?", params.DateFilter.StartDate)
+	} else if params.DateFilter.EndDate != nil {
+		baseQuery = baseQuery.
+			Where("journal_entries.date_inputed <= ?", params.DateFilter.EndDate)
 	}
 
 	// Hitung total baris
@@ -91,11 +122,6 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalLineRespo
 		Select("COALESCE(SUM(journal_lines.debit - journal_lines.credit), 0)").
 		Scan(&totalAsset).Error; err != nil {
 		return nil, 0, 0, err
-	}
-
-	// Jika SummaryOnly = true, kembalikan hanya totalAsset dan total
-	if params.SummaryOnly {
-		return nil, totalAsset, total, nil
 	}
 
 	// Query untuk mengambil data dengan pagination

@@ -1,11 +1,10 @@
 package service
 
 import (
-	"fmt"
-	"time"
-
 	"ayana/db"
 	"ayana/models"
+	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -52,16 +51,24 @@ func createJournalEntryService(input models.JournalEntry) (models.JournalEntry, 
 		return models.JournalEntry{}, fmt.Errorf("missing required fields")
 	}
 
+	tx := db.DB.Begin() // START transaction
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
 	var company models.Company
-	if err := db.DB.First(&company, "id = ?", input.CompanyID).Error; err != nil {
+	if err := tx.First(&company, "id = ?", input.CompanyID).Error; err != nil {
+		tx.Rollback()
 		return models.JournalEntry{}, err
 	}
 
 	var trxCategory models.TransactionCategory
-	if err := db.DB.
-		Preload("DebitAccount").
+	if err := tx.Preload("DebitAccount").
 		Preload("CreditAccount").
 		First(&trxCategory, "id = ?", input.TransactionCategoryID).Error; err != nil {
+		tx.Rollback()
 		return models.JournalEntry{}, err
 	}
 
@@ -69,12 +76,11 @@ func createJournalEntryService(input models.JournalEntry) (models.JournalEntry, 
 	journalID := uuid.New()
 
 	if input.Installment > 0 {
+		tx.Rollback() // stop transaction; use another flow for installment
 		installmentJournals, err := CreateInstallmentJournals(input)
 		if err != nil {
 			return models.JournalEntry{}, err
 		}
-
-		// Kembalikan journal pertama yang dibuat sebagai hasil
 		return installmentJournals[0], nil
 	}
 
@@ -128,16 +134,26 @@ func createJournalEntryService(input models.JournalEntry) (models.JournalEntry, 
 		},
 	}
 
-	if err := db.DB.Create(&journal).Error; err != nil {
+	if err := tx.Create(&journal).Error; err != nil {
+		tx.Rollback()
 		return models.JournalEntry{}, err
 	}
 
 	var journalWithDetails models.JournalEntry
-	if err := db.DB.Preload("Lines.Account").
+	if err := tx.Preload("Lines.Account").
 		Preload("TransactionCategory.DebitAccount").
 		Preload("TransactionCategory.CreditAccount").
 		First(&journalWithDetails, "id = ?", journal.ID).Error; err != nil {
+		tx.Rollback()
 		return models.JournalEntry{}, err
+	}
+
+	// Commit terlebih dahulu, baru index (karena indexing bukan bagian dari DB transaction)
+	tx.Commit()
+
+	// Index ke Typesense setelah commit (karena indexing bukan atomic DB op)
+	if err := IndexJournalDocument(journalWithDetails); err != nil {
+		return journalWithDetails, fmt.Errorf("data saved but indexing failed: %w", err)
 	}
 
 	return journalWithDetails, nil

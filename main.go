@@ -3,6 +3,7 @@ package main
 import (
 	"ayana/db"
 	"ayana/routes"
+	"ayana/service"
 	utilsEnv "ayana/utils/env"
 	"log"
 	"os"
@@ -73,6 +74,14 @@ func main() {
 			"message": "Welcome to Ayana Backend! 🚀",
 		})
 	})
+
+	service.InitTypesense(&configure)
+
+	// sudah ada err di scope ini, jadi cukup assign
+	// ✅ Buat koleksi jika belum ada
+	if err := service.CreateCollectionIfNotExist(); err != nil {
+		log.Fatal("❌ ERROR: Gagal membuat collection:", err)
+	}
 
 	// 🔹 Jalankan server
 	serverAddr := "0.0.0.0:" + configure.ServerPort
