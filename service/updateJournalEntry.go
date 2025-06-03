@@ -4,6 +4,7 @@ import (
 	"ayana/db"
 	"ayana/models"
 	"errors"
+	"fmt"
 
 	"gorm.io/gorm"
 )
@@ -108,6 +109,11 @@ func UpdateSingleJournalEntry(input models.JournalEntry) (models.JournalEntry, e
 
 	if err != nil {
 		return models.JournalEntry{}, err
+	}
+	err = updateJournalEntryInTypesense(existing)
+	if err != nil {
+		// Log error atau lakukan retry sesuai kebutuhan
+		fmt.Printf("Warning: failed update to Typesense: %v\n", err)
 	}
 
 	return existing, nil

@@ -75,10 +75,11 @@ func main() {
 		})
 	})
 
+	database := db.DB
 	service.InitTypesense(&configure)
-
-	// sudah ada err di scope ini, jadi cukup assign
-	// ✅ Buat koleksi jika belum ada
+	if err := service.SyncTypesenseWithPostgres(database); err != nil {
+		log.Fatal("❌ ERROR: Gagal sinkronisasi Typesense dengan PostgreSQL:", err)
+	}
 	if err := service.CreateCollectionIfNotExist(); err != nil {
 		log.Fatal("❌ ERROR: Gagal membuat collection:", err)
 	}

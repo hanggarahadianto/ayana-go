@@ -3,24 +3,14 @@ package service
 import (
 	"ayana/dto"
 	"ayana/models"
-	utilsEnv "ayana/utils/env"
 	"context"
+	"encoding/json"
+	"fmt"
 	"log"
-	"strings"
 	"time"
 
-	"github.com/typesense/typesense-go/typesense"
 	"github.com/typesense/typesense-go/typesense/api"
 )
-
-var tsClient *typesense.Client
-
-func InitTypesense(config *utilsEnv.Config) {
-	tsClient = typesense.NewClient(
-		typesense.WithServer(config.TYPESENSE_HOST),
-		typesense.WithAPIKey(config.TYPESENSE_API_KEY),
-	)
-}
 
 func IndexJournalDocument(journal models.JournalEntry) error {
 	document := map[string]interface{}{
@@ -55,51 +45,80 @@ func IndexJournalDocument(journal models.JournalEntry) error {
 	return err
 }
 
-func CreateCollectionIfNotExist() error {
-	facetTrue := true
-	defaultSort := "date_inputed"
-	schema := &api.CollectionSchema{
-		Name: "journal_entries",
-		Fields: []api.Field{
-			{Name: "id", Type: "string"},
-			{Name: "company_id", Type: "string", Facet: &facetTrue},     // ✅ bisa di-facet
-			{Name: "category", Type: "string", Facet: &facetTrue},       // ✅ bisa di-facet
-			{Name: "transaction_id", Type: "string", Facet: &facetTrue}, // ✅ hanya satu kali
-			{Name: "invoice", Type: "string", Facet: &facetTrue},        // ✅ bisa di-facet
-			{Name: "partner", Type: "string"},
-			{Name: "description", Type: "string"},
-			{Name: "amount", Type: "float"},
-			{Name: "date_inputed", Type: "int64", Facet: &facetTrue},
-			{Name: "transaction_category_id", Type: "string"},
-			{Name: "transaction_category_name", Type: "string"},
-			{Name: "transaction_type", Type: "string"},
-			{Name: "debit_account_type", Type: "string"},
-			{Name: "credit_account_type", Type: "string"},
-			{Name: "due_date", Type: "int64"},
-			{Name: "repayment_date", Type: "int64"},
-			{Name: "is_repaid", Type: "bool"},
-			{Name: "installment", Type: "int32"},
-			{Name: "note", Type: "string"},
-		},
-		DefaultSortingField: &defaultSort,
-	}
+func updateJournalEntryInTypesense(journal models.JournalEntry) error {
+	collection := "journal_entries"
+	idStr := journal.ID.String()
 
-	_, err := tsClient.Collections().Create(context.Background(), schema)
+	// Step 1: Check if document exists in Typesense
+	_, err := tsClient.Collection(collection).Document(idStr).Retrieve(context.Background())
 	if err != nil {
-		// ✅ Jika collection sudah ada, abaikan error
-		if strings.Contains(err.Error(), "already exists") {
-			log.Println("⚠️  Collection 'journal_entries' sudah ada, lanjut...")
-			return nil
-		}
-		// ❌ Jika error lain, baru return error
-		return err
+		log.Printf("Typesense document with ID %s not found: %v", idStr, err)
+		return fmt.Errorf("typesense document not found for ID: %s", idStr)
 	}
 
-	log.Println("✅ Collection 'journal_entries' berhasil dibuat")
+	// Step 2: Build custom payload with extra fields
+	payload := map[string]interface{}{
+		"id":                      journal.ID.String(),
+		"transaction_id":          journal.Transaction_ID,
+		"invoice":                 journal.Invoice,
+		"description":             journal.Description,
+		"transaction_category_id": journal.TransactionCategoryID,
+		"transaction_category_name": func() string {
+			if journal.TransactionCategory.Name != "" {
+				return journal.TransactionCategory.Name
+			}
+			return ""
+		}(),
+		"category": func() string {
+			if journal.TransactionCategory.Category != "" {
+				return journal.TransactionCategory.Category
+			}
+			return ""
+		}(),
+		"amount":              journal.Amount,
+		"partner":             journal.Partner,
+		"transaction_type":    journal.TransactionType,
+		"status":              journal.Status,
+		"company_id":          journal.CompanyID,
+		"date_inputed":        journal.DateInputed.Unix(),
+		"due_date":            journal.DueDate.Unix(),
+		"repayment_date":      journal.RepaymentDate.Unix(),
+		"is_repaid":           journal.IsRepaid,
+		"installment":         journal.Installment,
+		"note":                journal.Note,
+		"debit_account_type":  journal.DebitAccountType,
+		"credit_account_type": journal.CreditAccountType,
+	}
+
+	// Debug log
+	pretty, _ := json.MarshalIndent(payload, "", "  ")
+	log.Println("Payload to Typesense:", string(pretty))
+
+	// Step 3: Update to Typesense
+	_, err = tsClient.Collection(collection).Document(idStr).Update(context.Background(), payload)
+	if err != nil {
+		return fmt.Errorf("failed to update typesense document: %w", err)
+	}
+
+	log.Println("Successfully updated document in Typesense:", idStr)
+	return nil
+}
+
+func DeleteJournalEntryFromTypesense(ctx context.Context, journalEntryID string) error {
+	_, err := tsClient.
+		Collection("journal_entries").
+		Document(journalEntryID).
+		Delete(ctx)
+
+	if err != nil {
+		return fmt.Errorf("failed to delete document from Typesense: %w", err)
+	}
 	return nil
 }
 
 func SearchJournalLines(query string, companyID string, page, perPage int) ([]dto.JournalLineResponse, int, error) {
+	log.Printf("🔍 Searching journal lines: query=%s, companyID=%s, page=%d, perPage=%d", query, companyID, page, perPage)
+
 	searchParams := &api.SearchCollectionParams{
 		Q: query,
 
@@ -203,13 +222,4 @@ func SearchJournalLines(query string, companyID string, page, perPage int) ([]dt
 	}
 
 	return results, found, nil
-}
-
-// Helper functions for pointers in api.SearchCollectionParams
-func ptrString(s string) *string {
-	return &s
-}
-
-func ptrInt(i int) *int {
-	return &i
 }
