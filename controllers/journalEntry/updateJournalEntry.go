@@ -21,8 +21,6 @@ func UpdateJournalEntry(c *gin.Context) {
 		return
 	}
 
-	// Gunakan ID dari param, bukan dari input body
-
 	updatedJournal, err := service.UpdateSingleJournalEntry(input)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

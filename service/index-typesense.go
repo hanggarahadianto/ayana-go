@@ -22,6 +22,27 @@ func InitTypesense(config *utilsEnv.Config) {
 	)
 }
 
+func SyncTypesenseWithPostgres(db *gorm.DB) error {
+	log.Println("🔄 Sinkronisasi Typesense dengan PostgreSQL dimulai...")
+
+	// Pastikan collection ada dulu
+	if err := CreateCollectionIfNotExist(); err != nil {
+		return fmt.Errorf("gagal pastikan collection: %w", err)
+	}
+
+	postgresIDs, err := fetchPostgresJournalIDs(db)
+	if err != nil {
+		return err
+	}
+
+	if err := removeOrphanDocuments(postgresIDs); err != nil {
+		return err
+	}
+
+	log.Println("✅ Sinkronisasi selesai.")
+	return nil
+}
+
 func CreateCollectionIfNotExist() error {
 	facetTrue := true
 	defaultSort := "date_inputed"
@@ -38,7 +59,6 @@ func CreateCollectionIfNotExist() error {
 			{Name: "amount", Type: "float"},
 			{Name: "date_inputed", Type: "int64", Facet: &facetTrue},
 			{Name: "transaction_category_id", Type: "string"},
-			{Name: "transaction_category_name", Type: "string"},
 			{Name: "transaction_type", Type: "string"},
 			{Name: "debit_account_type", Type: "string"},
 			{Name: "credit_account_type", Type: "string"},
@@ -73,27 +93,6 @@ func ptrString(s string) *string {
 
 func ptrInt(i int) *int {
 	return &i
-}
-
-func SyncTypesenseWithPostgres(db *gorm.DB) error {
-	log.Println("🔄 Sinkronisasi Typesense dengan PostgreSQL dimulai...")
-
-	// Pastikan collection ada dulu
-	if err := CreateCollectionIfNotExist(); err != nil {
-		return fmt.Errorf("gagal pastikan collection: %w", err)
-	}
-
-	postgresIDs, err := fetchPostgresJournalIDs(db)
-	if err != nil {
-		return err
-	}
-
-	if err := removeOrphanDocuments(postgresIDs); err != nil {
-		return err
-	}
-
-	log.Println("✅ Sinkronisasi selesai.")
-	return nil
 }
 
 func fetchPostgresJournalIDs(db *gorm.DB) (map[string]struct{}, error) {

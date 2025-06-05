@@ -5,6 +5,7 @@ go 1.21.0
 toolchain go1.23.4
 
 require (
+	github.com/typesense/typesense-go v1.1.0
 	golang.org/x/crypto v0.31.0
 	gorm.io/gorm v1.25.12
 )
@@ -47,7 +48,6 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
-	github.com/typesense/typesense-go v1.1.0 // indirect
 	github.com/ugorji/go/codec v1.2.12 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect

@@ -51,19 +51,21 @@ func createJournalEntryService(input models.JournalEntry) (models.JournalEntry, 
 		return models.JournalEntry{}, fmt.Errorf("missing required fields")
 	}
 
-	tx := db.DB.Begin() // START transaction
+	tx := db.DB.Begin() // Mulai transaksi
 	defer func() {
 		if r := recover(); r != nil {
 			tx.Rollback()
 		}
 	}()
 
+	// Ambil data perusahaan
 	var company models.Company
 	if err := tx.First(&company, "id = ?", input.CompanyID).Error; err != nil {
 		tx.Rollback()
 		return models.JournalEntry{}, err
 	}
 
+	// Ambil kategori transaksi beserta akun debit dan kredit
 	var trxCategory models.TransactionCategory
 	if err := tx.Preload("DebitAccount").
 		Preload("CreditAccount").
@@ -72,17 +74,18 @@ func createJournalEntryService(input models.JournalEntry) (models.JournalEntry, 
 		return models.JournalEntry{}, err
 	}
 
-	now := time.Now()
-	journalID := uuid.New()
-
+	// Jika ada angsuran, gunakan flow khusus (tidak dalam transaksi ini)
 	if input.Installment > 0 {
-		tx.Rollback() // stop transaction; use another flow for installment
+		tx.Rollback()
 		installmentJournals, err := CreateInstallmentJournals(input)
 		if err != nil {
 			return models.JournalEntry{}, err
 		}
 		return installmentJournals[0], nil
 	}
+
+	now := time.Now()
+	journalID := uuid.New()
 
 	journal := models.JournalEntry{
 		ID:                    journalID,
@@ -134,11 +137,13 @@ func createJournalEntryService(input models.JournalEntry) (models.JournalEntry, 
 		},
 	}
 
+	// Simpan journal (belum commit)
 	if err := tx.Create(&journal).Error; err != nil {
 		tx.Rollback()
 		return models.JournalEntry{}, err
 	}
 
+	// Load ulang journal dengan relasi agar siap diindex
 	var journalWithDetails models.JournalEntry
 	if err := tx.Preload("Lines.Account").
 		Preload("TransactionCategory.DebitAccount").
@@ -148,12 +153,15 @@ func createJournalEntryService(input models.JournalEntry) (models.JournalEntry, 
 		return models.JournalEntry{}, err
 	}
 
-	// Commit terlebih dahulu, baru index (karena indexing bukan bagian dari DB transaction)
-	tx.Commit()
-
-	// Index ke Typesense setelah commit (karena indexing bukan atomic DB op)
+	// Lakukan indexing ke Typesense terlebih dahulu
 	if err := IndexJournalDocument(journalWithDetails); err != nil {
-		return journalWithDetails, fmt.Errorf("data saved but indexing failed: %w", err)
+		tx.Rollback()
+		return models.JournalEntry{}, fmt.Errorf("indexing failed, rollback db: %w", err)
+	}
+
+	// Jika indexing berhasil, commit transaksi DB
+	if err := tx.Commit().Error; err != nil {
+		return models.JournalEntry{}, err
 	}
 
 	return journalWithDetails, nil

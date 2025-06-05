@@ -29,7 +29,8 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalLineRespo
 	var totalAsset int64
 
 	if params.Search != "" {
-		results, found, err := SearchJournalLines(params.Search, params.CompanyID, params.Pagination.Page, params.Pagination.Limit)
+		results, found, err := SearchJournalLines(params.Search, params.CompanyID, params.Category, params.Pagination.Page, params.Pagination.Limit)
+
 		if err != nil {
 			log.Println("Error saat search ke Typesense:", err)
 			return nil, 0, 0, fmt.Errorf("gagal mengambil data aset: %w", err)
@@ -69,8 +70,9 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalLineRespo
 		baseQuery = baseQuery.
 			Where("journal_lines.debit > 0").
 			Where("journal_lines.debit_account_type = ?", "Asset").
-			Where("journal_entries.status = ?", "done").
-			Where("journal_entries.is_repaid = ? AND journal_entries.status = ? AND journal_entries.transaction_type = ?", true, "paid", "payout")
+			// Where("journal_entries.status = ?", "done").
+			Where("journal_entries.status IN ?", []string{"done", "paid"}).
+			Where("journal_entries.is_repaid = ? AND journal_entries.transaction_type = ?", true, "payout")
 
 	case "cashout":
 		baseQuery = baseQuery.

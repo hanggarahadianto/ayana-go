@@ -4,9 +4,9 @@ import (
 	"ayana/dto"
 	"ayana/models"
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/typesense/typesense-go/typesense/api"
@@ -14,22 +14,21 @@ import (
 
 func IndexJournalDocument(journal models.JournalEntry) error {
 	document := map[string]interface{}{
-		"id":                        journal.ID.String(),
-		"transaction_id":            journal.Transaction_ID,
-		"transaction_category_id":   journal.TransactionCategoryID.String(),
-		"transaction_category_name": journal.TransactionCategory.Name,
-		"invoice":                   journal.Invoice,
-		"category":                  journal.TransactionCategory.Name,
-		"partner":                   journal.Partner,
-		"description":               journal.Description,
-		"amount":                    journal.Amount,
-		"transaction_type":          journal.TransactionType,
-		"debit_account_type":        journal.DebitAccountType,
-		"credit_account_type":       journal.CreditAccountType,
-		"status":                    journal.Status,
-		"company_id":                journal.CompanyID.String(),
-		"date_inputed":              journal.DateInputed.Unix(),
-		"due_date":                  journal.DueDate.Unix(),
+		"id":                      journal.ID.String(),
+		"transaction_id":          journal.Transaction_ID,
+		"transaction_category_id": journal.TransactionCategoryID.String(),
+		"invoice":                 journal.Invoice,
+		"category":                journal.TransactionCategory.Category,
+		"partner":                 journal.Partner,
+		"description":             journal.Description,
+		"amount":                  journal.Amount,
+		"transaction_type":        journal.TransactionType,
+		"debit_account_type":      journal.DebitAccountType,
+		"credit_account_type":     journal.CreditAccountType,
+		"status":                  journal.Status,
+		"company_id":              journal.CompanyID.String(),
+		"date_inputed":            journal.DateInputed.Unix(),
+		"due_date":                journal.DueDate.Unix(),
 		"repayment_date": func() interface{} {
 			if journal.RepaymentDate != nil {
 				return journal.RepaymentDate.Unix()
@@ -45,62 +44,43 @@ func IndexJournalDocument(journal models.JournalEntry) error {
 	return err
 }
 
-func updateJournalEntryInTypesense(journal models.JournalEntry) error {
-	collection := "journal_entries"
-	idStr := journal.ID.String()
+func updateJournalEntryInTypesense(entry models.JournalEntry) error {
+	ctx := context.Background() // Buat context
 
-	// Step 1: Check if document exists in Typesense
-	_, err := tsClient.Collection(collection).Document(idStr).Retrieve(context.Background())
+	docID := entry.ID.String()
+
+	document := map[string]interface{}{
+		"id":                      docID,
+		"transaction_id":          entry.Transaction_ID,
+		"invoice":                 entry.Invoice,
+		"description":             entry.Description,
+		"transaction_category_id": entry.TransactionCategoryID.String(),
+		"amount":                  entry.Amount,
+		"partner":                 entry.Partner,
+		"transaction_type":        entry.TransactionType,
+		"status":                  entry.Status,
+		"company_id":              entry.CompanyID.String(),
+		"date_inputed":            entry.DateInputed.Unix(),
+		"due_date":                entry.DueDate.Unix(),
+		"is_repaid":               entry.IsRepaid,
+		"installment":             entry.Installment,
+		"note":                    entry.Note,
+		"debit_account_type":      entry.DebitAccountType,
+		"credit_account_type":     entry.CreditAccountType,
+	}
+
+	// Cek dokumen sudah ada atau belum
+	_, err := tsClient.Collection("journal_entries").Document(docID).Retrieve(ctx)
 	if err != nil {
-		log.Printf("Typesense document with ID %s not found: %v", idStr, err)
-		return fmt.Errorf("typesense document not found for ID: %s", idStr)
+		return fmt.Errorf("document not found in typesense: %w", err)
 	}
 
-	// Step 2: Build custom payload with extra fields
-	payload := map[string]interface{}{
-		"id":                      journal.ID.String(),
-		"transaction_id":          journal.Transaction_ID,
-		"invoice":                 journal.Invoice,
-		"description":             journal.Description,
-		"transaction_category_id": journal.TransactionCategoryID,
-		"transaction_category_name": func() string {
-			if journal.TransactionCategory.Name != "" {
-				return journal.TransactionCategory.Name
-			}
-			return ""
-		}(),
-		"category": func() string {
-			if journal.TransactionCategory.Category != "" {
-				return journal.TransactionCategory.Category
-			}
-			return ""
-		}(),
-		"amount":              journal.Amount,
-		"partner":             journal.Partner,
-		"transaction_type":    journal.TransactionType,
-		"status":              journal.Status,
-		"company_id":          journal.CompanyID,
-		"date_inputed":        journal.DateInputed.Unix(),
-		"due_date":            journal.DueDate.Unix(),
-		"repayment_date":      journal.RepaymentDate.Unix(),
-		"is_repaid":           journal.IsRepaid,
-		"installment":         journal.Installment,
-		"note":                journal.Note,
-		"debit_account_type":  journal.DebitAccountType,
-		"credit_account_type": journal.CreditAccountType,
-	}
-
-	// Debug log
-	pretty, _ := json.MarshalIndent(payload, "", "  ")
-	log.Println("Payload to Typesense:", string(pretty))
-
-	// Step 3: Update to Typesense
-	_, err = tsClient.Collection(collection).Document(idStr).Update(context.Background(), payload)
+	// Update dokumen
+	_, err = tsClient.Collection("journal_entries").Document(docID).Update(ctx, document)
 	if err != nil {
 		return fmt.Errorf("failed to update typesense document: %w", err)
 	}
 
-	log.Println("Successfully updated document in Typesense:", idStr)
 	return nil
 }
 
@@ -111,19 +91,30 @@ func DeleteJournalEntryFromTypesense(ctx context.Context, journalEntryID string)
 		Delete(ctx)
 
 	if err != nil {
+		// Jika error karena dokumen tidak ditemukan, abaikan
+		if strings.Contains(err.Error(), "Not Found") {
+			log.Printf("Typesense document not found for ID %s. Skipping deletion.", journalEntryID)
+			return nil
+		}
+		// Untuk error lain, tetap return error
 		return fmt.Errorf("failed to delete document from Typesense: %w", err)
 	}
+
 	return nil
 }
 
-func SearchJournalLines(query string, companyID string, page, perPage int) ([]dto.JournalLineResponse, int, error) {
+func SearchJournalLines(query string, companyID string, category string, page, perPage int) ([]dto.JournalLineResponse, int, error) {
 	log.Printf("🔍 Searching journal lines: query=%s, companyID=%s, page=%d, perPage=%d", query, companyID, page, perPage)
 
-	searchParams := &api.SearchCollectionParams{
-		Q: query,
+	filters := []string{"company_id:=" + companyID}
+	if category != "" {
+		filters = append(filters, fmt.Sprintf("category:=%q", category)) // gunakan exact match
+	}
 
+	searchParams := &api.SearchCollectionParams{
+		Q:        query,
 		QueryBy:  "transaction_id,invoice,description,partner,category",
-		FilterBy: ptrString("company_id:=" + companyID),
+		FilterBy: ptrString(strings.Join(filters, " && ")),
 		Page:     ptrInt(page),
 		PerPage:  ptrInt(perPage),
 	}
