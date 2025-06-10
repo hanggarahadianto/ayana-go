@@ -17,6 +17,9 @@ func GetExpensesSummary(c *gin.Context) {
 	expenseStatus := c.DefaultQuery("status", "")
 	summaryOnlyStr := c.DefaultQuery("summary_only", "false")
 	summaryOnly := summaryOnlyStr == "true"
+	category := c.Query("category")
+	search := c.Query("search")
+
 	if summaryOnlyStr != "true" && summaryOnlyStr != "false" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Parameter summary_only harus 'true' atau 'false'."})
 		return
@@ -35,8 +38,9 @@ func GetExpensesSummary(c *gin.Context) {
 		Pagination:    pagination,
 		DateFilter:    dateFilter,
 		ExpenseStatus: expenseStatus,
-
-		SummaryOnly: summaryOnly,
+		SummaryOnly:   summaryOnly,
+		Category:      category,
+		Search:        search,
 	}
 
 	data, totalexpense, total, err := service.GetExpensesFromJournalLines(params)

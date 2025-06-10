@@ -13,16 +13,19 @@ func GetTransactionCategory(c *gin.Context) {
 
 	all := c.Query("all") == "true"
 	selectOnly := c.Query("select") == "true"
-	selectByCategory := c.Query("selectByCategory") == "true" // ✅ Tambahan
+	selectByCategory := c.Query("select_by_category") == "true" // ✅ Tambahan
 
 	filterParams := service.TransactionCategoryFilterParams{
-		CompanyID:       c.Query("company_id"),
-		TransactionType: c.Query("transaction_type"),
-		Category:        c.Query("category"),
-		Status:          c.Query("status"),
-		All:             all,
-		Pagination:      pagination,
-		SelectOnly:      selectOnly, // tambah field baru di struct params
+		CompanyID:         c.Query("company_id"),
+		TransactionType:   c.Query("transaction_type"),
+		Category:          c.Query("category"),
+		Status:            c.Query("status"),
+		DebitAccountType:  c.Query("debit_account_type"),  // ➕ Tambahan
+		CreditAccountType: c.Query("credit_account_type"), // ➕ Tambahan
+		All:               all,
+		Pagination:        pagination,
+		SelectOnly:        selectOnly, // tambah field baru di struct params
+
 	}
 
 	var data interface{}
@@ -30,7 +33,6 @@ func GetTransactionCategory(c *gin.Context) {
 	var err error
 
 	if all {
-		// All = true, ambil semua data tanpa filter, tanpa paginasi
 		data, err = service.GetTransactionCategoriesAll()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch all transaction categories"})

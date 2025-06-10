@@ -6,6 +6,7 @@ import (
 	"ayana/models"
 	"ayana/utils/helper"
 	"fmt"
+	"log"
 	"math"
 
 	"gorm.io/gorm"
@@ -17,6 +18,8 @@ type DebtFilterParams struct {
 	DateFilter  helper.DateFilter
 	SummaryOnly bool
 	DebtStatus  string
+	Category    string
+	Search      string // ⬅️ Tambahkan ini
 }
 
 func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalLineResponse, int64, int64, error) {
@@ -24,24 +27,54 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalLineRespons
 	var total int64
 	var totalDebt int64
 
+	if params.Search != "" {
+		results, found, err := SearchJournalLines(params.Search, params.CompanyID, params.Category, params.Pagination.Page, params.Pagination.Limit)
+
+		if err != nil {
+			log.Println("Error saat search ke Typesense:", err)
+			return nil, 0, 0, fmt.Errorf("gagal mengambil data aset: %w", err)
+		}
+
+		// Jika hanya summary diperlukan
+		if params.SummaryOnly {
+			var totalDebt int64 = 0
+			for _, line := range results {
+				totalDebt += int64(line.Amount)
+			}
+			return nil, totalDebt, int64(found), nil
+		}
+
+		var totalDebt int64 = 0
+		for _, line := range results {
+			totalDebt += int64(line.Amount)
+		}
+
+		return results, totalDebt, int64(found), nil
+	}
+
 	// Build base query
 	baseQuery := db.DB.Model(&models.JournalLine{}).
 		Joins("JOIN journal_entries ON journal_entries.id = journal_lines.journal_id").
+		Joins("LEFT JOIN transaction_categories ON journal_entries.transaction_category_id = transaction_categories.id").
 		Where("journal_entries.company_id = ?", params.CompanyID)
 
 	switch params.DebtStatus {
 	case "going":
 		baseQuery = baseQuery.
-			Where("journal_lines.credit > 0").
+			Where("journal_lines.debit > 0").
 			Where("journal_entries.is_repaid = ? AND journal_entries.status = ?", false, "unpaid").
 			Where("LOWER(journal_lines.credit_account_type) = ?", "liability").
 			Where("LOWER(journal_lines.debit_account_type) != ?", "revenue")
 	case "done":
 		baseQuery = baseQuery.
-			Where("journal_lines.credit > 0").
+			Where("journal_lines.debit > 0").
 			Where("journal_entries.is_repaid = ? AND journal_entries.status = ?", true, "done").
 			Where("LOWER(journal_lines.debit_account_type) = ?", "liability").
 			Where("LOWER(journal_lines.credit_account_type) = ?", "asset")
+	}
+
+	if params.Category != "" {
+		baseQuery = baseQuery.Where("transaction_categories.category ILIKE ?", "%"+params.Category+"%")
 	}
 
 	if params.DateFilter.StartDate != nil {
@@ -105,22 +138,21 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalLineRespons
 			TransactionCategoryID:   line.Journal.TransactionCategoryID.String(),
 			TransactionCategoryName: line.Journal.TransactionCategory.Name,
 			Category:                line.Journal.TransactionCategory.Category,
-
-			Invoice:           line.Journal.Invoice,
-			Description:       line.Journal.Description,
-			Partner:           line.Journal.Partner,
-			Amount:            math.Abs(float64(line.Debit - line.Credit)),
-			TransactionType:   string(line.TransactionType),
-			DebitAccountType:  line.DebitAccountType,
-			CreditAccountType: line.CreditAccountType,
-			Status:            string(line.Journal.Status),
-			CompanyID:         line.CompanyID.String(),
-			DateInputed:       *line.Journal.DateInputed,
-			DueDate:           helper.SafeDueDate(line.Journal.DueDate),
-			IsRepaid:          line.Journal.IsRepaid,
-			Installment:       line.Journal.Installment,
-			Note:              line.Journal.Note,
-			PaymentDateStatus: paymentDateStatus, // <-- Tambahan field baru
+			Invoice:                 line.Journal.Invoice,
+			Description:             line.Journal.Description,
+			Partner:                 line.Journal.Partner,
+			Amount:                  math.Abs(float64(line.Debit - line.Credit)),
+			TransactionType:         string(line.TransactionType),
+			DebitAccountType:        line.DebitAccountType,
+			CreditAccountType:       line.CreditAccountType,
+			Status:                  string(line.Journal.Status),
+			CompanyID:               line.CompanyID.String(),
+			DateInputed:             *line.Journal.DateInputed,
+			DueDate:                 helper.SafeDueDate(line.Journal.DueDate),
+			IsRepaid:                line.Journal.IsRepaid,
+			Installment:             line.Journal.Installment,
+			Note:                    line.Journal.Note,
+			PaymentDateStatus:       paymentDateStatus, // <-- Tambahan field baru
 		})
 	}
 

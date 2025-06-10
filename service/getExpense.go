@@ -5,6 +5,8 @@ import (
 	"ayana/dto"
 	"ayana/models"
 	"ayana/utils/helper"
+	"fmt"
+	"log"
 	"math"
 
 	"gorm.io/gorm"
@@ -16,12 +18,39 @@ type ExpenseFilterParams struct {
 	DateFilter    helper.DateFilter
 	SummaryOnly   bool
 	ExpenseStatus string
+	Category      string
+	Search        string // ⬅️ Tambahkan ini
 }
 
 func GetExpensesFromJournalLines(params ExpenseFilterParams) ([]dto.JournalLineResponse, int64, int64, error) {
 	var lines []models.JournalLine
 	var total int64
 	var totalExpense int64
+
+	if params.Search != "" {
+		results, found, err := SearchJournalLines(params.Search, params.CompanyID, params.Category, params.Pagination.Page, params.Pagination.Limit)
+
+		if err != nil {
+			log.Println("Error saat search ke Typesense:", err)
+			return nil, 0, 0, fmt.Errorf("gagal mengambil data aset: %w", err)
+		}
+
+		// Jika hanya summary diperlukan
+		if params.SummaryOnly {
+			var totalExpense int64 = 0
+			for _, line := range results {
+				totalExpense += int64(line.Amount)
+			}
+			return nil, totalExpense, int64(found), nil
+		}
+
+		var totalExpense int64 = 0
+		for _, line := range results {
+			totalExpense += int64(line.Amount)
+		}
+
+		return results, totalExpense, int64(found), nil
+	}
 
 	// Build base query tanpa Limit dan Offset untuk Count dan Sum
 	baseQuery := db.DB.Model(&models.JournalLine{}).
@@ -36,6 +65,10 @@ func GetExpensesFromJournalLines(params ExpenseFilterParams) ([]dto.JournalLineR
 		baseQuery = baseQuery.
 			Where("journal_lines.debit > 0"). // Expense biasanya di sisi debit
 			Where("journal_entries.is_repaid = ? AND journal_entries.status = ? AND journal_entries.transaction_type = ?", true, "paid", "payout")
+	}
+
+	if params.Category != "" {
+		baseQuery = baseQuery.Where("transaction_categories.category = ?", params.Category)
 	}
 
 	// Filter date
@@ -58,10 +91,10 @@ func GetExpensesFromJournalLines(params ExpenseFilterParams) ([]dto.JournalLineR
 		return nil, 0, 0, err
 	}
 
-	// Jika SummaryOnly = true, kembalikan hanya totalExpense dan total
-	if params.SummaryOnly {
-		return nil, totalExpense, total, nil
-	}
+	// // Jika SummaryOnly = true, kembalikan hanya totalExpense dan total
+	// if params.SummaryOnly {
+	// 	return nil, totalExpense, total, nil
+	// }
 
 	// Query untuk mengambil data dengan pagination
 	dataQuery := baseQuery.Session(&gorm.Session{}).

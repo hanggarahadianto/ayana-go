@@ -10,13 +10,15 @@ import (
 )
 
 type TransactionCategoryFilterParams struct {
-	CompanyID       string
-	TransactionType string
-	Category        string
-	Status          string
-	All             bool
-	SelectOnly      bool
-	Pagination      helper.Pagination
+	CompanyID         string
+	TransactionType   string
+	Category          string
+	Status            string
+	All               bool
+	SelectOnly        bool
+	DebitAccountType  string // ➕ Tambahan
+	CreditAccountType string // ➕ Tambahan
+	Pagination        helper.Pagination
 }
 
 func GetTransactionCategoriesAll() ([]dto.TransactionCategoryResponse, error) {
@@ -80,21 +82,27 @@ func GetTransactionCategoriesWithPagination(params TransactionCategoryFilterPara
 
 	return dto.MapToTransactionCategoryDTO(categories), total, nil
 }
-
 func GetUniqueCategories(params TransactionCategoryFilterParams) ([]string, error) {
-	tx := db.DB.Model(&models.TransactionCategory{}).
-		Select("DISTINCT category").
-		Where("company_id = ?", params.CompanyID)
+	tx := db.DB.Model(&models.TransactionCategory{})
 
+	if params.CompanyID != "" {
+		tx = tx.Where("company_id = ?", params.CompanyID)
+	}
 	if params.TransactionType != "" {
 		tx = tx.Where("transaction_type = ?", params.TransactionType)
+	}
+	if params.DebitAccountType != "" {
+		tx = tx.Where("debit_account_type = ?", params.DebitAccountType)
+	}
+	if params.CreditAccountType != "" {
+		tx = tx.Where("credit_account_type = ?", params.CreditAccountType)
 	}
 	if params.Status != "" {
 		tx = tx.Where("status = ?", params.Status)
 	}
 
 	var categories []string
-	if err := tx.Pluck("category", &categories).Error; err != nil {
+	if err := tx.Distinct("category").Pluck("category", &categories).Error; err != nil {
 		return nil, err
 	}
 	return categories, nil
