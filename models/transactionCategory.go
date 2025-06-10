@@ -17,7 +17,8 @@ type TransactionCategory struct {
 	DebitAccountType  string    `gorm:"type:varchar(100)" json:"debit_account_type"`       // Nama akun debit
 	CreditAccountID   uuid.UUID `gorm:"type:uuid;not null" json:"credit_account_id"`       // Foreign key untuk akun kredit
 	CreditAccountType string    `gorm:"type:varchar(100)" json:"credit_account_type"`      // Nama akun kredit
-	Category          string    `gorm:"type:varchar(100)" json:"category"`                 // Kategori umum untuk transaksi (misal: "Pembayaran", "Penerimaan")
+	DebitCategory     string    `gorm:"type:varchar(100)" json:"debit_category"`           // Kategori umum untuk transaksi (misal: "Pembayaran", "Penerimaan")
+	CreditCategory    string    `gorm:"type:varchar(100)" json:"credit_category"`          // Kategori umum untuk transaksi (misal: "Pembayaran", "Penerimaan")
 	TransactionType   string    `gorm:"type:varchar(50);not null" json:"transaction_type"` // payout / payin
 	Description       string    `gorm:"type:varchar(255)" json:"description"`              // Deskripsi transaksi
 	CompanyID         uuid.UUID `gorm:"type:uuid;not null" json:"company_id"`              // Foreign key untuk perusahaan

@@ -24,7 +24,7 @@ func CreateTransactionCategory(c *gin.Context) {
 	}
 
 	// Validate input data
-	if input.Name == "" || input.Category == "" || input.Description == "" || input.CompanyID == uuid.Nil {
+	if input.Name == "" || input.DebitCategory == "" || input.CreditCategory == "" || input.Description == "" || input.CompanyID == uuid.Nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "error",
 			"message": "Missing required fields",
@@ -63,7 +63,8 @@ func CreateTransactionCategory(c *gin.Context) {
 		CreditAccountID:   input.CreditAccountID,
 		CreditAccountType: creditAccount.Type,
 		TransactionType:   input.TransactionType,
-		Category:          input.Category,
+		DebitCategory:     input.DebitCategory,
+		CreditCategory:    input.CreditAccountType,
 		Description:       input.Description,
 		CompanyID:         input.CompanyID,
 		CreatedAt:         time.Now(),

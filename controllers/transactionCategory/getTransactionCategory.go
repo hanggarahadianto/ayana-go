@@ -18,7 +18,8 @@ func GetTransactionCategory(c *gin.Context) {
 	filterParams := service.TransactionCategoryFilterParams{
 		CompanyID:         c.Query("company_id"),
 		TransactionType:   c.Query("transaction_type"),
-		Category:          c.Query("category"),
+		DebitCategory:     c.Query("debit_category"),
+		CreditCategory:    c.Query("credit_category"),
 		Status:            c.Query("status"),
 		DebitAccountType:  c.Query("debit_account_type"),  // ➕ Tambahan
 		CreditAccountType: c.Query("credit_account_type"), // ➕ Tambahan
@@ -41,19 +42,23 @@ func GetTransactionCategory(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "success", "data": data})
 		return
 	}
-
 	if selectByCategory {
 		// ✅ Tangani select kategori unik
 		if filterParams.CompanyID == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "company_id filter is required for selectByCategory=true"})
 			return
 		}
-		data, err = service.GetUniqueCategories(filterParams)
+
+		data, message, err := service.GetUniqueCategories(filterParams)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch unique categories"})
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{"status": "success", "data": data})
+
+		c.JSON(http.StatusOK, gin.H{
+			"status": message,
+			"data":   data,
+		})
 		return
 	}
 

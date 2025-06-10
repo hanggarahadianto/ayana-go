@@ -131,13 +131,13 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalLineRespons
 				}
 			}
 		}
-
 		response = append(response, dto.JournalLineResponse{
 			ID:                      line.JournalID.String(),
 			Transaction_ID:          line.Journal.Transaction_ID,
 			TransactionCategoryID:   line.Journal.TransactionCategoryID.String(),
 			TransactionCategoryName: line.Journal.TransactionCategory.Name,
-			Category:                line.Journal.TransactionCategory.Category,
+			DebitCategory:           line.Journal.TransactionCategory.DebitCategory,
+			CreditCategory:          line.Journal.TransactionCategory.CreditCategory,
 			Invoice:                 line.Journal.Invoice,
 			Description:             line.Journal.Description,
 			Partner:                 line.Journal.Partner,

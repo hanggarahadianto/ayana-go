@@ -9,7 +9,8 @@ type JournalEntryResponse struct {
 	ID                    string                 `json:"id"`
 	Invoice               string                 `json:"invoice"`
 	TransactionID         string                 `json:"transaction_id"`
-	Category              string                 `json:"category"`
+	DebitCategory         string                 `json:"debit_category"`
+	CreditCategory        string                 `json:"credit_category"`
 	Description           string                 `json:"description"`
 	TransactionCategoryID string                 `json:"transaction_category_id"`
 	Amount                float64                `json:"amount"`
@@ -68,7 +69,8 @@ func MapToJournalEntryResponse(journalEntry models.JournalEntry) JournalEntryRes
 		ID:                    journalEntry.ID.String(),
 		Invoice:               journalEntry.Invoice,
 		TransactionID:         journalEntry.Transaction_ID,
-		Category:              journalEntry.TransactionCategory.Category,
+		DebitCategory:         journalEntry.TransactionCategory.DebitCategory,
+		CreditCategory:        journalEntry.TransactionCategory.CreditCategory,
 		Description:           journalEntry.Description,
 		TransactionCategoryID: journalEntry.TransactionCategoryID.String(),
 		Amount:                float64(journalEntry.Amount),

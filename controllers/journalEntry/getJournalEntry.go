@@ -83,7 +83,8 @@ func GetJournalEntriesByCategory(c *gin.Context) {
 			Invoice:               entry.Invoice,
 			Description:           entry.Description,
 			TransactionID:         entry.Transaction_ID,
-			Category:              entry.TransactionCategory.Category,
+			DebitCategory:         entry.TransactionCategory.DebitCategory,
+			CreditCategory:        entry.TransactionCategory.CreditCategory,
 			TransactionCategoryID: entry.TransactionCategoryID.String(), // Mengonversi UUID ke string
 			Amount:                float64(entry.Amount),                // Konversi dari int64 ke float64
 			Partner:               entry.Partner,

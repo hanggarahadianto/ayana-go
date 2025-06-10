@@ -1,5 +1,3 @@
-// service/transaction_category_service.go
-
 package service
 
 import (
@@ -12,12 +10,13 @@ import (
 type TransactionCategoryFilterParams struct {
 	CompanyID         string
 	TransactionType   string
-	Category          string
+	DebitCategory     string
+	CreditCategory    string
 	Status            string
 	All               bool
 	SelectOnly        bool
-	DebitAccountType  string // ➕ Tambahan
-	CreditAccountType string // ➕ Tambahan
+	DebitAccountType  string
+	CreditAccountType string
 	Pagination        helper.Pagination
 }
 
@@ -42,8 +41,11 @@ func GetTransactionCategoriesForSelect(params TransactionCategoryFilterParams) (
 	if params.Status != "" {
 		tx = tx.Where("status = ?", params.Status)
 	}
-	if params.Category != "" {
-		tx = tx.Where("category = ?", params.Category)
+	if params.DebitCategory != "" {
+		tx = tx.Where("debit_category = ?", params.DebitCategory)
+	}
+	if params.CreditCategory != "" {
+		tx = tx.Where("credit_category = ?", params.CreditCategory)
 	}
 
 	var categories []models.TransactionCategory
@@ -60,11 +62,20 @@ func GetTransactionCategoriesWithPagination(params TransactionCategoryFilterPara
 	if params.TransactionType != "" {
 		tx = tx.Where("transaction_type = ?", params.TransactionType)
 	}
+	if params.DebitAccountType != "" {
+		tx = tx.Where("debit_account_type = ?", params.DebitAccountType)
+	}
+	if params.CreditAccountType != "" {
+		tx = tx.Where("credit_account_type = ?", params.CreditAccountType)
+	}
 	if params.Status != "" {
 		tx = tx.Where("status = ?", params.Status)
 	}
-	if params.Category != "" {
-		tx = tx.Where("category = ?", params.Category)
+	if params.DebitCategory != "" {
+		tx = tx.Where("debit_category = ?", params.DebitCategory)
+	}
+	if params.CreditCategory != "" {
+		tx = tx.Where("credit_category = ?", params.CreditCategory)
 	}
 
 	var total int64
@@ -82,7 +93,14 @@ func GetTransactionCategoriesWithPagination(params TransactionCategoryFilterPara
 
 	return dto.MapToTransactionCategoryDTO(categories), total, nil
 }
-func GetUniqueCategories(params TransactionCategoryFilterParams) ([]string, error) {
+
+func GetUniqueCategories(params TransactionCategoryFilterParams) ([]string, string, error) {
+	var categories []string
+
+	if params.DebitAccountType == "" && params.CreditAccountType == "" {
+		return []string{}, "Fill debit or credit account type", nil
+	}
+
 	tx := db.DB.Model(&models.TransactionCategory{})
 
 	if params.CompanyID != "" {
@@ -101,9 +119,16 @@ func GetUniqueCategories(params TransactionCategoryFilterParams) ([]string, erro
 		tx = tx.Where("status = ?", params.Status)
 	}
 
-	var categories []string
-	if err := tx.Distinct("category").Pluck("category", &categories).Error; err != nil {
-		return nil, err
+	var categoryColumn string
+	if params.DebitAccountType != "" {
+		categoryColumn = "debit_category"
+	} else {
+		categoryColumn = "credit_category"
 	}
-	return categories, nil
+
+	if err := tx.Distinct(categoryColumn).Pluck(categoryColumn, &categories).Error; err != nil {
+		return nil, "", err
+	}
+
+	return categories, "success", nil
 }

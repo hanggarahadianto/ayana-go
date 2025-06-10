@@ -47,7 +47,8 @@ type TransactionCategoryResponse struct {
 	DebitAccountType  string    `json:"debit_account_type"`
 	CreditAccountID   uuid.UUID `json:"credit_account_id"`
 	CreditAccountType string    `json:"credit_account_type"`
-	Category          string    `json:"category"`
+	DebitCategory     string    `json:"debit_category"`
+	CreditCategory    string    `json:"credit_category"`
 	Description       string    `json:"description"`
 	CompanyID         uuid.UUID `json:"company_id"`
 }
@@ -67,7 +68,8 @@ func MapToTransactionCategoryDTO(transactions []models.TransactionCategory) []Tr
 			CreditAccountID:   t.CreditAccountID,
 			CreditAccountType: t.CreditAccountType,
 			TransactionType:   t.TransactionType,
-			Category:          t.Category,
+			DebitCategory:     t.DebitCategory,
+			CreditCategory:    t.CreditCategory,
 			Description:       t.Description,
 			CompanyID:         t.CompanyID,
 		}

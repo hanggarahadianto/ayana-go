@@ -8,7 +8,8 @@ type JournalLineResponse struct {
 	TransactionCategoryID   string     `json:"transaction_category_id"`
 	TransactionCategoryName string     `json:"transaction_category_name,omitempty"` // optional, jika perlu
 	Invoice                 string     `json:"invoice"`
-	Category                string     `json:"category"`
+	DebitCategory           string     `json:"debit_category"`
+	CreditCategory          string     `json:"credit_category"`
 	Partner                 string     `json:"partner"`
 	Description             string     `json:"description"`
 	Amount                  float64    `json:"amount"`

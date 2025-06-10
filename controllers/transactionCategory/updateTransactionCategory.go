@@ -35,7 +35,8 @@ func UpdateTransactionCategory(c *gin.Context) {
 	// Update field yang diizinkan
 	existing.CompanyID = input.CompanyID
 	existing.TransactionType = input.TransactionType
-	existing.Category = input.Category
+	existing.DebitCategory = input.DebitCategory
+	existing.CreditCategory = input.CreditCategory
 	existing.Name = input.Name
 	existing.Status = input.Status
 	existing.TransactionLabel = input.TransactionLabel
