@@ -18,7 +18,7 @@ func GetRevenueSummary(c *gin.Context) {
 	summaryOnlyStr := c.DefaultQuery("summary_only", "false")
 	summaryOnly := summaryOnlyStr == "true"
 	debitCategory := c.Query("debit_category")
-	creditCategory := c.Query("creidt_category")
+	creditCategory := c.Query("credit_category")
 	search := c.Query("search")
 
 	if summaryOnlyStr != "true" && summaryOnlyStr != "false" {

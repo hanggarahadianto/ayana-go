@@ -15,7 +15,7 @@ import (
 func GetJournalEntriesByCategory(c *gin.Context) {
 	// Ambil query params
 	companyIDStr := c.DefaultQuery("company_id", "")
-	transactionCategoryIDStr := c.Query("transaction_category_id")
+	// transactionCategoryIDStr := c.Query("transaction_category_id")
 
 	// Validasi Company ID
 	companyID, valid := helper.ValidateAndParseCompanyID(companyIDStr, c)
@@ -24,10 +24,10 @@ func GetJournalEntriesByCategory(c *gin.Context) {
 	}
 
 	// Validasi Transaction Category ID
-	transactionCategoryID, valid := helper.ValidateAndParseTransactionCategoryID(transactionCategoryIDStr, c)
-	if !valid {
-		return
-	}
+	// transactionCategoryID, valid := helper.ValidateAndParseTransactionCategoryID(transactionCategoryIDStr, c)
+	// if !valid {
+	// 	return
+	// }
 
 	// Ambil paginasi
 	pagination := helper.GetPagination(c)
@@ -37,7 +37,8 @@ func GetJournalEntriesByCategory(c *gin.Context) {
 	err := db.DB.
 		Preload("Lines").
 		Preload("TransactionCategory"). // 👈 tambahkan preload ini
-		Where("transaction_category_id = ? AND company_id = ?", transactionCategoryID, companyID).
+		Where("company_id", companyID).
+		// Where("transaction_category_id = ? AND company_id = ?", transactionCategoryID, companyID).
 		Limit(pagination.Limit).
 		Offset(pagination.Offset).
 		Find(&journalEntries).Error

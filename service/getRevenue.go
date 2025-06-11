@@ -114,7 +114,7 @@ func GetRevenueFromJournalLines(params RevenueFilterParams) ([]dto.JournalLineRe
 	dataQuery := baseQuery.Session(&gorm.Session{}).
 		Preload("Journal").
 		Preload("Journal.TransactionCategory"). // ✅ Tambahkan ini
-		Order("journal_entries.date_inputed ASC").
+		Order("journal_entries.date_inputed DESC").
 		Limit(params.Pagination.Limit).
 		Offset(params.Pagination.Offset)
 
