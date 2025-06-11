@@ -13,13 +13,14 @@ import (
 )
 
 type ExpenseFilterParams struct {
-	CompanyID     string
-	Pagination    helper.Pagination
-	DateFilter    helper.DateFilter
-	SummaryOnly   bool
-	ExpenseStatus string
-	Category      string
-	Search        string // ⬅️ Tambahkan ini
+	CompanyID      string
+	Pagination     helper.Pagination
+	DateFilter     helper.DateFilter
+	SummaryOnly    bool
+	ExpenseStatus  string
+	DebitCategory  string
+	CreditCategory string
+	Search         string // ⬅️ Tambahkan ini
 }
 
 func GetExpensesFromJournalLines(params ExpenseFilterParams) ([]dto.JournalLineResponse, int64, int64, error) {
@@ -28,11 +29,11 @@ func GetExpensesFromJournalLines(params ExpenseFilterParams) ([]dto.JournalLineR
 	var totalExpense int64
 
 	if params.Search != "" {
-		results, found, err := SearchJournalLines(params.Search, params.CompanyID, params.Category, params.Pagination.Page, params.Pagination.Limit)
+		results, found, err := SearchJournalLines(params.Search, params.CompanyID, params.DebitCategory, params.CreditCategory, params.Pagination.Page, params.Pagination.Limit)
 
 		if err != nil {
 			log.Println("Error saat search ke Typesense:", err)
-			return nil, 0, 0, fmt.Errorf("gagal mengambil data aset: %w", err)
+			return nil, 0, 0, fmt.Errorf("gagal mengambil data pengeluaran: %w", err)
 		}
 
 		// Jika hanya summary diperlukan
@@ -67,8 +68,13 @@ func GetExpensesFromJournalLines(params ExpenseFilterParams) ([]dto.JournalLineR
 			Where("journal_entries.is_repaid = ? AND journal_entries.status = ? AND journal_entries.transaction_type = ?", true, "paid", "payout")
 	}
 
-	if params.Category != "" {
-		baseQuery = baseQuery.Where("transaction_categories.category = ?", params.Category)
+	if params.DebitCategory != "" {
+		baseQuery = baseQuery.Where("LOWER(transaction_categories.debit_category) = LOWER(?)", params.DebitCategory)
+
+	}
+	if params.CreditCategory != "" {
+		baseQuery = baseQuery.Where("LOWER(transaction_categories.credit_category) = LOWER(?)", params.CreditCategory)
+
 	}
 
 	// Filter date
@@ -90,12 +96,6 @@ func GetExpensesFromJournalLines(params ExpenseFilterParams) ([]dto.JournalLineR
 		Scan(&totalExpense).Error; err != nil {
 		return nil, 0, 0, err
 	}
-
-	// // Jika SummaryOnly = true, kembalikan hanya totalExpense dan total
-	// if params.SummaryOnly {
-	// 	return nil, totalExpense, total, nil
-	// }
-
 	// Query untuk mengambil data dengan pagination
 	dataQuery := baseQuery.Session(&gorm.Session{}).
 		Preload("Journal").

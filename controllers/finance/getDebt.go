@@ -21,7 +21,8 @@ func GetOutstandingDebts(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Parameter summary_only harus 'true' atau 'false'."})
 		return
 	}
-	category := c.Query("category")
+	debitCategory := c.Query("debit_category")
+	creditCategory := c.Query("credit_category")
 	search := c.Query("search")
 
 	dateFilter, err := helper.GetDateFilter(c)
@@ -33,13 +34,14 @@ func GetOutstandingDebts(c *gin.Context) {
 	pagination := helper.GetPagination(c)
 
 	params := service.DebtFilterParams{
-		CompanyID:   companyID.String(),
-		Pagination:  pagination,
-		DateFilter:  dateFilter,
-		DebtStatus:  debtStatus,
-		SummaryOnly: summaryOnly,
-		Category:    category,
-		Search:      search,
+		CompanyID:      companyID.String(),
+		Pagination:     pagination,
+		DateFilter:     dateFilter,
+		DebtStatus:     debtStatus,
+		SummaryOnly:    summaryOnly,
+		DebitCategory:  debitCategory,
+		CreditCategory: creditCategory,
+		Search:         search,
 	}
 
 	data, totalDebt, total, err := service.GetDebtsFromJournalLines(params)

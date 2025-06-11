@@ -12,7 +12,6 @@ import (
 func ProcessSingleJournalEntry(input models.JournalEntry) (models.JournalEntry, error) {
 	return createJournalEntryService(input)
 }
-
 func ProcessMultipleJournalEntries(inputs []models.JournalEntry) ([]models.JournalEntry, error) {
 	var results []models.JournalEntry
 

@@ -19,7 +19,8 @@ type EquityFilterParams struct {
 	SummaryOnly     bool
 	EquityType      string
 	TransactionType string
-	Category        string
+	DebitCategory   string
+	CreditCategory  string
 	Search          string // ⬅️ Tambahkan ini
 }
 
@@ -29,7 +30,7 @@ func GetEquityFromJournalLines(params EquityFilterParams) ([]dto.JournalLineResp
 	var totalEquity int64
 
 	if params.Search != "" {
-		results, found, err := SearchJournalLines(params.Search, params.CompanyID, params.Category, params.Pagination.Page, params.Pagination.Limit)
+		results, found, err := SearchJournalLines(params.Search, params.CompanyID, params.DebitCategory, params.CreditCategory, params.Pagination.Page, params.Pagination.Limit)
 
 		if err != nil {
 			log.Println("Error saat search ke Typesense:", err)
@@ -77,8 +78,13 @@ func GetEquityFromJournalLines(params EquityFilterParams) ([]dto.JournalLineResp
 
 	}
 
-	if params.Category != "" {
-		baseQuery = baseQuery.Where("transaction_categories.category ILIKE ?", "%"+params.Category+"%")
+	if params.DebitCategory != "" {
+		baseQuery = baseQuery.Where("LOWER(transaction_categories.debit_category) = LOWER(?)", params.DebitCategory)
+
+	}
+	if params.CreditCategory != "" {
+		baseQuery = baseQuery.Where("LOWER(transaction_categories.credit_category) = LOWER(?)", params.CreditCategory)
+
 	}
 
 	// Filter date

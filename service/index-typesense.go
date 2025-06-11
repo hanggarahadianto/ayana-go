@@ -50,10 +50,11 @@ func CreateCollectionIfNotExist() error {
 		Name: "journal_entries",
 		Fields: []api.Field{
 			{Name: "id", Type: "string", Facet: &facetTrue},
-			{Name: "company_id", Type: "string", Facet: &facetTrue},     // ✅ bisa di-facet
-			{Name: "category", Type: "string", Facet: &facetTrue},       // ✅ bisa di-facet
-			{Name: "transaction_id", Type: "string", Facet: &facetTrue}, // ✅ hanya satu kali
-			{Name: "invoice", Type: "string", Facet: &facetTrue},        // ✅ bisa di-facet
+			{Name: "company_id", Type: "string", Facet: &facetTrue},      // ✅ bisa di-facet
+			{Name: "debit_category", Type: "string", Facet: &facetTrue},  // ✅ bisa di-facet
+			{Name: "credit_category", Type: "string", Facet: &facetTrue}, // ✅ bisa di-facet
+			{Name: "transaction_id", Type: "string", Facet: &facetTrue},  // ✅ hanya satu kali
+			{Name: "invoice", Type: "string", Facet: &facetTrue},         // ✅ bisa di-facet
 			{Name: "partner", Type: "string"},
 			{Name: "description", Type: "string"},
 			{Name: "amount", Type: "float"},

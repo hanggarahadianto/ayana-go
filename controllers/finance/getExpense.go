@@ -17,7 +17,8 @@ func GetExpensesSummary(c *gin.Context) {
 	expenseStatus := c.DefaultQuery("status", "")
 	summaryOnlyStr := c.DefaultQuery("summary_only", "false")
 	summaryOnly := summaryOnlyStr == "true"
-	category := c.Query("category")
+	debitCategory := c.Query("debit_category")
+	creditCategory := c.Query("creidt_category")
 	search := c.Query("search")
 
 	if summaryOnlyStr != "true" && summaryOnlyStr != "false" {
@@ -34,13 +35,14 @@ func GetExpensesSummary(c *gin.Context) {
 	pagination := helper.GetPagination(c)
 
 	params := service.ExpenseFilterParams{
-		CompanyID:     companyID.String(),
-		Pagination:    pagination,
-		DateFilter:    dateFilter,
-		ExpenseStatus: expenseStatus,
-		SummaryOnly:   summaryOnly,
-		Category:      category,
-		Search:        search,
+		CompanyID:      companyID.String(),
+		Pagination:     pagination,
+		DateFilter:     dateFilter,
+		ExpenseStatus:  expenseStatus,
+		SummaryOnly:    summaryOnly,
+		DebitCategory:  debitCategory,
+		CreditCategory: creditCategory,
+		Search:         search,
 	}
 
 	data, totalexpense, total, err := service.GetExpensesFromJournalLines(params)

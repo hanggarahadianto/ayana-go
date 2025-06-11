@@ -104,17 +104,20 @@ func DeleteJournalEntryFromTypesense(ctx context.Context, journalEntryID string)
 	return nil
 }
 
-func SearchJournalLines(query string, companyID string, category string, page, perPage int) ([]dto.JournalLineResponse, int, error) {
+func SearchJournalLines(query string, companyID string, debitCategory string, creditCategory string, page, perPage int) ([]dto.JournalLineResponse, int, error) {
 	log.Printf("🔍 Searching journal lines: query=%s, companyID=%s, page=%d, perPage=%d", query, companyID, page, perPage)
 
 	filters := []string{"company_id:=" + companyID}
-	if category != "" {
-		filters = append(filters, fmt.Sprintf("category:=%q", category)) // gunakan exact match
+	if debitCategory != "" {
+		filters = append(filters, fmt.Sprintf("category:=%q", debitCategory)) // gunakan exact match
+	}
+	if creditCategory != "" {
+		filters = append(filters, fmt.Sprintf("category:=%q", creditCategory)) // gunakan exact match
 	}
 
 	searchParams := &api.SearchCollectionParams{
 		Q:        query,
-		QueryBy:  "transaction_id,invoice,description,partner,category",
+		QueryBy:  "transaction_id,invoice,description,partner,debit_category, credit_category",
 		FilterBy: ptrString(strings.Join(filters, " && ")),
 		Page:     ptrInt(page),
 		PerPage:  ptrInt(perPage),

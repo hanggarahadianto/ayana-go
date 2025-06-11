@@ -13,13 +13,14 @@ import (
 )
 
 type DebtFilterParams struct {
-	CompanyID   string
-	Pagination  helper.Pagination
-	DateFilter  helper.DateFilter
-	SummaryOnly bool
-	DebtStatus  string
-	Category    string
-	Search      string // ⬅️ Tambahkan ini
+	CompanyID      string
+	Pagination     helper.Pagination
+	DateFilter     helper.DateFilter
+	SummaryOnly    bool
+	DebtStatus     string
+	DebitCategory  string
+	CreditCategory string
+	Search         string // ⬅️ Tambahkan ini
 }
 
 func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalLineResponse, int64, int64, error) {
@@ -28,7 +29,7 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalLineRespons
 	var totalDebt int64
 
 	if params.Search != "" {
-		results, found, err := SearchJournalLines(params.Search, params.CompanyID, params.Category, params.Pagination.Page, params.Pagination.Limit)
+		results, found, err := SearchJournalLines(params.Search, params.CompanyID, params.DebitCategory, params.CreditCategory, params.Pagination.Page, params.Pagination.Limit)
 
 		if err != nil {
 			log.Println("Error saat search ke Typesense:", err)
@@ -65,6 +66,7 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalLineRespons
 			Where("journal_entries.is_repaid = ? AND journal_entries.status = ?", false, "unpaid").
 			Where("LOWER(journal_lines.credit_account_type) = ?", "liability").
 			Where("LOWER(journal_lines.debit_account_type) != ?", "revenue")
+
 	case "done":
 		baseQuery = baseQuery.
 			Where("journal_lines.debit > 0").
@@ -73,10 +75,14 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalLineRespons
 			Where("LOWER(journal_lines.credit_account_type) = ?", "asset")
 	}
 
-	if params.Category != "" {
-		baseQuery = baseQuery.Where("transaction_categories.category ILIKE ?", "%"+params.Category+"%")
-	}
+	if params.DebitCategory != "" {
+		baseQuery = baseQuery.Where("LOWER(transaction_categories.debit_category) = LOWER(?)", params.DebitCategory)
 
+	}
+	if params.CreditCategory != "" {
+		baseQuery = baseQuery.Where("LOWER(transaction_categories.credit_category) = LOWER(?)", params.CreditCategory)
+
+	}
 	if params.DateFilter.StartDate != nil {
 		baseQuery = baseQuery.Where("journal_entries.date_inputed >= ?", params.DateFilter.StartDate)
 	}
@@ -104,7 +110,7 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalLineRespons
 	dataQuery := baseQuery.Session(&gorm.Session{}).
 		Preload("Journal").
 		Preload("Journal.TransactionCategory").
-		Order("journal_entries.date_inputed ASC").
+		Order("journal_entries.due_date ASC").
 		Limit(params.Pagination.Limit).
 		Offset(params.Pagination.Offset)
 
