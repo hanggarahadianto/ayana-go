@@ -96,8 +96,7 @@ func CreateReversedJournalEntry(c *gin.Context) {
 			return
 		}
 
-		// Response pakai DTO
-		response := dto.MapToJournalEntryResponseList(result)
+		response := dto.MapToJournalEntryResponses(result)
 		c.JSON(http.StatusOK, gin.H{"status": "success", "data": response})
 		return
 	}

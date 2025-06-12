@@ -23,7 +23,7 @@ type DebtFilterParams struct {
 	Search         string // ⬅️ Tambahkan ini
 }
 
-func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalLineResponse, int64, int64, error) {
+func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalEntryResponse, int64, int64, error) {
 	var lines []models.JournalLine
 	var total int64
 	var totalDebt int64
@@ -118,7 +118,7 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalLineRespons
 		return nil, 0, 0, err
 	}
 
-	var response []dto.JournalLineResponse
+	var response []dto.JournalEntryResponse
 	for _, line := range lines {
 		var paymentDateStatus string
 
@@ -137,29 +137,31 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalLineRespons
 				}
 			}
 		}
-		response = append(response, dto.JournalLineResponse{
-			ID:                      line.JournalID.String(),
-			Transaction_ID:          line.Journal.Transaction_ID,
-			TransactionCategoryID:   line.Journal.TransactionCategoryID.String(),
-			TransactionCategoryName: line.Journal.TransactionCategory.Name,
-			DebitCategory:           line.Journal.TransactionCategory.DebitCategory,
-			CreditCategory:          line.Journal.TransactionCategory.CreditCategory,
-			Invoice:                 line.Journal.Invoice,
-			Description:             line.Journal.Description,
-			Partner:                 line.Journal.Partner,
-			Amount:                  math.Abs(float64(line.Debit - line.Credit)),
-			TransactionType:         string(line.TransactionType),
-			DebitAccountType:        line.DebitAccountType,
-			CreditAccountType:       line.CreditAccountType,
-			Status:                  string(line.Journal.Status),
-			CompanyID:               line.CompanyID.String(),
-			DateInputed:             *line.Journal.DateInputed,
-			DueDate:                 helper.SafeDueDate(line.Journal.DueDate),
-			IsRepaid:                line.Journal.IsRepaid,
-			Installment:             line.Journal.Installment,
-			Note:                    line.Journal.Note,
-			PaymentDateStatus:       paymentDateStatus, // <-- Tambahan field baru
-		})
+		for _, line := range lines {
+			response = append(response, dto.JournalEntryResponse{
+				ID:                      line.JournalID.String(),
+				Invoice:                 line.Journal.Invoice,
+				TransactionID:           line.Journal.Transaction_ID,
+				TransactionCategoryID:   line.Journal.TransactionCategoryID.String(),
+				TransactionCategoryName: line.Journal.TransactionCategory.Name,
+				DebitCategory:           line.Journal.TransactionCategory.DebitCategory,
+				CreditCategory:          line.Journal.TransactionCategory.CreditCategory,
+				Description:             line.Journal.Description,
+				Partner:                 line.Journal.Partner,
+				Amount:                  int64(math.Abs(float64(line.Debit - line.Credit))),
+				TransactionType:         string(line.TransactionType),
+				DebitAccountType:        line.DebitAccountType,
+				CreditAccountType:       line.CreditAccountType,
+				Status:                  string(line.Journal.Status),
+				CompanyID:               line.CompanyID.String(),
+				DateInputed:             line.Journal.DateInputed,
+				DueDate:                 helper.SafeDueDate(line.Journal.DueDate),
+				IsRepaid:                line.Journal.IsRepaid,
+				Installment:             line.Journal.Installment,
+				Note:                    line.Journal.Note,
+				PaymentDateStatus:       paymentDateStatus,
+			})
+		}
 	}
 
 	return response, totalDebt, total, nil

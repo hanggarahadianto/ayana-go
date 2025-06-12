@@ -104,20 +104,20 @@ func DeleteJournalEntryFromTypesense(ctx context.Context, journalEntryID string)
 	return nil
 }
 
-func SearchJournalLines(query string, companyID string, debitCategory string, creditCategory string, page, perPage int) ([]dto.JournalLineResponse, int, error) {
+func SearchJournalLines(query string, companyID string, debitCategory string, creditCategory string, page, perPage int) ([]dto.JournalEntryResponse, int, error) {
 	log.Printf("🔍 Searching journal lines: query=%s, companyID=%s, page=%d, perPage=%d", query, companyID, page, perPage)
 
 	filters := []string{"company_id:=" + companyID}
 	if debitCategory != "" {
-		filters = append(filters, fmt.Sprintf("category:=%q", debitCategory)) // gunakan exact match
+		filters = append(filters, fmt.Sprintf("debit_category:=%q", debitCategory))
 	}
 	if creditCategory != "" {
-		filters = append(filters, fmt.Sprintf("category:=%q", creditCategory)) // gunakan exact match
+		filters = append(filters, fmt.Sprintf("credit_category:=%q", creditCategory))
 	}
 
 	searchParams := &api.SearchCollectionParams{
 		Q:        query,
-		QueryBy:  "transaction_id,invoice,description,partner,debit_category, credit_category",
+		QueryBy:  "transaction_id,invoice,description,partner,debit_category,credit_category",
 		FilterBy: ptrString(strings.Join(filters, " && ")),
 		Page:     ptrInt(page),
 		PerPage:  ptrInt(perPage),
@@ -128,7 +128,7 @@ func SearchJournalLines(query string, companyID string, debitCategory string, cr
 		return nil, 0, err
 	}
 
-	var results []dto.JournalLineResponse
+	var results []dto.JournalEntryResponse
 
 	for _, hit := range *searchResult.Hits {
 		doc := hit.Document
@@ -137,27 +137,24 @@ func SearchJournalLines(query string, companyID string, debitCategory string, cr
 		}
 		m := *doc
 
-		getStr := func(key string) string {
+		get := func(key string) string {
 			if v, ok := m[key].(string); ok {
 				return v
 			}
 			return ""
 		}
-
-		getFloat := func(key string) float64 {
-			if v, ok := m[key].(float64); ok {
-				return v
-			}
-			return 0
-		}
-
 		getInt := func(key string) int {
 			if v, ok := m[key].(float64); ok {
 				return int(v)
 			}
 			return 0
 		}
-
+		getInt64 := func(key string) int64 {
+			if v, ok := m[key].(float64); ok {
+				return int64(v)
+			}
+			return 0
+		}
 		getBool := func(key string) bool {
 			switch v := m[key].(type) {
 			case bool:
@@ -167,48 +164,40 @@ func SearchJournalLines(query string, companyID string, debitCategory string, cr
 			}
 			return false
 		}
-
-		getTime := func(key string) time.Time {
-			if v, ok := m[key].(float64); ok {
-				return time.Unix(int64(v), 0)
-			}
-			return time.Time{}
-		}
-
 		getTimePtr := func(key string) *time.Time {
-			if v, ok := m[key].(float64); ok {
+			if v, ok := m[key].(float64); ok && v > 0 {
 				t := time.Unix(int64(v), 0)
 				return &t
 			}
 			return nil
 		}
 
-		results = append(results, dto.JournalLineResponse{
-			ID:                      getStr("id"),
-			Transaction_ID:          getStr("transaction_id"),
-			TransactionCategoryID:   getStr("transaction_category_id"),
-			TransactionCategoryName: getStr("transaction_category_name"),
-			Invoice:                 getStr("invoice"),
-			DebitCategory:           getStr("debit_category"),
-			CreditCategory:          getStr("credit_category"),
-			Partner:                 getStr("partner"),
-			Description:             getStr("description"),
-			Amount:                  getFloat("amount"),
-			TransactionType:         getStr("transaction_type"),
-			DebitAccountType:        getStr("debit_account_type"),
-			CreditAccountType:       getStr("credit_account_type"),
-			Status:                  getStr("status"),
-			CompanyID:               getStr("company_id"),
-			DateInputed:             getTime("date_inputed"),
-			DueDate:                 getTime("due_date"),
+		results = append(results, dto.JournalEntryResponse{
+			ID:                      get("id"),
+			TransactionID:           get("transaction_id"),
+			TransactionCategoryID:   get("transaction_category_id"),
+			TransactionCategoryName: get("transaction_category_name"),
+			Invoice:                 get("invoice"),
+			DebitCategory:           get("debit_category"),
+			CreditCategory:          get("credit_category"),
+			Partner:                 get("partner"),
+			Description:             get("description"),
+			Amount:                  getInt64("amount"),
+			TransactionType:         get("transaction_type"),
+			DebitAccountType:        get("debit_account_type"),
+			CreditAccountType:       get("credit_account_type"),
+			Status:                  get("status"),
+			CompanyID:               get("company_id"),
+			DateInputed:             getTimePtr("date_inputed"),
+			DueDate:                 getTimePtr("due_date"),
 			RepaymentDate:           getTimePtr("repayment_date"),
 			IsRepaid:                getBool("is_repaid"),
 			Installment:             getInt("installment"),
-			Note:                    getStr("note"),
-			PaymentDateStatus:       getStr("payment_date_status"),
-			DebitLineId:             getStr("debit_line_id"),
-			CreditLineId:            getStr("credit_line_id"),
-			Label:                   getStr("label"),
+			Note:                    get("note"),
+			PaymentDateStatus:       get("payment_date_status"),
+			DebitLineId:             get("debit_line_id"),
+			CreditLineId:            get("credit_line_id"),
+			Label:                   get("label"),
 		})
 	}
 
