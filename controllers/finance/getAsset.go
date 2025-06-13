@@ -20,6 +20,8 @@ func GetAssetSummary(c *gin.Context) {
 	debitCategory := c.Query("debit_category")
 	creditCategory := c.Query("credit_category")
 	search := c.Query("search")
+	sortBy := c.DefaultQuery("sort_by", "date_inputed") // default: date_inputed
+	sortOrder := c.DefaultQuery("sort_order", "asc")    // default: asc
 
 	if summaryOnlyStr != "true" && summaryOnlyStr != "false" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Parameter summary_only harus 'true' atau 'false'."})
@@ -45,6 +47,8 @@ func GetAssetSummary(c *gin.Context) {
 		DebitCategory:   debitCategory,
 		CreditCategory:  creditCategory,
 		Search:          search,
+		SortBy:          sortBy,
+		SortOrder:       sortOrder,
 	}
 
 	data, totalAsset, total, err := service.GetAssetsFromJournalLines(params)

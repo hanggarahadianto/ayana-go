@@ -22,6 +22,8 @@ type AssetFilterParams struct {
 	DebitCategory   string
 	CreditCategory  string
 	Search          string // ⬅️ Tambahkan ini
+	SortBy          string
+	SortOrder       string
 }
 
 func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalEntryResponse, int64, int64, error) {
@@ -119,6 +121,17 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalEntryResp
 			Where("journal_entries.date_inputed <= ?", params.DateFilter.EndDate)
 	}
 
+	validSortBy := map[string]bool{
+		"date_inputed": true,
+		"due_date":     true,
+	}
+	if !validSortBy[params.SortBy] {
+		params.SortBy = "date_inputed"
+	}
+	if params.SortOrder != "asc" && params.SortOrder != "desc" {
+		params.SortOrder = "asc"
+	}
+
 	// Hitung total baris
 	if err := baseQuery.Session(&gorm.Session{}).Count(&total).Error; err != nil {
 		return nil, 0, 0, err
@@ -126,7 +139,7 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalEntryResp
 
 	// Hitung total asset (menggunakan debit - credit)
 	if err := baseQuery.Session(&gorm.Session{}).
-		Select("COALESCE(SUM(journal_lines.debit - journal_lines.credit), 0)").
+		Select("COALESCE(SUM(ABS(journal_lines.debit - journal_lines.credit)), 0)").
 		Scan(&totalAsset).Error; err != nil {
 		return nil, 0, 0, err
 	}
@@ -135,7 +148,7 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalEntryResp
 	dataQuery := baseQuery.Session(&gorm.Session{}).
 		Preload("Journal").
 		Preload("Journal.TransactionCategory"). // ✅ Tambahkan ini
-		Order("journal_entries.date_inputed ASC").
+		Order(fmt.Sprintf("journal_entries.%s %s", params.SortBy, params.SortOrder)).
 		Limit(params.Pagination.Limit).
 		Offset(params.Pagination.Offset)
 
@@ -164,6 +177,7 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalEntryResp
 			CompanyID:               line.CompanyID.String(),
 			DateInputed:             line.Journal.DateInputed,
 			DueDate:                 helper.SafeDueDate(line.Journal.DueDate),
+			RepaymentDate:           line.Journal.RepaymentDate,
 			IsRepaid:                line.Journal.IsRepaid,
 			Installment:             line.Journal.Installment,
 			Note:                    line.Journal.Note,

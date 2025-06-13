@@ -62,7 +62,7 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalEntryRespon
 	switch params.DebtStatus {
 	case "going":
 		baseQuery = baseQuery.
-			Where("journal_lines.debit > 0").
+			Where("journal_lines.credit > 0").
 			Where("journal_entries.is_repaid = ? AND journal_entries.status = ?", false, "unpaid").
 			Where("LOWER(journal_lines.credit_account_type) = ?", "liability").
 			Where("LOWER(journal_lines.debit_account_type) != ?", "revenue")
@@ -122,12 +122,9 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalEntryRespon
 	for _, line := range lines {
 		var paymentDateStatus string
 
-		// Hitung payment status jika DebtStatus adalah "done"
 		if params.DebtStatus == "done" && line.Journal.DateInputed != nil && line.Journal.DueDate != nil {
 			due := *line.Journal.DueDate
 			input := *line.Journal.DateInputed
-
-			// Lewati jika due date kosong (zero time)
 			if !due.IsZero() {
 				diff := due.Sub(input).Hours() / 24
 				if diff >= 0 {
@@ -137,31 +134,30 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalEntryRespon
 				}
 			}
 		}
-		for _, line := range lines {
-			response = append(response, dto.JournalEntryResponse{
-				ID:                      line.JournalID.String(),
-				Invoice:                 line.Journal.Invoice,
-				TransactionID:           line.Journal.Transaction_ID,
-				TransactionCategoryID:   line.Journal.TransactionCategoryID.String(),
-				TransactionCategoryName: line.Journal.TransactionCategory.Name,
-				DebitCategory:           line.Journal.TransactionCategory.DebitCategory,
-				CreditCategory:          line.Journal.TransactionCategory.CreditCategory,
-				Description:             line.Journal.Description,
-				Partner:                 line.Journal.Partner,
-				Amount:                  int64(math.Abs(float64(line.Debit - line.Credit))),
-				TransactionType:         string(line.TransactionType),
-				DebitAccountType:        line.DebitAccountType,
-				CreditAccountType:       line.CreditAccountType,
-				Status:                  string(line.Journal.Status),
-				CompanyID:               line.CompanyID.String(),
-				DateInputed:             line.Journal.DateInputed,
-				DueDate:                 helper.SafeDueDate(line.Journal.DueDate),
-				IsRepaid:                line.Journal.IsRepaid,
-				Installment:             line.Journal.Installment,
-				Note:                    line.Journal.Note,
-				PaymentDateStatus:       paymentDateStatus,
-			})
-		}
+
+		response = append(response, dto.JournalEntryResponse{
+			ID:                      line.JournalID.String(),
+			Invoice:                 line.Journal.Invoice,
+			TransactionID:           line.Journal.Transaction_ID,
+			TransactionCategoryID:   line.Journal.TransactionCategoryID.String(),
+			TransactionCategoryName: line.Journal.TransactionCategory.Name,
+			DebitCategory:           line.Journal.TransactionCategory.DebitCategory,
+			CreditCategory:          line.Journal.TransactionCategory.CreditCategory,
+			Description:             line.Journal.Description,
+			Partner:                 line.Journal.Partner,
+			Amount:                  int64(math.Abs(float64(line.Debit - line.Credit))),
+			TransactionType:         string(line.TransactionType),
+			DebitAccountType:        line.DebitAccountType,
+			CreditAccountType:       line.CreditAccountType,
+			Status:                  string(line.Journal.Status),
+			CompanyID:               line.CompanyID.String(),
+			DateInputed:             line.Journal.DateInputed,
+			DueDate:                 helper.SafeDueDate(line.Journal.DueDate),
+			IsRepaid:                line.Journal.IsRepaid,
+			Installment:             line.Journal.Installment,
+			Note:                    line.Journal.Note,
+			PaymentDateStatus:       paymentDateStatus,
+		})
 	}
 
 	return response, totalDebt, total, nil

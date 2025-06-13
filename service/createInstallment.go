@@ -102,9 +102,8 @@ func CreateInstallmentJournals(input models.JournalEntry) ([]models.JournalEntry
 					DebitAccountType:  trxCategory.DebitAccountType,
 					CreditAccountType: trxCategory.CreditAccountType,
 					TransactionType:   input.TransactionType,
-
-					CreatedAt: time.Now(),
-					UpdatedAt: time.Now(),
+					CreatedAt:         time.Now(),
+					UpdatedAt:         time.Now(),
 				},
 			},
 		}
