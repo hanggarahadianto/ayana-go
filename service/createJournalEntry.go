@@ -50,37 +50,25 @@ func createJournalEntryService(input models.JournalEntry) (models.JournalEntry, 
 		return models.JournalEntry{}, fmt.Errorf("missing required fields")
 	}
 
-	tx := db.DB.Begin() // Mulai transaksi
+	tx := db.DB.Begin()
 	defer func() {
 		if r := recover(); r != nil {
 			tx.Rollback()
 		}
 	}()
 
-	// Ambil data perusahaan
 	var company models.Company
 	if err := tx.First(&company, "id = ?", input.CompanyID).Error; err != nil {
 		tx.Rollback()
 		return models.JournalEntry{}, err
 	}
 
-	// Ambil kategori transaksi beserta akun debit dan kredit
 	var trxCategory models.TransactionCategory
 	if err := tx.Preload("DebitAccount").
 		Preload("CreditAccount").
 		First(&trxCategory, "id = ?", input.TransactionCategoryID).Error; err != nil {
 		tx.Rollback()
 		return models.JournalEntry{}, err
-	}
-
-	// Jika ada angsuran, gunakan flow khusus (tidak dalam transaksi ini)
-	if input.Installment > 0 {
-		tx.Rollback()
-		installmentJournals, err := CreateInstallmentJournals(input)
-		if err != nil {
-			return models.JournalEntry{}, err
-		}
-		return installmentJournals[0], nil
 	}
 
 	now := time.Now()
@@ -136,13 +124,11 @@ func createJournalEntryService(input models.JournalEntry) (models.JournalEntry, 
 		},
 	}
 
-	// Simpan journal (belum commit)
 	if err := tx.Create(&journal).Error; err != nil {
 		tx.Rollback()
 		return models.JournalEntry{}, err
 	}
 
-	// Load ulang journal dengan relasi agar siap diindex
 	var journalWithDetails models.JournalEntry
 	if err := tx.Preload("Lines.Account").
 		Preload("TransactionCategory.DebitAccount").
@@ -152,15 +138,27 @@ func createJournalEntryService(input models.JournalEntry) (models.JournalEntry, 
 		return models.JournalEntry{}, err
 	}
 
-	// Lakukan indexing ke Typesense terlebih dahulu
-	if err := IndexJournalDocument(journalWithDetails); err != nil {
-		tx.Rollback()
-		return models.JournalEntry{}, fmt.Errorf("indexing failed, rollback db: %w", err)
+	// Placeholder untuk semua jurnal yang perlu di-index
+	var journalsToIndex []models.JournalEntry
+	journalsToIndex = append(journalsToIndex, journalWithDetails)
+
+	// Jika ada angsuran, buat jurnal cicilan, tapi tetap commit transaksi utama dulu
+	if input.Installment > 0 {
+		installmentJournals, err := CreateInstallmentJournals(input)
+		if err != nil {
+			tx.Rollback()
+			return models.JournalEntry{}, fmt.Errorf("create installment journal failed: %w", err)
+		}
+		journalsToIndex = append(journalsToIndex, installmentJournals...)
 	}
 
-	// Jika indexing berhasil, commit transaksi DB
 	if err := tx.Commit().Error; err != nil {
 		return models.JournalEntry{}, err
+	}
+
+	// Setelah commit berhasil, lakukan indexing semua jurnal
+	if err := IndexJournals(journalsToIndex...); err != nil {
+		return models.JournalEntry{}, fmt.Errorf("indexing failed after commit: %w", err)
 	}
 
 	return journalWithDetails, nil

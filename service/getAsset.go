@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -39,7 +40,15 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalEntryResp
 			return nil, 0, 0, fmt.Errorf("gagal mengambil data aset: %w", err)
 		}
 
-		// Jika hanya summary diperlukan
+		now := time.Now()
+
+		// Tambahkan logic paymentNote ke hasil dari typesense
+		for i, line := range results {
+			note, color := helper.HitungPaymentNote(params.AssetType, line.DueDate, line.RepaymentDate, now)
+			results[i].PaymentNote = note
+			results[i].PaymentNoteColor = color
+		}
+
 		if params.SummaryOnly {
 			var totalAsset int64 = 0
 			for _, line := range results {
@@ -156,10 +165,12 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalEntryResp
 		return nil, 0, 0, err
 	}
 
+	now := time.Now()
 	var response []dto.JournalEntryResponse
 	for _, line := range lines {
+		note, color := helper.HitungPaymentNote(params.AssetType, line.Journal.DueDate, line.Journal.RepaymentDate, now)
 
-		response = append(response, dto.JournalEntryResponse{
+		entry := dto.JournalEntryResponse{
 			ID:                      line.JournalID.String(),
 			Invoice:                 line.Journal.Invoice,
 			TransactionID:           line.Journal.Transaction_ID,
@@ -181,7 +192,14 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalEntryResp
 			IsRepaid:                line.Journal.IsRepaid,
 			Installment:             line.Journal.Installment,
 			Note:                    line.Journal.Note,
-		})
+		}
+
+		if params.AssetType == "receivable" {
+			entry.PaymentNote = note
+			entry.PaymentNoteColor = color
+		}
+
+		response = append(response, entry)
 	}
 
 	return response, totalAsset, total, nil

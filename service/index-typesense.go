@@ -42,19 +42,23 @@ func SyncTypesenseWithPostgres(db *gorm.DB) error {
 	log.Println("✅ Sinkronisasi selesai.")
 	return nil
 }
+func boolPtr(b bool) *bool {
+	return &b
+}
 
 func CreateCollectionIfNotExist() error {
 	facetTrue := true
 	defaultSort := "date_inputed"
+
 	schema := &api.CollectionSchema{
 		Name: "journal_entries",
 		Fields: []api.Field{
 			{Name: "id", Type: "string", Facet: &facetTrue},
-			{Name: "company_id", Type: "string", Facet: &facetTrue},      // ✅ bisa di-facet
-			{Name: "debit_category", Type: "string", Facet: &facetTrue},  // ✅ bisa di-facet
-			{Name: "credit_category", Type: "string", Facet: &facetTrue}, // ✅ bisa di-facet
-			{Name: "transaction_id", Type: "string", Facet: &facetTrue},  // ✅ hanya satu kali
-			{Name: "invoice", Type: "string", Facet: &facetTrue},         // ✅ bisa di-facet
+			{Name: "company_id", Type: "string", Facet: &facetTrue},
+			{Name: "debit_category", Type: "string", Facet: &facetTrue},
+			{Name: "credit_category", Type: "string", Facet: &facetTrue},
+			{Name: "transaction_id", Type: "string", Facet: &facetTrue},
+			{Name: "invoice", Type: "string", Facet: &facetTrue},
 			{Name: "partner", Type: "string"},
 			{Name: "description", Type: "string"},
 			{Name: "amount", Type: "float"},
@@ -67,19 +71,20 @@ func CreateCollectionIfNotExist() error {
 			{Name: "repayment_date", Type: "int64"},
 			{Name: "is_repaid", Type: "bool"},
 			{Name: "installment", Type: "int32"},
-			{Name: "note", Type: "string"},
+
+			// ✅ optional fields properly set
+			{Name: "payment_note", Type: "string", Optional: boolPtr(true)},
+			{Name: "payment_note_color", Type: "string", Optional: boolPtr(true)},
 		},
 		DefaultSortingField: &defaultSort,
 	}
 
 	_, err := tsClient.Collections().Create(context.Background(), schema)
 	if err != nil {
-		// ✅ Jika collection sudah ada, abaikan error
 		if strings.Contains(err.Error(), "already exists") {
 			log.Println("⚠️  Collection 'journal_entries' sudah ada, lanjut...")
 			return nil
 		}
-		// ❌ Jika error lain, baru return error
 		return err
 	}
 

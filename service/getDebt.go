@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -36,7 +37,15 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalEntryRespon
 			return nil, 0, 0, fmt.Errorf("gagal mengambil data aset: %w", err)
 		}
 
-		// Jika hanya summary diperlukan
+		now := time.Now()
+
+		// Tambahkan logic paymentNote ke hasil dari typesense
+		for i, line := range results {
+			note, color := helper.HitungPaymentNote(params.DebtStatus, line.DueDate, line.RepaymentDate, now)
+			results[i].PaymentNote = note
+			results[i].PaymentNoteColor = color
+		}
+
 		if params.SummaryOnly {
 			var totalDebt int64 = 0
 			for _, line := range results {
@@ -118,22 +127,12 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalEntryRespon
 		return nil, 0, 0, err
 	}
 
+	now := time.Now()
 	var response []dto.JournalEntryResponse
-	for _, line := range lines {
-		var paymentDateStatus string
 
-		if params.DebtStatus == "done" && line.Journal.DateInputed != nil && line.Journal.DueDate != nil {
-			due := *line.Journal.DueDate
-			input := *line.Journal.DateInputed
-			if !due.IsZero() {
-				diff := due.Sub(input).Hours() / 24
-				if diff >= 0 {
-					paymentDateStatus = fmt.Sprintf("Dibayar Tepat Waktu %.0f Hari Sebelum Jatuh Tempo", diff)
-				} else {
-					paymentDateStatus = fmt.Sprintf("Dibayar Terlambat %.0f Hari Setelah Jatuh Tempo", -diff)
-				}
-			}
-		}
+	for _, line := range lines {
+
+		note, color := helper.HitungPaymentNote(params.DebtStatus, line.Journal.DueDate, line.Journal.RepaymentDate, now)
 
 		response = append(response, dto.JournalEntryResponse{
 			ID:                      line.JournalID.String(),
@@ -153,10 +152,12 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalEntryRespon
 			CompanyID:               line.CompanyID.String(),
 			DateInputed:             line.Journal.DateInputed,
 			DueDate:                 helper.SafeDueDate(line.Journal.DueDate),
+			RepaymentDate:           line.Journal.RepaymentDate,
 			IsRepaid:                line.Journal.IsRepaid,
 			Installment:             line.Journal.Installment,
 			Note:                    line.Journal.Note,
-			PaymentDateStatus:       paymentDateStatus,
+			PaymentNote:             note,
+			PaymentNoteColor:        color,
 		})
 	}
 

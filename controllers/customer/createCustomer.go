@@ -29,6 +29,7 @@ func CreateCustomer(c *gin.Context) {
 		Amount:        input.Amount,
 		Marketer:      input.Marketer,
 		HomeID:        input.HomeID,
+		ProductUnit:   input.ProductUnit,
 		CreatedAt:     time.Now(),
 		UpdatedAt:     time.Now(),
 	}

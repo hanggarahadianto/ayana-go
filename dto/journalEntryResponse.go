@@ -27,7 +27,8 @@ type JournalEntryResponse struct {
 	IsRepaid                bool       `json:"is_repaid"`
 	Installment             int        `json:"installment"`
 	Note                    string     `json:"note"`
-	PaymentDateStatus       string     `json:"payment_date_status,omitempty"`
+	PaymentNote             string     `json:"payment_note,omitempty"`
+	PaymentNoteColor        string     `json:"payment_note_color,omitempty"`
 	DebitLineId             string     `json:"debit_line_id,omitempty"`
 	CreditLineId            string     `json:"credit_line_id,omitempty"`
 	Label                   string     `json:"label,omitempty"`
@@ -56,7 +57,6 @@ func MapToJournalEntryResponse(entry models.JournalEntry) JournalEntryResponse {
 		IsRepaid:                entry.IsRepaid,
 		Installment:             entry.Installment,
 		Note:                    entry.Note,
-		PaymentDateStatus:       "", // Optional, tambahkan jika tersedia
 		DebitLineId:             "", // Tambahkan jika ada di model/relasi
 		CreditLineId:            "",
 		Label:                   "", // Tambahkan jika ada

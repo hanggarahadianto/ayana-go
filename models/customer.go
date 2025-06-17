@@ -17,9 +17,12 @@ type Customer struct {
 	PaymentMethod string     `gorm:"type:varchar(20);not null" json:"payment_method"`
 	DateInputed   *time.Time `gorm:"type:timestamp;" json:"date_inputed"` // Tanggal transaksi
 
-	HomeID    *uuid.UUID `gorm:"type:uuid;index" json:"home_id" form:"home_id"`
-	CreatedAt time.Time  `gorm:"not null" json:"created_at"`
-	UpdatedAt time.Time  `gorm:"not null" json:"updated_at"`
+	HomeID      *uuid.UUID `gorm:"type:uuid;index" json:"home_id" form:"home_id"`
+	ProductUnit string     `gorm:"type:varchar(20);not null" json:"product_unit" form:"product_unit"`
+	BankName    string     `gorm:"type:varchar(20);" json:"bank_name" form:"bank_name"`
+
+	CreatedAt time.Time `gorm:"not null" json:"created_at"`
+	UpdatedAt time.Time `gorm:"not null" json:"updated_at"`
 
 	Home *Home `json:"home"` // Relasi ke model Home
 }

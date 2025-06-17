@@ -12,59 +12,64 @@ import (
 	"gorm.io/gorm"
 )
 
-func DeleteJournalEntry(c *gin.Context) {
-	idStr := c.Param("id")
-	journalEntryID, err := uuid.Parse(idStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid journal entry ID"})
+func DeleteJournalEntries(c *gin.Context) {
+	var req struct {
+		IDs []string `json:"ids"` // terima array string UUID
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON"})
 		return
 	}
 
-	// Hapus dari Postgres dalam transaksi
-	err = db.DB.Transaction(func(tx *gorm.DB) error {
-		var journalEntry models.JournalEntry
+	// Validasi dan konversi ke UUID
+	var uuidList []uuid.UUID
+	for _, idStr := range req.IDs {
+		id, err := uuid.Parse(idStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid UUID in list", "id": idStr})
+			return
+		}
+		uuidList = append(uuidList, id)
+	}
 
-		// Ambil journal entry
-		if err := tx.Preload("Lines").First(&journalEntry, "id = ?", journalEntryID).Error; err != nil {
-			if err == gorm.ErrRecordNotFound {
-				c.JSON(http.StatusNotFound, gin.H{"error": "Journal entry not found"})
-			} else {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to find journal entry"})
+	// Mulai transaksi
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
+		for _, journalEntryID := range uuidList {
+			var journalEntry models.JournalEntry
+
+			if err := tx.Preload("Lines").First(&journalEntry, "id = ?", journalEntryID).Error; err != nil {
+				if err == gorm.ErrRecordNotFound {
+					continue // skip ID yang tidak ditemukan
+				}
+				return err
 			}
-			return err
-		}
 
-		// Hapus journal lines
-		if err := tx.Where("journal_id = ?", journalEntryID).Delete(&models.JournalLine{}).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete journal lines"})
-			return err
-		}
+			if err := tx.Where("journal_id = ?", journalEntryID).Delete(&models.JournalLine{}).Error; err != nil {
+				return err
+			}
 
-		// Hapus journal entry
-		if err := tx.Delete(&journalEntry).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete journal entry"})
-			return err
+			if err := tx.Delete(&journalEntry).Error; err != nil {
+				return err
+			}
 		}
-
 		return nil
 	})
 
 	if err != nil {
-		// Semua error sudah dikirimkan di dalam transaksi
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete journal entries", "details": err.Error()})
 		return
 	}
 
-	if err := service.DeleteJournalEntryFromTypesense(c.Request.Context(), journalEntryID.String()); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error":   "Failed to delete from Typesense",
-			"details": err.Error(), // tampilkan pesan error spesifik
-		})
-		return
+	// Hapus juga dari Typesense (optional)
+	for _, id := range uuidList {
+		if err := service.DeleteJournalEntryFromTypesense(c.Request.Context(), id.String()); err != nil {
+			// Optional: tangani error ini jika penting
+		}
 	}
 
-	// Berhasil
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "success",
-		"message": "Journal entry deleted successfully",
+		"message": "Journal entries deleted successfully",
 	})
 }

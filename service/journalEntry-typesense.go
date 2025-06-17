@@ -12,6 +12,15 @@ import (
 	"github.com/typesense/typesense-go/typesense/api"
 )
 
+func IndexJournals(journals ...models.JournalEntry) error {
+	for _, journal := range journals {
+		if err := IndexJournalDocument(journal); err != nil {
+			return fmt.Errorf("indexing failed for journal %s: %w", journal.ID, err)
+		}
+	}
+	return nil
+}
+
 func IndexJournalDocument(journal models.JournalEntry) error {
 	document := map[string]interface{}{
 		"id":                      journal.ID.String(),
@@ -85,20 +94,24 @@ func updateJournalEntryInTypesense(entry models.JournalEntry) error {
 	return nil
 }
 
-func DeleteJournalEntryFromTypesense(ctx context.Context, journalEntryID string) error {
-	_, err := tsClient.
-		Collection("journal_entries").
-		Document(journalEntryID).
-		Delete(ctx)
+func DeleteJournalEntryFromTypesense(ctx context.Context, journalEntryIDs ...string) error {
+	for _, id := range journalEntryIDs {
+		_, err := tsClient.
+			Collection("journal_entries").
+			Document(id).
+			Delete(ctx)
 
-	if err != nil {
-		// Jika error karena dokumen tidak ditemukan, abaikan
-		if strings.Contains(err.Error(), "Not Found") {
-			log.Printf("Typesense document not found for ID %s. Skipping deletion.", journalEntryID)
-			return nil
+		if err != nil {
+			// Abaikan error "Not Found"
+			if strings.Contains(err.Error(), "Not Found") {
+				log.Printf("Typesense document not found for ID %s. Skipping deletion.", id)
+				continue
+			}
+
+			// Log error dan kembalikan
+			log.Printf("Failed to delete document %s: %v", id, err)
+			return fmt.Errorf("failed to delete document %s from Typesense: %w", id, err)
 		}
-		// Untuk error lain, tetap return error
-		return fmt.Errorf("failed to delete document from Typesense: %w", err)
 	}
 
 	return nil
@@ -194,7 +207,8 @@ func SearchJournalLines(query string, companyID string, debitCategory string, cr
 			IsRepaid:                getBool("is_repaid"),
 			Installment:             getInt("installment"),
 			Note:                    get("note"),
-			PaymentDateStatus:       get("payment_date_status"),
+			PaymentNote:             get("payment_note"),
+			PaymentNoteColor:        get("payment_note_color"),
 			DebitLineId:             get("debit_line_id"),
 			CreditLineId:            get("credit_line_id"),
 			Label:                   get("label"),
