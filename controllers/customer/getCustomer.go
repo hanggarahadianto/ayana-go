@@ -1,10 +1,9 @@
 package controllers
 
 import (
-	"ayana/db"
+	"ayana/service"
 	"ayana/utils/helper"
 
-	"ayana/models"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -12,34 +11,42 @@ import (
 
 func GetCustomers(c *gin.Context) {
 	pagination := helper.GetPagination(c)
-
 	if !helper.ValidatePagination(pagination, c) {
 		return
 	}
 
-	var customers []models.Customer
-	var total int64
+	search := c.Query("search")
+	summaryOnlyStr := c.DefaultQuery("summary_only", "false")
+	summaryOnly := summaryOnlyStr == "true"
 
-	// Hitung total data
-	if err := db.DB.Model(&models.Customer{}).Count(&total).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to count customers"})
+	dateFilter, err := helper.GetDateFilter(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Format tanggal tidak valid. Gunakan format YYYY-MM-DD."})
 		return
 	}
 
-	// Ambil data dengan pagination
-	if err := db.DB.Preload("Home").
-		Order("updated_at DESC").
-		Limit(pagination.Limit).
-		Offset(pagination.Offset).
-		Find(&customers).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve customers"})
+	params := service.CustomerFilterParams{
+		Pagination:  pagination,
+		Search:      search,
+		SummaryOnly: summaryOnly,
+		DateFilter:  dateFilter,
+	}
+
+	data, total, err := service.GetCustomersWithSearch(params)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil data customer"})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"data":  customers,
-		"page":  pagination.Page,
-		"limit": pagination.Limit,
-		"total": total,
+		"data": gin.H{
+			"customerList":   data,
+			"total_customer": total,
+			"page":           pagination.Page,
+			"limit":          pagination.Limit,
+			"total":          total,
+		},
+		"message": "Data customer berhasil diambil",
+		"status":  "sukses",
 	})
 }

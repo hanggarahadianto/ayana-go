@@ -38,6 +38,7 @@ func UpdateCustomer(c *gin.Context) {
 	customer.Marketer = input.Marketer
 	customer.HomeID = input.HomeID
 	customer.ProductUnit = input.ProductUnit
+	customer.BankName = input.BankName
 	customer.UpdatedAt = time.Now()
 
 	if err := db.DB.Save(&customer).Error; err != nil {

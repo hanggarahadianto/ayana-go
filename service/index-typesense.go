@@ -50,6 +50,7 @@ func CreateCollectionIfNotExist() error {
 	facetTrue := true
 	defaultSort := "date_inputed"
 
+	// === Journal Entries ===
 	schema := &api.CollectionSchema{
 		Name: "journal_entries",
 		Fields: []api.Field{
@@ -71,24 +72,52 @@ func CreateCollectionIfNotExist() error {
 			{Name: "repayment_date", Type: "int64"},
 			{Name: "is_repaid", Type: "bool"},
 			{Name: "installment", Type: "int32"},
-
-			// ✅ optional fields properly set
 			{Name: "payment_note", Type: "string", Optional: boolPtr(true)},
 			{Name: "payment_note_color", Type: "string", Optional: boolPtr(true)},
 		},
 		DefaultSortingField: &defaultSort,
 	}
 
-	_, err := tsClient.Collections().Create(context.Background(), schema)
-	if err != nil {
+	if _, err := tsClient.Collections().Create(context.Background(), schema); err != nil {
 		if strings.Contains(err.Error(), "already exists") {
 			log.Println("⚠️  Collection 'journal_entries' sudah ada, lanjut...")
-			return nil
+		} else {
+			return fmt.Errorf("gagal buat collection journal_entries: %w", err)
 		}
-		return err
+	} else {
+		log.Println("✅ Collection 'journal_entries' berhasil dibuat")
 	}
 
-	log.Println("✅ Collection 'journal_entries' berhasil dibuat")
+	// === Customers ===
+	customerSchema := &api.CollectionSchema{
+		Name: "customers",
+		Fields: []api.Field{
+			{Name: "id", Type: "string", Facet: &facetTrue},
+			{Name: "name", Type: "string"},
+			{Name: "address", Type: "string"},
+			{Name: "phone", Type: "string"},
+			{Name: "status", Type: "string", Facet: &facetTrue},
+			{Name: "marketer", Type: "string"},
+			{Name: "amount", Type: "float"},
+			{Name: "payment_method", Type: "string"},
+			{Name: "date_inputed", Type: "int64"}, // ⛔️ Jangan optional
+			{Name: "home_id", Type: "string", Optional: boolPtr(true)},
+			{Name: "product_unit", Type: "string"},
+			{Name: "bank_name", Type: "string"},
+		},
+		DefaultSortingField: ptrString("date_inputed"),
+	}
+
+	if _, err := tsClient.Collections().Create(context.Background(), customerSchema); err != nil {
+		if strings.Contains(err.Error(), "already exists") {
+			log.Println("⚠️  Collection 'customers' sudah ada, lanjut...")
+		} else {
+			return fmt.Errorf("gagal buat collection customers: %w", err)
+		}
+	} else {
+		log.Println("✅ Collection 'customers' berhasil dibuat")
+	}
+
 	return nil
 }
 
