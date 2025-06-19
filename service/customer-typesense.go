@@ -1,6 +1,7 @@
 package service
 
 import (
+	"ayana/db"
 	"ayana/dto"
 	"ayana/models"
 	"context"
@@ -14,49 +15,26 @@ import (
 
 func IndexCustomers(customers ...models.Customer) error {
 	for _, customer := range customers {
-		if err := IndexCustomerDocuments(customer); err != nil {
+		if err := indexSingleCustomer(customer); err != nil {
 			return fmt.Errorf("indexing failed for customer %s: %w", customer.ID, err)
 		}
 	}
 	return nil
 }
 
-func IndexCustomerDocuments(customers ...models.Customer) error {
-	for _, customer := range customers {
-		document := map[string]interface{}{
-			"id":             customer.ID.String(),
-			"name":           customer.Name,
-			"address":        customer.Address,
-			"phone":          customer.Phone,
-			"status":         customer.Status,
-			"marketer":       customer.Marketer,
-			"amount":         customer.Amount,
-			"payment_method": customer.PaymentMethod,
-			"product_unit":   customer.ProductUnit,
-			"bank_name":      customer.BankName,
-		}
+func indexSingleCustomer(customer models.Customer) error {
+	document := buildCustomerDocument(customer)
 
-		if customer.DateInputed != nil {
-			document["date_inputed"] = customer.DateInputed.Unix()
-		}
-		if customer.HomeID != nil {
-			document["home_id"] = customer.HomeID.String()
-		}
-
-		_, err := tsClient.Collection("customers").Documents().Create(context.Background(), document)
-		if err != nil {
-			return fmt.Errorf("gagal index customer ID %s: %w", customer.ID.String(), err)
-		}
+	_, err := tsClient.Collection("customers").Documents().Create(context.Background(), document)
+	if err != nil {
+		return fmt.Errorf("gagal index customer ID %s: %w", customer.ID.String(), err)
 	}
 	return nil
 }
 
-func UpdateCustomerInTypesense(customer models.Customer) error {
-	ctx := context.Background()
-	docID := customer.ID.String()
-
-	document := map[string]interface{}{
-		"id":             docID,
+func buildCustomerDocument(customer models.Customer) map[string]interface{} {
+	doc := map[string]interface{}{
+		"id":             customer.ID.String(),
 		"name":           customer.Name,
 		"address":        customer.Address,
 		"phone":          customer.Phone,
@@ -64,28 +42,35 @@ func UpdateCustomerInTypesense(customer models.Customer) error {
 		"marketer":       customer.Marketer,
 		"amount":         customer.Amount,
 		"payment_method": customer.PaymentMethod,
-		"date_inputed": func() interface{} {
-			if customer.DateInputed != nil {
-				return customer.DateInputed.Unix()
-			}
-			return nil
-		}(),
-		"home_id": func() string {
-			if customer.HomeID != nil {
-				return customer.HomeID.String()
-			}
-			return ""
-		}(),
-		"product_unit": customer.ProductUnit,
-		"bank_name":    customer.BankName,
-		"created_at":   customer.CreatedAt.Unix(),
-		"updated_at":   customer.UpdatedAt.Unix(),
+		"product_unit":   customer.ProductUnit,
+		"bank_name":      customer.BankName,
+		"company_id":     customer.CompanyID.String(), // ✅ Tambahkan company_id
+		"created_at":     customer.CreatedAt.Unix(),
+		"updated_at":     customer.UpdatedAt.Unix(),
 	}
 
+	if customer.DateInputed != nil {
+		doc["date_inputed"] = customer.DateInputed.Unix()
+	}
+
+	if customer.HomeID != nil {
+		doc["home_id"] = customer.HomeID.String()
+	}
+
+	return doc
+}
+
+func UpdateCustomerInTypesense(customer models.Customer) error {
+	ctx := context.Background()
+	docID := customer.ID.String()
+
+	// Check if document exists
 	_, err := tsClient.Collection("customers").Document(docID).Retrieve(ctx)
 	if err != nil {
 		return fmt.Errorf("document not found: %w", err)
 	}
+
+	document := buildCustomerDocument(customer)
 
 	_, err = tsClient.Collection("customers").Document(docID).Update(ctx, document)
 	if err != nil {
@@ -128,7 +113,9 @@ func SearchCustomers(query, companyID string, page, perPage int) ([]dto.Customer
 	}
 
 	var results []dto.CustomerResponse
+	var homeIDs []string
 
+	// Step 1: Parse basic customer fields from Typesense
 	for _, hit := range *searchResult.Hits {
 		doc := hit.Document
 		if doc == nil {
@@ -136,48 +123,90 @@ func SearchCustomers(query, companyID string, page, perPage int) ([]dto.Customer
 		}
 		m := *doc
 
-		getStr := func(key string) string {
-			if v, ok := m[key].(string); ok {
-				return v
-			}
-			return ""
-		}
-
-		getInt64 := func(key string) int64 {
-			if v, ok := m[key].(float64); ok {
-				return int64(v)
-			}
-			return 0
-		}
-
-		getTimePtr := func(key string) *time.Time {
-			if v, ok := m[key].(float64); ok && v > 0 {
-				t := time.Unix(int64(v), 0)
-				return &t
-			}
-			return nil
-		}
+		homeID := getStr(m, "home_id")
+		homeIDs = append(homeIDs, homeID)
 
 		results = append(results, dto.CustomerResponse{
-			ID:            getStr("id"),
-			Name:          getStr("name"),
-			Address:       getStr("address"),
-			Phone:         getStr("phone"),
-			Status:        getStr("status"),
-			Marketer:      getStr("marketer"),
-			Amount:        getInt64("amount"),
-			PaymentMethod: getStr("payment_method"),
-			DateInputed:   getTimePtr("date_inputed"),
-			HomeID:        getStr("home_id"),
-			ProductUnit:   getStr("product_unit"),
-			BankName:      getStr("bank_name"),
+			ID:            getStr(m, "id"),
+			Name:          getStr(m, "name"),
+			Address:       getStr(m, "address"),
+			Phone:         getStr(m, "phone"),
+			Status:        getStr(m, "status"),
+			Marketer:      getStr(m, "marketer"),
+			Amount:        getInt64(m, "amount"),
+			PaymentMethod: getStr(m, "payment_method"),
+			DateInputed:   getTimePtr(m, "date_inputed"),
+			HomeID:        homeID,
+			ProductUnit:   getStr(m, "product_unit"),
+			BankName:      getStr(m, "bank_name"),
 		})
 	}
 
+	// Step 2: Ambil data Home dari database
+	var homes []models.Home
+	if len(homeIDs) > 0 {
+		err := db.DB.Where("id IN ?", homeIDs).Find(&homes).Error
+		if err != nil {
+			return nil, 0, fmt.Errorf("gagal mengambil data home: %w", err)
+		}
+	}
+
+	// Step 3: Map homeID → HomeResponse
+	homeMap := make(map[string]*dto.HomeResponse)
+	for _, h := range homes {
+		homeMap[h.ID.String()] = &dto.HomeResponse{
+			ID:         h.ID.String(),
+			ClusterID:  h.ClusterID.String(),
+			Type:       h.Type,
+			Title:      h.Title,
+			Content:    h.Content,
+			Bathroom:   int(h.Bathroom),
+			Bedroom:    int(h.Bedroom),
+			Square:     int(h.Square),
+			Price:      int64(h.Price),
+			Quantity:   int(h.Quantity),
+			Status:     h.Status,
+			Sequence:   int(h.Sequence),
+			StartPrice: int64(h.StartPrice),
+		}
+	}
+
+	// Step 4: Lengkapi setiap CustomerResponse dengan Home
+	for i, customer := range results {
+		if home, ok := homeMap[customer.HomeID]; ok {
+			results[i].Home = home
+		}
+	}
+
+	// Total data ditemukan
 	var found int64
 	if searchResult.Found != nil {
 		found = int64(*searchResult.Found)
 	}
 
 	return results, found, nil
+}
+
+// 🔸 Helpers
+
+func getStr(m map[string]interface{}, key string) string {
+	if v, ok := m[key].(string); ok {
+		return v
+	}
+	return ""
+}
+
+func getInt64(m map[string]interface{}, key string) int64 {
+	if v, ok := m[key].(float64); ok {
+		return int64(v)
+	}
+	return 0
+}
+
+func getTimePtr(m map[string]interface{}, key string) *time.Time {
+	if v, ok := m[key].(float64); ok && v > 0 {
+		t := time.Unix(int64(v), 0)
+		return &t
+	}
+	return nil
 }

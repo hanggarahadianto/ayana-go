@@ -17,6 +17,8 @@ type Project struct {
 	ProjectEnd    *time.Time `gorm:"type:timestamp" json:"project_end" form:"project_end"`
 	Note          string     `gorm:"type:varchar(255);not null" json:"note" form:"note"`
 
+	CompanyID uuid.UUID `gorm:"type:uuid;not null" json:"company_id"`
+
 	CreatedAt time.Time `gorm:"type:timestamp;default:now()" json:"created_at"`
 	UpdatedAt time.Time `gorm:"type:timestamp;default:now()" json:"updated_at"`
 

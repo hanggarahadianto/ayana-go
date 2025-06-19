@@ -21,6 +21,8 @@ type Customer struct {
 	ProductUnit string     `gorm:"type:varchar(20);not null" json:"product_unit" form:"product_unit"`
 	BankName    string     `gorm:"type:varchar(20);" json:"bank_name" form:"bank_name"`
 
+	CompanyID uuid.UUID `gorm:"type:uuid;not null" json:"company_id"`
+
 	CreatedAt time.Time `gorm:"not null" json:"created_at"`
 	UpdatedAt time.Time `gorm:"not null" json:"updated_at"`
 

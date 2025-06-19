@@ -28,6 +28,7 @@ func CreateProject(c *gin.Context) {
 		ProjectStart:  projectData.ProjectStart, // Set the ProjectStart value from the input
 		ProjectEnd:    projectData.ProjectEnd,
 		Note:          projectData.Note,
+		CompanyID:     projectData.CompanyID,
 		CreatedAt:     now,
 		UpdatedAt:     now,
 	}

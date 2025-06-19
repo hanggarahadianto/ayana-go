@@ -30,13 +30,19 @@ func SyncTypesenseWithPostgres(db *gorm.DB) error {
 		return fmt.Errorf("gagal pastikan collection: %w", err)
 	}
 
-	postgresIDs, err := fetchPostgresJournalIDs(db)
+	journalIDs, err := fetchPostgresJournalIDs(db)
 	if err != nil {
-		return err
+		return fmt.Errorf("gagal fetch journal IDs: %w", err)
 	}
-
-	if err := removeOrphanDocuments(postgresIDs); err != nil {
-		return err
+	if err := removeOrphanDocuments("journal_entries", journalIDs); err != nil {
+		return fmt.Errorf("gagal hapus dokumen orphan journal: %w", err)
+	}
+	customerIDs, err := fetchPostgresCustomerIDs(db)
+	if err != nil {
+		return fmt.Errorf("gagal fetch customer IDs: %w", err)
+	}
+	if err := removeOrphanDocuments("customers", customerIDs); err != nil {
+		return fmt.Errorf("gagal hapus dokumen orphan customer: %w", err)
 	}
 
 	log.Println("✅ Sinkronisasi selesai.")
@@ -104,6 +110,7 @@ func CreateCollectionIfNotExist() error {
 			{Name: "home_id", Type: "string", Optional: boolPtr(true)},
 			{Name: "product_unit", Type: "string"},
 			{Name: "bank_name", Type: "string"},
+			{Name: "company_id", Type: "string", Facet: &facetTrue},
 		},
 		DefaultSortingField: ptrString("date_inputed"),
 	}
@@ -144,18 +151,32 @@ func fetchPostgresJournalIDs(db *gorm.DB) (map[string]struct{}, error) {
 	return ids, nil
 }
 
-func removeOrphanDocuments(validIDs map[string]struct{}) error {
+func fetchPostgresCustomerIDs(db *gorm.DB) (map[string]struct{}, error) {
+	var customers []models.Customer
+	if err := db.Select("id").Find(&customers).Error; err != nil {
+		return nil, err
+	}
+
+	ids := make(map[string]struct{}, len(customers))
+	for _, c := range customers {
+		ids[c.ID.String()] = struct{}{}
+	}
+
+	return ids, nil
+}
+
+func removeOrphanDocuments(collectionName string, validIDs map[string]struct{}) error {
 	page := 1
 	perPage := 250
 
 	for {
-		result, err := tsClient.Collection("journal_entries").Documents().Search(context.Background(), &api.SearchCollectionParams{
+		result, err := tsClient.Collection(collectionName).Documents().Search(context.Background(), &api.SearchCollectionParams{
 			Q:       "*",
 			Page:    &page,
 			PerPage: &perPage,
 		})
 		if err != nil {
-			return err
+			return fmt.Errorf("search %s: %w", collectionName, err)
 		}
 
 		hits := result.Hits
@@ -177,20 +198,18 @@ func removeOrphanDocuments(validIDs map[string]struct{}) error {
 				continue
 			}
 
-			// Cek apakah idStr ada di validIDs (data Postgres)
 			if _, exists := validIDs[idStr]; exists {
-				// Dokumen valid, tidak dihapus
 				continue
 			}
 
-			// Jika tidak ada di validIDs, hapus dari Typesense
-			_, err := tsClient.Collection("journal_entries").Document(idStr).Delete(context.Background())
-			if err != nil {
+			if _, err := tsClient.Collection(collectionName).Document(idStr).Delete(context.Background()); err != nil {
 				if strings.Contains(err.Error(), "404") {
-					log.Printf("Dokumen %s tidak ditemukan, skip hapus", idStr)
+					log.Printf("Dokumen %s (%s) tidak ditemukan, skip hapus", idStr, collectionName)
 				} else {
-					return err
+					log.Printf("❌ Gagal hapus dokumen %s (%s): %v", idStr, collectionName, err)
 				}
+			} else {
+				log.Printf("🗑️ Hapus dokumen %s dari collection %s", idStr, collectionName)
 			}
 		}
 

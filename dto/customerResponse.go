@@ -21,19 +21,17 @@ type CustomerResponse struct {
 }
 
 type HomeResponse struct {
-	ID         string    `json:"id"`
-	ClusterID  string    `json:"cluster_id"`
-	Type       string    `json:"type"`
-	Title      string    `json:"title"`
-	Content    string    `json:"content"`
-	Bathroom   int       `json:"bathroom"`
-	Bedroom    int       `json:"bedroom"`
-	Square     int       `json:"square"`
-	Price      int64     `json:"price"`
-	Quantity   int       `json:"quantity"`
-	Status     string    `json:"status"`
-	Sequence   int       `json:"sequence"`
-	StartPrice int64     `json:"start_price"`
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
+	ID         string `json:"id"`
+	ClusterID  string `json:"cluster_id"`
+	Type       string `json:"type"`
+	Title      string `json:"title"`
+	Content    string `json:"content"`
+	Bathroom   int    `json:"bathroom"`
+	Bedroom    int    `json:"bedroom"`
+	Square     int    `json:"square"`
+	Price      int64  `json:"price"`
+	Quantity   int    `json:"quantity"`
+	Status     string `json:"status"`
+	Sequence   int    `json:"sequence"`
+	StartPrice int64  `json:"start_price"`
 }

@@ -33,6 +33,7 @@ func EditProject(c *gin.Context) {
 	existingProject.ProjectTime = projectData.ProjectTime
 	existingProject.ProjectStart = projectData.ProjectStart
 	existingProject.ProjectEnd = projectData.ProjectEnd
+	existingProject.CompanyID = projectData.CompanyID
 	existingProject.Note = projectData.Note
 	existingProject.UpdatedAt = time.Now()
 

@@ -1,27 +1,50 @@
 package controllers
 
 import (
-	"ayana/db"
-	"ayana/models"
+	"ayana/service"
+	"ayana/utils/helper"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 func GetProject(c *gin.Context) {
-	var projectList []models.Project
+	companyIDStr := c.DefaultQuery("company_id", "")
 
-	result := db.DB.Order("created_at desc, updated_at desc").Find(&projectList)
-	if result.Error != nil {
+	// Validasi Company ID
+	companyID, valid := helper.ValidateAndParseCompanyID(companyIDStr, c)
+	if !valid {
+		return
+	}
+
+	pagination := helper.GetPagination(c)
+
+	search := c.Query("search") // optional kalau kamu pakai
+
+	params := service.ProjectFilterParams{
+		CompanyID:  companyID.String(),
+		Pagination: pagination,
+		Search:     search,
+	}
+
+	projects, totalProject, total, err := service.GetProjects(params)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "error",
-			"message": result.Error.Error(),
+			"message": err.Error(),
 		})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"data":   projectList,
-	})
 
+	c.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"projectList":   projects,
+			"total_project": totalProject,
+			"page":          pagination.Page,
+			"limit":         pagination.Limit,
+			"total":         total,
+		},
+		"message": "Data project berhasil diambil",
+		"status":  "sukses",
+	})
 }

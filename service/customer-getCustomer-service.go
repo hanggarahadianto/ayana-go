@@ -9,7 +9,6 @@ import (
 	"log"
 
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 type CustomerFilterParams struct {
@@ -26,45 +25,62 @@ func GetCustomersWithSearch(params CustomerFilterParams) ([]dto.CustomerResponse
 	var customers []models.Customer
 	var total int64
 
-	// Jika pakai search dengan Typesense (optional)
+	// 🔍 Search via Typesense
 	if params.Search != "" {
 		results, found, err := SearchCustomers(params.Search, params.CompanyID, params.Pagination.Page, params.Pagination.Limit)
 		if err != nil {
 			log.Println("🔴 Error search Typesense:", err)
 			return nil, 0, fmt.Errorf("gagal search customer")
 		}
-
 		if params.SummaryOnly {
 			return nil, int64(found), nil
 		}
-
 		return results, int64(found), nil
 	}
 
-	// 🔸 Inisialisasi baseQuery
-	baseQuery := db.DB.Model(&models.Customer{})
-
-	// 🔹 Filter tanggal jika ada
-	if params.DateFilter.StartDate != nil && params.DateFilter.EndDate != nil {
-		baseQuery = baseQuery.Where("date_inputed BETWEEN ? AND ?", params.DateFilter.StartDate, params.DateFilter.EndDate)
-	} else if params.DateFilter.StartDate != nil {
-		baseQuery = baseQuery.Where("date_inputed >= ?", params.DateFilter.StartDate)
-	} else if params.DateFilter.EndDate != nil {
-		baseQuery = baseQuery.Where("date_inputed <= ?", params.DateFilter.EndDate)
+	// Validasi sort_by dan sort_order
+	validSortBy := map[string]bool{
+		"date_inputed": true,
+	}
+	if !validSortBy[params.SortBy] {
+		params.SortBy = "date_inputed"
+	}
+	if params.SortOrder != "asc" && params.SortOrder != "desc" {
+		params.SortOrder = "asc"
 	}
 
-	// 🔹 Hitung total data
-	if err := baseQuery.Session(&gorm.Session{}).Count(&total).Error; err != nil {
+	// 🔹 Query untuk menghitung total
+	countQuery := db.DB.Model(&models.Customer{}).Where("company_id = ?", params.CompanyID)
+	if params.DateFilter.StartDate != nil && params.DateFilter.EndDate != nil {
+		countQuery = countQuery.Where("date_inputed BETWEEN ? AND ?", params.DateFilter.StartDate, params.DateFilter.EndDate)
+	} else if params.DateFilter.StartDate != nil {
+		countQuery = countQuery.Where("date_inputed >= ?", params.DateFilter.StartDate)
+	} else if params.DateFilter.EndDate != nil {
+		countQuery = countQuery.Where("date_inputed <= ?", params.DateFilter.EndDate)
+	}
+
+	if err := countQuery.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
-	// 🔹 Ambil data dengan pagination
-	if err := baseQuery.
-		Order("updated_at DESC").
+	// 🔹 Query untuk ambil data (HARUS query baru)
+	dataQuery := db.DB.Model(&models.Customer{}).
+		Where("company_id = ?", params.CompanyID).
+		Order(fmt.Sprintf("%s %s", params.SortBy, params.SortOrder)).
 		Limit(params.Pagination.Limit).
 		Offset(params.Pagination.Offset).
-		Preload("Home").
-		Find(&customers).Error; err != nil {
+		Preload("Home")
+
+	// 🔹 Filter tanggal di dataQuery juga
+	if params.DateFilter.StartDate != nil && params.DateFilter.EndDate != nil {
+		dataQuery = dataQuery.Where("date_inputed BETWEEN ? AND ?", params.DateFilter.StartDate, params.DateFilter.EndDate)
+	} else if params.DateFilter.StartDate != nil {
+		dataQuery = dataQuery.Where("date_inputed >= ?", params.DateFilter.StartDate)
+	} else if params.DateFilter.EndDate != nil {
+		dataQuery = dataQuery.Where("date_inputed <= ?", params.DateFilter.EndDate)
+	}
+
+	if err := dataQuery.Find(&customers).Error; err != nil {
 		return nil, 0, err
 	}
 
@@ -87,8 +103,6 @@ func GetCustomersWithSearch(params CustomerFilterParams) ([]dto.CustomerResponse
 				Status:     c.Home.Status,
 				Sequence:   int(c.Home.Sequence),
 				StartPrice: int64(c.Home.StartPrice),
-				CreatedAt:  c.Home.CreatedAt,
-				UpdatedAt:  c.Home.UpdatedAt,
 			}
 		}
 
