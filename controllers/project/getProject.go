@@ -16,6 +16,11 @@ func GetProject(c *gin.Context) {
 	if !valid {
 		return
 	}
+	dateFilter, err := helper.GetDateFilter(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Format tanggal tidak valid. Gunakan format YYYY-MM-DD."})
+		return
+	}
 
 	pagination := helper.GetPagination(c)
 
@@ -24,6 +29,7 @@ func GetProject(c *gin.Context) {
 	params := service.ProjectFilterParams{
 		CompanyID:  companyID.String(),
 		Pagination: pagination,
+		DateFilter: dateFilter,
 		Search:     search,
 	}
 

@@ -9,7 +9,8 @@ import (
 type ProjectFilterParams struct {
 	CompanyID  string
 	Pagination helper.Pagination
-	Search     string // Jika ingin menambahkan pencarian di masa depan
+	DateFilter helper.DateFilter
+	Search     string
 }
 
 func GetProjects(params ProjectFilterParams) ([]models.Project, int64, int64, error) {
@@ -19,16 +20,30 @@ func GetProjects(params ProjectFilterParams) ([]models.Project, int64, int64, er
 		filteredTotal int64
 	)
 
-	// Total seluruh project tanpa filter
+	// Hitung semua project tanpa filter
 	if err := db.DB.Model(&models.Project{}).Count(&totalProject).Error; err != nil {
 		return nil, 0, 0, err
 	}
 
-	// Query dengan filter company_id dan search
+	// Base query dengan filter company_id
 	query := db.DB.Model(&models.Project{}).Where("company_id = ?", params.CompanyID)
 
+	// Filter pencarian nama
 	if params.Search != "" {
-		query = query.Where("name ILIKE ?", "%"+params.Search+"%")
+		searchPattern := "%" + params.Search + "%"
+		query = query.Where(`
+			project_name ILIKE ? OR 
+			project_leader ILIKE ? OR 
+			investor ILIKE ?`,
+			searchPattern, searchPattern, searchPattern)
+	}
+	// Filter berdasarkan rentang tanggal ProjectStart
+	if params.DateFilter.StartDate != nil && params.DateFilter.EndDate != nil {
+		query = query.Where("project_start BETWEEN ? AND ?", params.DateFilter.StartDate, params.DateFilter.EndDate)
+	} else if params.DateFilter.StartDate != nil {
+		query = query.Where("project_start >= ?", params.DateFilter.StartDate)
+	} else if params.DateFilter.EndDate != nil {
+		query = query.Where("project_start <= ?", params.DateFilter.EndDate)
 	}
 
 	// Hitung total setelah filter (tanpa pagination)

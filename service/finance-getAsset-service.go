@@ -118,7 +118,7 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalEntryResp
 		baseQuery = baseQuery.Where("LOWER(transaction_categories.credit_category) = LOWER(?)", params.CreditCategory)
 
 	}
-	// Filter date
+
 	if params.DateFilter.StartDate != nil && params.DateFilter.EndDate != nil {
 		baseQuery = baseQuery.
 			Where("journal_entries.date_inputed BETWEEN ? AND ?", params.DateFilter.StartDate, params.DateFilter.EndDate)
