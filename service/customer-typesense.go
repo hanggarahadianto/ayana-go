@@ -96,10 +96,18 @@ func DeleteCustomerFromTypesense(ctx context.Context, customerIDs ...string) err
 	return nil
 }
 
-func SearchCustomers(query, companyID string, page, perPage int) ([]dto.CustomerResponse, int64, error) {
+func SearchCustomers(query, companyID string, startDate, endDate *time.Time, page, perPage int) ([]dto.CustomerResponse, int64, error) {
+
 	log.Printf("🔍 Searching customers: query=%s, companyID=%s, page=%d, perPage=%d", query, companyID, page, perPage)
 
 	filters := []string{"company_id:=" + companyID}
+
+	if startDate != nil {
+		filters = append(filters, fmt.Sprintf("date_inputed:>=%d", startDate.Unix()))
+	}
+	if endDate != nil {
+		filters = append(filters, fmt.Sprintf("date_inputed:<=%d", endDate.Unix()))
+	}
 
 	searchParams := &api.SearchCollectionParams{
 		Q:        query,

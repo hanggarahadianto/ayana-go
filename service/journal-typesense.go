@@ -117,32 +117,51 @@ func DeleteJournalEntryFromTypesense(ctx context.Context, journalEntryIDs ...str
 	return nil
 }
 
-func SearchJournalLines(query string, companyID string, debitCategory string, creditCategory string, page, perPage int) ([]dto.JournalEntryResponse, int, error) {
+func SearchJournalLines(
+	query string,
+	companyID string,
+	debitCategory string,
+	creditCategory string,
+	startDate, endDate *time.Time,
+	page, perPage int,
+) ([]dto.JournalEntryResponse, int, error) {
 	log.Printf("🔍 Searching journal lines: query=%s, companyID=%s, page=%d, perPage=%d", query, companyID, page, perPage)
 
+	// Build dynamic filters
 	filters := []string{"company_id:=" + companyID}
+
 	if debitCategory != "" {
 		filters = append(filters, fmt.Sprintf("debit_category:=%q", debitCategory))
 	}
 	if creditCategory != "" {
 		filters = append(filters, fmt.Sprintf("credit_category:=%q", creditCategory))
 	}
+	if startDate != nil {
+		filters = append(filters, fmt.Sprintf("date_inputed:>=%d", startDate.Unix()))
+	}
+	if endDate != nil {
+		filters = append(filters, fmt.Sprintf("date_inputed:<=%d", endDate.Unix()))
+	}
+	filterBy := strings.Join(filters, " && ")
 
+	// Setup search parameters
 	searchParams := &api.SearchCollectionParams{
 		Q:        query,
 		QueryBy:  "transaction_id,invoice,description,partner,debit_category,credit_category",
-		FilterBy: ptrString(strings.Join(filters, " && ")),
-		Page:     ptrInt(page),
-		PerPage:  ptrInt(perPage),
+		FilterBy: &filterBy,
+		Page:     &page,
+		PerPage:  &perPage,
+		SortBy:   ptrString("date_inputed:desc"),
 	}
 
+	// Perform search
 	searchResult, err := tsClient.Collection("journal_entries").Documents().Search(context.Background(), searchParams)
 	if err != nil {
 		return nil, 0, err
 	}
 
+	// Parse results
 	var results []dto.JournalEntryResponse
-
 	for _, hit := range *searchResult.Hits {
 		doc := hit.Document
 		if doc == nil {
@@ -178,9 +197,11 @@ func SearchJournalLines(query string, companyID string, debitCategory string, cr
 			return false
 		}
 		getTimePtr := func(key string) *time.Time {
-			if v, ok := m[key].(float64); ok && v > 0 {
-				t := time.Unix(int64(v), 0)
-				return &t
+			if v, ok := m[key].(string); ok && v != "" {
+				t, err := time.Parse("2006-01-02", v)
+				if err == nil {
+					return &t
+				}
 			}
 			return nil
 		}

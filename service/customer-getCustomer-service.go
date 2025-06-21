@@ -27,7 +27,15 @@ func GetCustomersWithSearch(params CustomerFilterParams) ([]dto.CustomerResponse
 
 	// 🔍 Search via Typesense
 	if params.Search != "" {
-		results, found, err := SearchCustomers(params.Search, params.CompanyID, params.Pagination.Page, params.Pagination.Limit)
+		results, found, err := SearchCustomers(
+			params.Search,
+			params.CompanyID,
+			params.DateFilter.StartDate,
+			params.DateFilter.EndDate,
+			params.Pagination.Page,
+			params.Pagination.Limit,
+		)
+
 		if err != nil {
 			log.Println("🔴 Error search Typesense:", err)
 			return nil, 0, fmt.Errorf("gagal search customer")

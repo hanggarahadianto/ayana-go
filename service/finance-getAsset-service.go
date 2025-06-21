@@ -33,7 +33,16 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalEntryResp
 	var totalAsset int64
 
 	if params.Search != "" {
-		results, found, err := SearchJournalLines(params.Search, params.CompanyID, params.DebitCategory, params.CreditCategory, params.Pagination.Page, params.Pagination.Limit)
+		results, found, err := SearchJournalLines(
+			params.Search,
+			params.CompanyID,
+			params.DebitCategory,
+			params.CreditCategory,
+			params.DateFilter.StartDate,
+			params.DateFilter.EndDate,
+			params.Pagination.Page,
+			params.Pagination.Limit,
+		)
 
 		if err != nil {
 			log.Println("Error saat search ke Typesense:", err)
