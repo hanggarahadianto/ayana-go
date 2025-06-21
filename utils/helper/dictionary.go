@@ -9,7 +9,7 @@ var ValidCategories = map[string][]string{
 		"Aset Tetap",
 	},
 	"Liability": {
-		"Utang Dagang",
+		"Hutang Dagang",
 		"Pinjaman",
 		"Kewajiban Lancar",
 		"Pajak",

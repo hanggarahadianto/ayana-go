@@ -67,7 +67,7 @@ func CreateReversedJournalEntry(c *gin.Context) {
 				Amount:                entry.Amount,
 				Transaction_ID:        entry.Transaction_ID,
 				CompanyID:             entry.CompanyID,
-				DateInputed:           entry.DateInputed,
+				DateInputed:           entry.RepaymentDate,
 				Description:           entry.Description,
 				DueDate:               entry.DueDate,
 				RepaymentDate:         entry.RepaymentDate,

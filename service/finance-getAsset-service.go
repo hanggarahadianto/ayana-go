@@ -82,7 +82,7 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalEntryResp
 		baseQuery = baseQuery.
 			Where("journal_lines.debit > 0").
 			Where("journal_lines.debit_account_type = ?", "Asset").
-			// Where("journal_entries.status = ?", "done").
+			Where("journal_lines.credit_account_type = ?", "Asset").
 			Where("journal_entries.status IN ?", []string{"done", "paid"}).
 			Where("journal_entries.is_repaid = ? AND journal_entries.transaction_type = ?", true, "payout")
 

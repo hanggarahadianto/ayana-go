@@ -23,17 +23,7 @@ func IndexCustomers(customers ...models.Customer) error {
 }
 
 func indexSingleCustomer(customer models.Customer) error {
-	document := buildCustomerDocument(customer)
-
-	_, err := tsClient.Collection("customers").Documents().Create(context.Background(), document)
-	if err != nil {
-		return fmt.Errorf("gagal index customer ID %s: %w", customer.ID.String(), err)
-	}
-	return nil
-}
-
-func buildCustomerDocument(customer models.Customer) map[string]interface{} {
-	doc := map[string]interface{}{
+	document := map[string]interface{}{
 		"id":             customer.ID.String(),
 		"name":           customer.Name,
 		"address":        customer.Address,
@@ -45,36 +35,48 @@ func buildCustomerDocument(customer models.Customer) map[string]interface{} {
 		"product_unit":   customer.ProductUnit,
 		"bank_name":      customer.BankName,
 		"company_id":     customer.CompanyID.String(), // ✅ Tambahkan company_id
-		"created_at":     customer.CreatedAt.Unix(),
-		"updated_at":     customer.UpdatedAt.Unix(),
 	}
 
 	if customer.DateInputed != nil {
-		doc["date_inputed"] = customer.DateInputed.Unix()
+		document["date_inputed"] = customer.DateInputed.Unix()
 	}
 
 	if customer.HomeID != nil {
-		doc["home_id"] = customer.HomeID.String()
+		document["home_id"] = customer.HomeID.String()
 	}
 
-	return doc
+	_, err := tsClient.Collection("customers").Documents().Create(context.Background(), document)
+	if err != nil {
+		return fmt.Errorf("gagal index customer ID %s: %w", customer.ID.String(), err)
+	}
+	return nil
 }
 
-func UpdateCustomerInTypesense(customer models.Customer) error {
+func updateCustomerInTypesense(customer models.Customer) error {
 	ctx := context.Background()
+
 	docID := customer.ID.String()
 
-	// Check if document exists
-	_, err := tsClient.Collection("customers").Document(docID).Retrieve(ctx)
-	if err != nil {
-		return fmt.Errorf("document not found: %w", err)
+	document := map[string]interface{}{
+		"id":             docID,
+		"name":           customer.Name,
+		"address":        customer.Address,
+		"phone":          customer.Phone,
+		"status":         customer.Status,
+		"payment_method": customer.PaymentMethod,
+		"amount":         customer.Amount,
+		"bank_name":      customer.BankName,
+		"company_id":     customer.CompanyID.String(),
+		"home_id":        customer.HomeID.String(),
+		"product_unit":   customer.ProductUnit,
+		"marketer":       customer.Marketer,
+		"date_inputed":   customer.DateInputed.Unix(),
 	}
 
-	document := buildCustomerDocument(customer)
-
-	_, err = tsClient.Collection("customers").Document(docID).Update(ctx, document)
+	// Langsung upsert
+	_, err := tsClient.Collection("customers").Documents().Upsert(ctx, document)
 	if err != nil {
-		return fmt.Errorf("failed to update typesense document: %w", err)
+		return fmt.Errorf("failed to upsert typesense document: %w", err)
 	}
 
 	return nil
