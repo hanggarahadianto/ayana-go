@@ -1,12 +1,11 @@
 package controller
 
 import (
-	"encoding/json"
-	"net/http"
-
 	"ayana/dto"
 	"ayana/models"
 	"ayana/service"
+	"encoding/json"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 )

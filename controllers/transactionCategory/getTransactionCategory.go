@@ -1,15 +1,16 @@
 package controller
 
 import (
+	lib "ayana/lib"
 	"ayana/service"
-	"ayana/utils/helper"
+
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 func GetTransactionCategory(c *gin.Context) {
-	pagination := helper.GetPagination(c)
+	pagination := lib.GetPagination(c)
 
 	all := c.Query("all") == "true"
 	selectOnly := c.Query("select") == "true"

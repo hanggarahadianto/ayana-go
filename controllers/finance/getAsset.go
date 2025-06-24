@@ -1,6 +1,7 @@
 package controller
 
 import (
+	lib "ayana/lib"
 	"ayana/service"
 	"ayana/utils/helper"
 	"log"
@@ -28,7 +29,7 @@ func GetAssetSummary(c *gin.Context) {
 		return
 	}
 
-	dateFilter, err := helper.GetDateFilter(c)
+	dateFilter, err := lib.GetDateFilter(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Format tanggal tidak valid. Gunakan format YYYY-MM-DD."})
 		return
@@ -36,7 +37,7 @@ func GetAssetSummary(c *gin.Context) {
 
 	assetType := c.DefaultQuery("asset_type", "")
 	transactionType := c.DefaultQuery("transaction_type", "")
-	pagination := helper.GetPagination(c)
+	pagination := lib.GetPagination(c)
 	params := service.AssetFilterParams{
 		CompanyID:       companyID.String(),
 		Pagination:      pagination,

@@ -2,7 +2,9 @@ package service
 
 import (
 	"ayana/dto"
+	lib "ayana/lib"
 	"ayana/models"
+	"ayana/utils/helper"
 	"context"
 	"fmt"
 	"log"
@@ -123,28 +125,16 @@ func SearchJournalLines(
 	debitCategory string,
 	creditCategory string,
 	startDate, endDate *time.Time,
+	Type *string,
+	Status *string,
 	page, perPage int,
 ) ([]dto.JournalEntryResponse, int, error) {
-	log.Printf("🔍 Searching journal lines: query=%s, companyID=%s, page=%d, perPage=%d", query, companyID, page, perPage)
+	log.Printf("🔍 Searching journal lines: query=%s, companyID=%s,Type=%v,Status=%v,page=%d, perPage=%d", query, companyID, Type, Status, page, perPage)
 
-	// Build dynamic filters
-	filters := []string{"company_id:=" + companyID}
+	// ✅ Gunakan lib refactor untuk filter
+	filterBy := helper.BuildTypesenseFilter(companyID, debitCategory, creditCategory, startDate, endDate, Status, Type)
 
-	if debitCategory != "" {
-		filters = append(filters, fmt.Sprintf("debit_category:=%q", debitCategory))
-	}
-	if creditCategory != "" {
-		filters = append(filters, fmt.Sprintf("credit_category:=%q", creditCategory))
-	}
-	if startDate != nil {
-		filters = append(filters, fmt.Sprintf("date_inputed:>=%d", startDate.Unix()))
-	}
-	if endDate != nil {
-		filters = append(filters, fmt.Sprintf("date_inputed:<=%d", endDate.Unix()))
-	}
-	filterBy := strings.Join(filters, " && ")
-
-	// Setup search parameters
+	// 🔧 Setup search params
 	searchParams := &api.SearchCollectionParams{
 		Q:        query,
 		QueryBy:  "transaction_id,invoice,description,partner,debit_category,credit_category",
@@ -154,13 +144,22 @@ func SearchJournalLines(
 		SortBy:   ptrString("date_inputed:desc"),
 	}
 
-	// Perform search
+	// 🧪 Debug log
+	log.Println("🔥 Typesense Search Params:")
+	log.Printf("Q         : %s\n", searchParams.Q)
+	log.Printf("QueryBy   : %s\n", searchParams.QueryBy)
+	log.Printf("FilterBy  : %s\n", *searchParams.FilterBy)
+	log.Printf("Page      : %d\n", *searchParams.Page)
+	log.Printf("PerPage   : %d\n", *searchParams.PerPage)
+	log.Printf("SortBy    : %s\n", *searchParams.SortBy)
+
+	// 🚀 Perform search
 	searchResult, err := tsClient.Collection("journal_entries").Documents().Search(context.Background(), searchParams)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	// Parse results
+	// 🧾 Parse results
 	var results []dto.JournalEntryResponse
 	for _, hit := range *searchResult.Hits {
 		doc := hit.Document
@@ -169,70 +168,33 @@ func SearchJournalLines(
 		}
 		m := *doc
 
-		get := func(key string) string {
-			if v, ok := m[key].(string); ok {
-				return v
-			}
-			return ""
-		}
-		getInt := func(key string) int {
-			if v, ok := m[key].(float64); ok {
-				return int(v)
-			}
-			return 0
-		}
-		getInt64 := func(key string) int64 {
-			if v, ok := m[key].(float64); ok {
-				return int64(v)
-			}
-			return 0
-		}
-		getBool := func(key string) bool {
-			switch v := m[key].(type) {
-			case bool:
-				return v
-			case string:
-				return v == "true"
-			}
-			return false
-		}
-		getTimePtr := func(key string) *time.Time {
-			if v, ok := m[key].(string); ok && v != "" {
-				t, err := time.Parse("2006-01-02", v)
-				if err == nil {
-					return &t
-				}
-			}
-			return nil
-		}
-
 		results = append(results, dto.JournalEntryResponse{
-			ID:                      get("id"),
-			TransactionID:           get("transaction_id"),
-			TransactionCategoryID:   get("transaction_category_id"),
-			TransactionCategoryName: get("transaction_category_name"),
-			Invoice:                 get("invoice"),
-			DebitCategory:           get("debit_category"),
-			CreditCategory:          get("credit_category"),
-			Partner:                 get("partner"),
-			Description:             get("description"),
-			Amount:                  getInt64("amount"),
-			TransactionType:         get("transaction_type"),
-			DebitAccountType:        get("debit_account_type"),
-			CreditAccountType:       get("credit_account_type"),
-			Status:                  get("status"),
-			CompanyID:               get("company_id"),
-			DateInputed:             getTimePtr("date_inputed"),
-			DueDate:                 getTimePtr("due_date"),
-			RepaymentDate:           getTimePtr("repayment_date"),
-			IsRepaid:                getBool("is_repaid"),
-			Installment:             getInt("installment"),
-			Note:                    get("note"),
-			PaymentNote:             get("payment_note"),
-			PaymentNoteColor:        get("payment_note_color"),
-			DebitLineId:             get("debit_line_id"),
-			CreditLineId:            get("credit_line_id"),
-			Label:                   get("label"),
+			ID:                      lib.GetString(m, "id"),
+			TransactionID:           lib.GetString(m, "transaction_id"),
+			TransactionCategoryID:   lib.GetString(m, "transaction_category_id"),
+			TransactionCategoryName: lib.GetString(m, "transaction_category_name"),
+			Invoice:                 lib.GetString(m, "invoice"),
+			DebitCategory:           lib.GetString(m, "debit_category"),
+			CreditCategory:          lib.GetString(m, "credit_category"),
+			Partner:                 lib.GetString(m, "partner"),
+			Description:             lib.GetString(m, "description"),
+			Amount:                  lib.GetInt64(m, "amount"),
+			TransactionType:         lib.GetString(m, "transaction_type"),
+			DebitAccountType:        lib.GetString(m, "debit_account_type"),
+			CreditAccountType:       lib.GetString(m, "credit_account_type"),
+			Status:                  lib.GetString(m, "status"),
+			CompanyID:               lib.GetString(m, "company_id"),
+			DateInputed:             lib.GetTimePtr(m, "date_inputed"),
+			DueDate:                 lib.GetTimePtr(m, "due_date"),
+			RepaymentDate:           lib.GetTimePtr(m, "repayment_date"),
+			IsRepaid:                lib.GetBool(m, "is_repaid"),
+			Installment:             lib.GetInt(m, "installment"),
+			Note:                    lib.GetString(m, "note"),
+			PaymentNote:             lib.GetString(m, "payment_note"),
+			PaymentNoteColor:        lib.GetString(m, "payment_note_color"),
+			DebitLineId:             lib.GetString(m, "debit_line_id"),
+			CreditLineId:            lib.GetString(m, "credit_line_id"),
+			Label:                   lib.GetString(m, "label"),
 		})
 	}
 
@@ -240,6 +202,5 @@ func SearchJournalLines(
 	if searchResult.Found != nil {
 		found = *searchResult.Found
 	}
-
 	return results, found, nil
 }

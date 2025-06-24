@@ -1,8 +1,9 @@
 package controllers
 
 import (
+	lib "ayana/lib"
 	"ayana/service"
-	"ayana/utils/helper"
+
 	"log"
 
 	"net/http"
@@ -11,8 +12,8 @@ import (
 )
 
 func GetCustomers(c *gin.Context) {
-	pagination := helper.GetPagination(c)
-	if !helper.ValidatePagination(pagination, c) {
+	pagination := lib.GetPagination(c)
+	if !lib.ValidatePagination(pagination, c) {
 		return
 	}
 
@@ -28,7 +29,7 @@ func GetCustomers(c *gin.Context) {
 	sortBy := c.DefaultQuery("sort_by", "date_inputed")
 	sortOrder := c.DefaultQuery("sort_order", "asc")
 
-	dateFilter, err := helper.GetDateFilter(c)
+	dateFilter, err := lib.GetDateFilter(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Format tanggal tidak valid. Gunakan format YYYY-MM-DD."})
 		return

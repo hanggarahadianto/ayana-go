@@ -3,8 +3,8 @@ package service
 import (
 	"ayana/db"
 	"ayana/dto"
+	lib "ayana/lib"
 	"ayana/models"
-	"ayana/utils/helper"
 )
 
 type TransactionCategoryFilterParams struct {
@@ -17,7 +17,7 @@ type TransactionCategoryFilterParams struct {
 	SelectOnly        bool
 	DebitAccountType  string
 	CreditAccountType string
-	Pagination        helper.Pagination
+	Pagination        lib.Pagination
 }
 
 func GetTransactionCategoriesAll() ([]dto.TransactionCategoryResponse, error) {

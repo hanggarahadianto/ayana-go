@@ -1,7 +1,9 @@
 package controllers
 
 import (
+	lib "ayana/lib"
 	"ayana/service"
+
 	"ayana/utils/helper"
 	"net/http"
 
@@ -16,13 +18,13 @@ func GetProject(c *gin.Context) {
 	if !valid {
 		return
 	}
-	dateFilter, err := helper.GetDateFilter(c)
+	dateFilter, err := lib.GetDateFilter(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Format tanggal tidak valid. Gunakan format YYYY-MM-DD."})
 		return
 	}
 
-	pagination := helper.GetPagination(c)
+	pagination := lib.GetPagination(c)
 
 	search := c.Query("search") // optional kalau kamu pakai
 

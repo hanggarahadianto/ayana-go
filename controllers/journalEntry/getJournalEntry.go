@@ -3,6 +3,7 @@ package controller
 import (
 	"ayana/db"
 	"ayana/dto"
+	lib "ayana/lib"
 	"ayana/models"
 	"ayana/utils/helper"
 	"net/http"
@@ -20,7 +21,7 @@ func GetJournalEntriesByCategory(c *gin.Context) {
 		return
 	}
 
-	pagination := helper.GetPagination(c)
+	pagination := lib.GetPagination(c)
 
 	var total int64
 	if err := db.DB.

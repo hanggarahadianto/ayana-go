@@ -3,8 +3,8 @@ package controllers
 import (
 	"ayana/db"
 	"ayana/dto"
+	lib "ayana/lib"
 	"ayana/models"
-	"ayana/utils/helper"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -12,7 +12,7 @@ import (
 
 func HomeListByClusterId(c *gin.Context) {
 	clusterId := c.Param("cluster_id")
-	pagination := helper.GetPagination(c)
+	pagination := lib.GetPagination(c)
 
 	var homes []models.Home
 	var total int64

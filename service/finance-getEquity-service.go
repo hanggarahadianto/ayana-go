@@ -3,8 +3,8 @@ package service
 import (
 	"ayana/db"
 	"ayana/dto"
+	lib "ayana/lib"
 	"ayana/models"
-	"ayana/utils/helper"
 	"fmt"
 	"log"
 	"math"
@@ -14,8 +14,8 @@ import (
 
 type EquityFilterParams struct {
 	CompanyID       string
-	Pagination      helper.Pagination
-	DateFilter      helper.DateFilter
+	Pagination      lib.Pagination
+	DateFilter      lib.DateFilter
 	SummaryOnly     bool
 	EquityType      string
 	TransactionType string
@@ -37,6 +37,8 @@ func GetEquityFromJournalLines(params EquityFilterParams) ([]dto.JournalEntryRes
 			params.CreditCategory,
 			params.DateFilter.StartDate,
 			params.DateFilter.EndDate,
+			nil,
+			nil,
 			params.Pagination.Page,
 			params.Pagination.Limit,
 		)
@@ -152,7 +154,7 @@ func GetEquityFromJournalLines(params EquityFilterParams) ([]dto.JournalEntryRes
 			Status:                  string(line.Journal.Status),
 			CompanyID:               line.CompanyID.String(),
 			DateInputed:             line.Journal.DateInputed,
-			DueDate:                 helper.SafeDueDate(line.Journal.DueDate),
+			DueDate:                 lib.SafeDueDate(line.Journal.DueDate),
 			IsRepaid:                line.Journal.IsRepaid,
 			Installment:             line.Journal.Installment,
 			Note:                    line.Journal.Note,

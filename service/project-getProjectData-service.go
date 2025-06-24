@@ -2,14 +2,14 @@ package service
 
 import (
 	"ayana/db"
+	lib "ayana/lib"
 	"ayana/models"
-	"ayana/utils/helper"
 )
 
 type ProjectFilterParams struct {
 	CompanyID  string
-	Pagination helper.Pagination
-	DateFilter helper.DateFilter
+	Pagination lib.Pagination
+	DateFilter lib.DateFilter
 	Search     string
 }
 

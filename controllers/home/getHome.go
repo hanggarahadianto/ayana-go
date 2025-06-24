@@ -3,8 +3,7 @@ package controllers
 import (
 	"ayana/db"
 	"ayana/dto"
-	"ayana/utils/helper"
-
+	lib "ayana/lib"
 	"ayana/models"
 	"log"
 	"net/http"
@@ -13,10 +12,10 @@ import (
 )
 
 func GetHomes(c *gin.Context) {
-	pagination := helper.GetPagination(c)
+	pagination := lib.GetPagination(c)
 
 	// Validasi parameter pagination
-	if !helper.ValidatePagination(pagination, c) {
+	if !lib.ValidatePagination(pagination, c) {
 		return
 	}
 

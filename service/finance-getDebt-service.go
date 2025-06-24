@@ -3,8 +3,8 @@ package service
 import (
 	"ayana/db"
 	"ayana/dto"
+	lib "ayana/lib"
 	"ayana/models"
-	"ayana/utils/helper"
 	"fmt"
 	"log"
 	"math"
@@ -15,9 +15,10 @@ import (
 
 type DebtFilterParams struct {
 	CompanyID      string
-	Pagination     helper.Pagination
-	DateFilter     helper.DateFilter
+	Pagination     lib.Pagination
+	DateFilter     lib.DateFilter
 	SummaryOnly    bool
+	Status         string
 	DebtStatus     string
 	DebitCategory  string
 	CreditCategory string
@@ -37,6 +38,8 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalEntryRespon
 			params.CreditCategory,
 			params.DateFilter.StartDate,
 			params.DateFilter.EndDate,
+			nil,
+			&params.Status,
 			params.Pagination.Page,
 			params.Pagination.Limit,
 		)
@@ -50,7 +53,7 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalEntryRespon
 
 		// Tambahkan logic paymentNote ke hasil dari typesense
 		for i, line := range results {
-			note, color := helper.HitungPaymentNote(params.DebtStatus, line.DueDate, line.RepaymentDate, now)
+			note, color := lib.HitungPaymentNote(params.DebtStatus, line.DueDate, line.RepaymentDate, now)
 			results[i].PaymentNote = note
 			results[i].PaymentNoteColor = color
 		}
@@ -141,7 +144,7 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalEntryRespon
 
 	for _, line := range lines {
 
-		note, color := helper.HitungPaymentNote(params.DebtStatus, line.Journal.DueDate, line.Journal.RepaymentDate, now)
+		note, color := lib.HitungPaymentNote(params.DebtStatus, line.Journal.DueDate, line.Journal.RepaymentDate, now)
 
 		response = append(response, dto.JournalEntryResponse{
 			ID:                      line.JournalID.String(),
@@ -160,7 +163,7 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalEntryRespon
 			Status:                  string(line.Journal.Status),
 			CompanyID:               line.CompanyID.String(),
 			DateInputed:             line.Journal.DateInputed,
-			DueDate:                 helper.SafeDueDate(line.Journal.DueDate),
+			DueDate:                 lib.SafeDueDate(line.Journal.DueDate),
 			RepaymentDate:           line.Journal.RepaymentDate,
 			IsRepaid:                line.Journal.IsRepaid,
 			Installment:             line.Journal.Installment,

@@ -3,6 +3,7 @@ package controllers
 import (
 	"ayana/db"
 	"ayana/dto"
+	lib "ayana/lib"
 	"ayana/models"
 	"ayana/utils/helper"
 	"net/http"
@@ -63,7 +64,7 @@ func GetAccount(c *gin.Context) {
 		}
 	} else {
 		// ✅ Gunakan paginasi
-		pagination := helper.GetPagination(c)
+		pagination := lib.GetPagination(c)
 		if err := query.
 			Order("CAST(code AS INTEGER) ASC").
 			Limit(pagination.Limit).

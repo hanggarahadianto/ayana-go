@@ -1,6 +1,7 @@
 package controller
 
 import (
+	lib "ayana/lib"
 	"ayana/service"
 	"ayana/utils/helper"
 	"log"
@@ -26,7 +27,7 @@ func GetRevenueSummary(c *gin.Context) {
 		return
 	}
 
-	dateFilter, err := helper.GetDateFilter(c)
+	dateFilter, err := lib.GetDateFilter(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Format tanggal tidak valid. Gunakan format YYYY-MM-DD."})
 		return
@@ -34,7 +35,7 @@ func GetRevenueSummary(c *gin.Context) {
 
 	revenueType := c.DefaultQuery("revenue_type", "")
 	transactionType := c.DefaultQuery("transaction_type", "")
-	pagination := helper.GetPagination(c)
+	pagination := lib.GetPagination(c)
 	params := service.RevenueFilterParams{
 		CompanyID:       companyID.String(),
 		Pagination:      pagination,

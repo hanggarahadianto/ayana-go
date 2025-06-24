@@ -1,6 +1,7 @@
 package helper
 
 import (
+	lib "ayana/lib"
 	"ayana/models"
 	"fmt"
 )
@@ -21,7 +22,7 @@ func ValidateAccount(account *models.Account) error {
 	}
 
 	// Validasi kategori berdasarkan type akun
-	if categories, ok := ValidCategories[account.Type]; ok {
+	if categories, ok := lib.ValidCategories[account.Type]; ok {
 		valid := false
 		for _, category := range categories {
 			if account.Category == category {

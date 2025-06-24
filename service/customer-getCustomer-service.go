@@ -3,8 +3,8 @@ package service
 import (
 	"ayana/db"
 	"ayana/dto"
+	lib "ayana/lib"
 	"ayana/models"
-	"ayana/utils/helper"
 	"fmt"
 	"log"
 
@@ -13,8 +13,8 @@ import (
 
 type CustomerFilterParams struct {
 	CompanyID   string
-	Pagination  helper.Pagination
-	DateFilter  helper.DateFilter
+	Pagination  lib.Pagination
+	DateFilter  lib.DateFilter
 	SummaryOnly bool
 	Search      string
 	SortBy      string

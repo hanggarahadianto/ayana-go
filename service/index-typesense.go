@@ -77,6 +77,7 @@ func CreateCollectionIfNotExist() error {
 			{Name: "due_date", Type: "int64"},
 			{Name: "repayment_date", Type: "int64"},
 			{Name: "is_repaid", Type: "bool"},
+			{Name: "status", Type: "string", Facet: &facetTrue},
 			{Name: "installment", Type: "int32"},
 			{Name: "payment_note", Type: "string", Optional: boolPtr(true)},
 			{Name: "payment_note_color", Type: "string", Optional: boolPtr(true)},
