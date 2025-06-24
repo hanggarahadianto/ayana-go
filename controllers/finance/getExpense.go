@@ -2,7 +2,7 @@ package controller
 
 import (
 	lib "ayana/lib"
-	"ayana/service"
+	expense "ayana/service/finance/expense"
 	"ayana/utils/helper"
 	"net/http"
 
@@ -35,18 +35,18 @@ func GetExpensesSummary(c *gin.Context) {
 
 	pagination := lib.GetPagination(c)
 
-	params := service.ExpenseFilterParams{
+	params := expense.ExpenseFilterParams{
 		CompanyID:      companyID.String(),
 		Pagination:     pagination,
 		DateFilter:     dateFilter,
-		ExpenseStatus:  expenseStatus,
+		Status:         expenseStatus,
 		SummaryOnly:    summaryOnly,
 		DebitCategory:  debitCategory,
 		CreditCategory: creditCategory,
 		Search:         search,
 	}
 
-	data, totalexpense, total, err := service.GetExpensesFromJournalLines(params)
+	data, totalexpense, total, err := expense.GetExpensesFromJournalLines(params)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil data aset"})
 		return

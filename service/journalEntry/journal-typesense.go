@@ -4,6 +4,7 @@ import (
 	"ayana/dto"
 	lib "ayana/lib"
 	"ayana/models"
+	tsClient "ayana/service"
 	"ayana/utils/helper"
 	"context"
 	"fmt"
@@ -52,11 +53,11 @@ func IndexJournalDocument(journal models.JournalEntry) error {
 		"note":        journal.Note,
 	}
 
-	_, err := tsClient.Collection("journal_entries").Documents().Create(context.Background(), document)
+	_, err := tsClient.TsClient.Collection("journal_entries").Documents().Create(context.Background(), document)
 	return err
 }
 
-func updateJournalEntryInTypesense(entry models.JournalEntry) error {
+func UpdateJournalEntryInTypesense(entry models.JournalEntry) error {
 	ctx := context.Background() // Buat context
 
 	docID := entry.ID.String()
@@ -82,13 +83,13 @@ func updateJournalEntryInTypesense(entry models.JournalEntry) error {
 	}
 
 	// Cek dokumen sudah ada atau belum
-	_, err := tsClient.Collection("journal_entries").Document(docID).Retrieve(ctx)
+	_, err := tsClient.TsClient.Collection("journal_entries").Document(docID).Retrieve(ctx)
 	if err != nil {
 		return fmt.Errorf("document not found in typesense: %w", err)
 	}
 
 	// Update dokumen
-	_, err = tsClient.Collection("journal_entries").Document(docID).Update(ctx, document)
+	_, err = tsClient.TsClient.Collection("journal_entries").Document(docID).Update(ctx, document)
 	if err != nil {
 		return fmt.Errorf("failed to update typesense document: %w", err)
 	}
@@ -98,7 +99,7 @@ func updateJournalEntryInTypesense(entry models.JournalEntry) error {
 
 func DeleteJournalEntryFromTypesense(ctx context.Context, journalEntryIDs ...string) error {
 	for _, id := range journalEntryIDs {
-		_, err := tsClient.
+		_, err := tsClient.TsClient.
 			Collection("journal_entries").
 			Document(id).
 			Delete(ctx)
@@ -141,7 +142,7 @@ func SearchJournalLines(
 		FilterBy: &filterBy,
 		Page:     &page,
 		PerPage:  &perPage,
-		SortBy:   ptrString("date_inputed:desc"),
+		SortBy:   lib.PtrString("date_inputed:desc"),
 	}
 
 	// 🧪 Debug log
@@ -154,7 +155,7 @@ func SearchJournalLines(
 	log.Printf("SortBy    : %s\n", *searchParams.SortBy)
 
 	// 🚀 Perform search
-	searchResult, err := tsClient.Collection("journal_entries").Documents().Search(context.Background(), searchParams)
+	searchResult, err := tsClient.TsClient.Collection("journal_entries").Documents().Search(context.Background(), searchParams)
 	if err != nil {
 		return nil, 0, err
 	}

@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"ayana/models"
-	"ayana/service"
+	customer "ayana/service/customer"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -16,7 +16,7 @@ func CreateCustomer(c *gin.Context) {
 		return
 	}
 
-	customer, err := service.CreateCustomer(input)
+	customer, err := customer.CreateCustomer(input)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create customer: " + err.Error()})
 		return

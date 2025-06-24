@@ -2,6 +2,15 @@ package helper
 
 import "time"
 
+// Helper functions for pointers in api.SearchCollectionParams
+func PtrString(s string) *string {
+	return &s
+}
+
+func PtrInt(i int) *int {
+	return &i
+}
+
 func GetString(m map[string]interface{}, key string) string {
 	if v, ok := m[key].(string); ok {
 		return v

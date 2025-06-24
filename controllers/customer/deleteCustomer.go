@@ -3,7 +3,7 @@ package controllers
 import (
 	"ayana/db"
 	"ayana/models"
-	"ayana/service"
+	typesense "ayana/service/Customer"
 	"context"
 	"log"
 	"net/http"
@@ -28,7 +28,7 @@ func DeleteCustomer(c *gin.Context) {
 	}
 
 	// Hapus dari Typesense
-	err := service.DeleteCustomerFromTypesense(context.Background(), id)
+	err := typesense.DeleteCustomerFromTypesense(context.Background(), id)
 	if err != nil {
 		// Tidak menghalangi response sukses, hanya log error
 		log.Printf("Gagal menghapus dokumen dari Typesense untuk ID %s: %v", id, err)

@@ -2,7 +2,7 @@ package controller
 
 import (
 	lib "ayana/lib"
-	"ayana/service"
+	debt "ayana/service/finance/debt"
 	"ayana/utils/helper"
 	"net/http"
 
@@ -34,18 +34,18 @@ func GetOutstandingDebts(c *gin.Context) {
 
 	pagination := lib.GetPagination(c)
 
-	params := service.DebtFilterParams{
+	params := debt.DebtFilterParams{
 		CompanyID:      companyID.String(),
 		Pagination:     pagination,
 		DateFilter:     dateFilter,
-		DebtStatus:     debtStatus,
+		Status:         debtStatus,
 		SummaryOnly:    summaryOnly,
 		DebitCategory:  debitCategory,
 		CreditCategory: creditCategory,
 		Search:         search,
 	}
 
-	data, totalDebt, total, err := service.GetDebtsFromJournalLines(params)
+	data, totalDebt, total, err := debt.GetDebtsFromJournalLines(params)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil data aset"})
 		return

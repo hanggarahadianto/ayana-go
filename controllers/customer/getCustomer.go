@@ -2,7 +2,7 @@ package controllers
 
 import (
 	lib "ayana/lib"
-	"ayana/service"
+	customer "ayana/service/customer"
 
 	"log"
 
@@ -35,7 +35,7 @@ func GetCustomers(c *gin.Context) {
 		return
 	}
 
-	params := service.CustomerFilterParams{
+	params := customer.CustomerFilterParams{
 		CompanyID:   companyID,
 		Pagination:  pagination,
 		Search:      search,
@@ -45,7 +45,7 @@ func GetCustomers(c *gin.Context) {
 		SortOrder:   sortOrder,
 	}
 
-	data, total, err := service.GetCustomersWithSearch(params)
+	data, total, err := customer.GetCustomersWithSearch(params)
 	if err != nil {
 		log.Println("🔴 GetCustomers error:", err) // Tambahkan log ini untuk debugging
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil data customer"})

@@ -5,6 +5,9 @@ import (
 	"ayana/dto"
 	lib "ayana/lib"
 	"ayana/models"
+
+	service "ayana/service/journalEntry"
+	"ayana/utils/helper"
 	"fmt"
 	"log"
 	"math"
@@ -12,25 +15,27 @@ import (
 	"gorm.io/gorm"
 )
 
-type EquityFilterParams struct {
+type RevenueFilterParams struct {
 	CompanyID       string
 	Pagination      lib.Pagination
 	DateFilter      lib.DateFilter
 	SummaryOnly     bool
-	EquityType      string
+	Status          string
 	TransactionType string
 	DebitCategory   string
 	CreditCategory  string
 	Search          string // ⬅️ Tambahkan ini
+	SortBy          string
+	SortOrder       string
 }
 
-func GetEquityFromJournalLines(params EquityFilterParams) ([]dto.JournalEntryResponse, int64, int64, error) {
+func GetRevenueFromJournalLines(params RevenueFilterParams) ([]dto.JournalEntryResponse, int64, int64, error) {
 	var lines []models.JournalLine
 	var total int64
-	var totalEquity int64
+	var totalRevenue int64
 
 	if params.Search != "" {
-		results, found, err := SearchJournalLines(
+		results, found, err := service.SearchJournalLines(
 			params.Search,
 			params.CompanyID,
 			params.DebitCategory,
@@ -50,19 +55,19 @@ func GetEquityFromJournalLines(params EquityFilterParams) ([]dto.JournalEntryRes
 
 		// Jika hanya summary diperlukan
 		if params.SummaryOnly {
-			var totalEquity int64 = 0
+			var totalRevenue int64 = 0
 			for _, line := range results {
-				totalEquity += int64(line.Amount)
+				totalRevenue += int64(line.Amount)
 			}
-			return nil, totalEquity, int64(found), nil
+			return nil, totalRevenue, int64(found), nil
 		}
 
-		var totalEquity int64 = 0
+		var totalRevenue int64 = 0
 		for _, line := range results {
-			totalEquity += int64(line.Amount)
+			totalRevenue += int64(line.Amount)
 		}
 
-		return results, totalEquity, int64(found), nil
+		return results, totalRevenue, int64(found), nil
 	}
 
 	baseQuery := db.DB.Model(&models.JournalLine{}).
@@ -70,63 +75,37 @@ func GetEquityFromJournalLines(params EquityFilterParams) ([]dto.JournalEntryRes
 		Joins("LEFT JOIN transaction_categories ON journal_entries.transaction_category_id = transaction_categories.id").
 		Where("journal_entries.company_id = ?", params.CompanyID)
 
-	switch params.EquityType {
-	case "setor":
-		baseQuery = baseQuery.
-			Where("journal_lines.debit > 0").
-			Where("journal_entries.transaction_type = ?", "payin").
-			Where("journal_lines.debit_account_type = ?", "Asset").
-			Where("journal_lines.credit_account_type = ?", "Equity")
+	baseQuery = ApplyRevenueTypeFilterToGorm(baseQuery, params.Status)
+	filteredQuery, sortBy, sortOrder := helper.ApplyCommonJournalEntryFiltersToGorm(
+		baseQuery,
+		helper.JournalEntryFilterParams{
+			DebitCategory:  params.DebitCategory,
+			CreditCategory: params.CreditCategory,
+			DateFilter:     params.DateFilter,
+			SortBy:         params.SortBy,
+			SortOrder:      params.SortOrder,
+		},
+		false,
+	)
 
-		// Where("NOT (journal_lines.credit_account_type = 'Revenue' AND journal_entries.status = 'unpaid')")
-
-	case "tarik":
-		baseQuery = baseQuery.
-			Where("journal_lines.credit > 0").
-			Where("journal_entries.transaction_type = ?", "payout").
-			Where("journal_lines.debit_account_type = ?", "Equity").
-			Where("journal_lines.credit_account_type = ?", "Asset")
-
-	}
-
-	if params.DebitCategory != "" {
-		baseQuery = baseQuery.Where("LOWER(transaction_categories.debit_category) = LOWER(?)", params.DebitCategory)
-
-	}
-	if params.CreditCategory != "" {
-		baseQuery = baseQuery.Where("LOWER(transaction_categories.credit_category) = LOWER(?)", params.CreditCategory)
-
-	}
-
-	// Filter date
-	if params.DateFilter.StartDate != nil && params.DateFilter.EndDate != nil {
-		baseQuery = baseQuery.
-			Where("journal_entries.date_inputed BETWEEN ? AND ?", params.DateFilter.StartDate, params.DateFilter.EndDate)
-	} else if params.DateFilter.StartDate != nil {
-		baseQuery = baseQuery.
-			Where("journal_entries.date_inputed >= ?", params.DateFilter.StartDate)
-	} else if params.DateFilter.EndDate != nil {
-		baseQuery = baseQuery.
-			Where("journal_entries.date_inputed <= ?", params.DateFilter.EndDate)
-	}
-
-	// Hitung total baris
 	if err := baseQuery.Session(&gorm.Session{}).Count(&total).Error; err != nil {
 		return nil, 0, 0, err
 	}
-
-	// Hitung total asset (menggunakan debit - credit)
-	if err := baseQuery.Session(&gorm.Session{}).
-		Select("COALESCE(SUM(journal_lines.debit - journal_lines.credit), 0)").
-		Scan(&totalEquity).Error; err != nil {
+	if err := filteredQuery.
+		Session(&gorm.Session{}).
+		Order(nil).
+		Select("COALESCE(SUM(ABS(journal_lines.debit - journal_lines.credit)), 0)").
+		Scan(&totalRevenue).Error; err != nil {
 		return nil, 0, 0, err
 	}
+	if params.SummaryOnly {
+		return nil, totalRevenue, total, nil
+	}
 
-	// Query untuk mengambil data dengan pagination
-	dataQuery := baseQuery.Session(&gorm.Session{}).
+	dataQuery := filteredQuery.
 		Preload("Journal").
-		Preload("Journal.TransactionCategory"). // ✅ Tambahkan ini
-		Order("journal_entries.date_inputed ASC").
+		Preload("Journal.TransactionCategory").
+		Order(fmt.Sprintf("journal_entries.%s %s", sortBy, sortOrder)).
 		Limit(params.Pagination.Limit).
 		Offset(params.Pagination.Offset)
 
@@ -161,5 +140,5 @@ func GetEquityFromJournalLines(params EquityFilterParams) ([]dto.JournalEntryRes
 		})
 	}
 
-	return response, totalEquity, total, nil
+	return response, totalRevenue, total, nil
 }

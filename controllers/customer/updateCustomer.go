@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"ayana/models"
-	"ayana/service"
+	customer "ayana/service/customer"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -17,7 +17,7 @@ func UpdateCustomer(c *gin.Context) {
 		return
 	}
 
-	updatedCustomer, err := service.UpdateCustomerService(id, input)
+	updatedCustomer, err := customer.UpdateCustomerService(id, input)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

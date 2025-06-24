@@ -2,7 +2,7 @@ package controller
 
 import (
 	lib "ayana/lib"
-	"ayana/service"
+	equity "ayana/service/finance/equity"
 	"ayana/utils/helper"
 	"net/http"
 
@@ -35,7 +35,7 @@ func GetEquitySummary(c *gin.Context) {
 	equityType := c.DefaultQuery("equity_type", "")
 	transactionType := c.DefaultQuery("transaction_type", "")
 	pagination := lib.GetPagination(c)
-	params := service.EquityFilterParams{
+	params := equity.EquityFilterParams{
 		CompanyID:       companyID.String(),
 		Pagination:      pagination,
 		DateFilter:      dateFilter,
@@ -47,7 +47,7 @@ func GetEquitySummary(c *gin.Context) {
 		Search:          search,
 	}
 
-	data, totalEquity, total, err := service.GetEquityFromJournalLines(params)
+	data, totalEquity, total, err := equity.GetEquityFromJournalLines(params)
 	if err != nil {
 
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil data modal"})

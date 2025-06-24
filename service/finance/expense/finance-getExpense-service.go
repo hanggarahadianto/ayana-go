@@ -5,33 +5,37 @@ import (
 	"ayana/dto"
 	lib "ayana/lib"
 	"ayana/models"
+	service "ayana/service/journalEntry"
+	"ayana/utils/helper"
+
+	// ts "ayana/utils/helper/typesense" // Removed to fix import cycle
 	"fmt"
 	"log"
 	"math"
-	"time"
 
 	"gorm.io/gorm"
 )
 
-type DebtFilterParams struct {
+type ExpenseFilterParams struct {
 	CompanyID      string
 	Pagination     lib.Pagination
 	DateFilter     lib.DateFilter
 	SummaryOnly    bool
 	Status         string
-	DebtStatus     string
 	DebitCategory  string
 	CreditCategory string
 	Search         string // ⬅️ Tambahkan ini
+	SortBy         string
+	SortOrder      string
 }
 
-func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalEntryResponse, int64, int64, error) {
+func GetExpensesFromJournalLines(params ExpenseFilterParams) ([]dto.JournalEntryResponse, int64, int64, error) {
 	var lines []models.JournalLine
 	var total int64
-	var totalDebt int64
+	var totalExpense int64
 
 	if params.Search != "" {
-		results, found, err := SearchJournalLines(
+		results, found, err := service.SearchJournalLines(
 			params.Search,
 			params.CompanyID,
 			params.DebitCategory,
@@ -39,99 +43,75 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalEntryRespon
 			params.DateFilter.StartDate,
 			params.DateFilter.EndDate,
 			nil,
-			&params.Status,
+			nil,
 			params.Pagination.Page,
 			params.Pagination.Limit,
 		)
 
 		if err != nil {
 			log.Println("Error saat search ke Typesense:", err)
-			return nil, 0, 0, fmt.Errorf("gagal mengambil data aset: %w", err)
+			return nil, 0, 0, fmt.Errorf("gagal mengambil data pengeluaran: %w", err)
 		}
 
-		now := time.Now()
-
-		// Tambahkan logic paymentNote ke hasil dari typesense
-		for i, line := range results {
-			note, color := lib.HitungPaymentNote(params.DebtStatus, line.DueDate, line.RepaymentDate, now)
-			results[i].PaymentNote = note
-			results[i].PaymentNoteColor = color
-		}
-
+		// Jika hanya summary diperlukan
 		if params.SummaryOnly {
-			var totalDebt int64 = 0
+			var totalExpense int64 = 0
 			for _, line := range results {
-				totalDebt += int64(line.Amount)
+				totalExpense += int64(line.Amount)
 			}
-			return nil, totalDebt, int64(found), nil
+			return nil, totalExpense, int64(found), nil
 		}
 
-		var totalDebt int64 = 0
+		var totalExpense int64 = 0
 		for _, line := range results {
-			totalDebt += int64(line.Amount)
+			totalExpense += int64(line.Amount)
 		}
 
-		return results, totalDebt, int64(found), nil
+		return results, totalExpense, int64(found), nil
 	}
 
-	// Build base query
+	// Build base query tanpa Limit dan Offset untuk Count dan Sum
 	baseQuery := db.DB.Model(&models.JournalLine{}).
 		Joins("JOIN journal_entries ON journal_entries.id = journal_lines.journal_id").
 		Joins("LEFT JOIN transaction_categories ON journal_entries.transaction_category_id = transaction_categories.id").
-		Where("journal_entries.company_id = ?", params.CompanyID)
+		Where("journal_entries.company_id = ?", params.CompanyID).
+		Where("journal_lines.debit_account_type = ?", "Expense")
 
-	switch params.DebtStatus {
-	case "going":
-		baseQuery = baseQuery.
-			Where("journal_lines.credit > 0").
-			Where("journal_entries.is_repaid = ? AND journal_entries.status = ?", false, "unpaid").
-			Where("LOWER(journal_lines.credit_account_type) = ?", "liability").
-			Where("LOWER(journal_lines.debit_account_type) != ?", "revenue")
+	// Filter expense type
 
-	case "done":
-		baseQuery = baseQuery.
-			Where("journal_lines.debit > 0").
-			Where("journal_entries.is_repaid = ? AND journal_entries.status = ?", true, "done").
-			Where("LOWER(journal_lines.debit_account_type) = ?", "liability").
-			Where("LOWER(journal_lines.credit_account_type) = ?", "asset")
-	}
+	baseQuery = ApplyExpenseTypeFilterToGorm(baseQuery, params.Status)
 
-	if params.DebitCategory != "" {
-		baseQuery = baseQuery.Where("LOWER(transaction_categories.debit_category) = LOWER(?)", params.DebitCategory)
+	filteredQuery, sortBy, sortOrder := helper.ApplyCommonJournalEntryFiltersToGorm(
+		baseQuery,
+		helper.JournalEntryFilterParams{
+			DebitCategory:  params.DebitCategory,
+			CreditCategory: params.CreditCategory,
+			DateFilter:     params.DateFilter,
+			SortBy:         params.SortBy,
+			SortOrder:      params.SortOrder,
+		},
+		false,
+	)
 
-	}
-	if params.CreditCategory != "" {
-		baseQuery = baseQuery.Where("LOWER(transaction_categories.credit_category) = LOWER(?)", params.CreditCategory)
-
-	}
-	if params.DateFilter.StartDate != nil {
-		baseQuery = baseQuery.Where("journal_entries.date_inputed >= ?", params.DateFilter.StartDate)
-	}
-	if params.DateFilter.EndDate != nil {
-		baseQuery = baseQuery.Where("journal_entries.date_inputed <= ?", params.DateFilter.EndDate)
-	}
-
-	// Total count
+	// Hitung total baris
 	if err := baseQuery.Session(&gorm.Session{}).Count(&total).Error; err != nil {
 		return nil, 0, 0, err
 	}
-
-	// Total debt
-	if err := baseQuery.Session(&gorm.Session{}).
-		Select("COALESCE(SUM(journal_entries.amount), 0)").
-		Scan(&totalDebt).Error; err != nil {
+	if err := filteredQuery.
+		Session(&gorm.Session{}).
+		Order(nil).
+		Select("COALESCE(SUM(ABS(journal_lines.debit - journal_lines.credit)), 0)").
+		Scan(&totalExpense).Error; err != nil {
 		return nil, 0, 0, err
 	}
-
 	if params.SummaryOnly {
-		return nil, totalDebt, total, nil
+		return nil, totalExpense, total, nil
 	}
 
-	// Data with pagination
-	dataQuery := baseQuery.Session(&gorm.Session{}).
+	dataQuery := filteredQuery.
 		Preload("Journal").
 		Preload("Journal.TransactionCategory").
-		Order("journal_entries.due_date ASC").
+		Order(fmt.Sprintf("journal_entries.%s %s", sortBy, sortOrder)).
 		Limit(params.Pagination.Limit).
 		Offset(params.Pagination.Offset)
 
@@ -139,12 +119,8 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalEntryRespon
 		return nil, 0, 0, err
 	}
 
-	now := time.Now()
 	var response []dto.JournalEntryResponse
-
 	for _, line := range lines {
-
-		note, color := lib.HitungPaymentNote(params.DebtStatus, line.Journal.DueDate, line.Journal.RepaymentDate, now)
 
 		response = append(response, dto.JournalEntryResponse{
 			ID:                      line.JournalID.String(),
@@ -164,14 +140,11 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalEntryRespon
 			CompanyID:               line.CompanyID.String(),
 			DateInputed:             line.Journal.DateInputed,
 			DueDate:                 lib.SafeDueDate(line.Journal.DueDate),
-			RepaymentDate:           line.Journal.RepaymentDate,
 			IsRepaid:                line.Journal.IsRepaid,
 			Installment:             line.Journal.Installment,
 			Note:                    line.Journal.Note,
-			PaymentNote:             note,
-			PaymentNoteColor:        color,
 		})
 	}
 
-	return response, totalDebt, total, nil
+	return response, totalExpense, total, nil
 }

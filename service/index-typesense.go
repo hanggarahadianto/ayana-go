@@ -1,6 +1,7 @@
 package service
 
 import (
+	lib "ayana/lib"
 	"ayana/models"
 	utilsEnv "ayana/utils/env"
 	"context"
@@ -13,10 +14,10 @@ import (
 	"gorm.io/gorm"
 )
 
-var tsClient *typesense.Client
+var TsClient *typesense.Client
 
 func InitTypesense(config *utilsEnv.Config) {
-	tsClient = typesense.NewClient(
+	TsClient = typesense.NewClient(
 		typesense.WithServer(config.TYPESENSE_HOST),
 		typesense.WithAPIKey(config.TYPESENSE_API_KEY),
 	)
@@ -85,7 +86,7 @@ func CreateCollectionIfNotExist() error {
 		DefaultSortingField: &defaultSort,
 	}
 
-	if _, err := tsClient.Collections().Create(context.Background(), schema); err != nil {
+	if _, err := TsClient.Collections().Create(context.Background(), schema); err != nil {
 		if strings.Contains(err.Error(), "already exists") {
 			log.Println("⚠️  Collection 'journal_entries' sudah ada, lanjut...")
 		} else {
@@ -113,10 +114,10 @@ func CreateCollectionIfNotExist() error {
 			{Name: "bank_name", Type: "string"},
 			{Name: "company_id", Type: "string", Facet: &facetTrue},
 		},
-		DefaultSortingField: ptrString("date_inputed"),
+		DefaultSortingField: lib.PtrString("date_inputed"),
 	}
 
-	if _, err := tsClient.Collections().Create(context.Background(), customerSchema); err != nil {
+	if _, err := TsClient.Collections().Create(context.Background(), customerSchema); err != nil {
 		if strings.Contains(err.Error(), "already exists") {
 			log.Println("⚠️  Collection 'customers' sudah ada, lanjut...")
 		} else {
@@ -127,15 +128,6 @@ func CreateCollectionIfNotExist() error {
 	}
 
 	return nil
-}
-
-// Helper functions for pointers in api.SearchCollectionParams
-func ptrString(s string) *string {
-	return &s
-}
-
-func ptrInt(i int) *int {
-	return &i
 }
 
 func fetchPostgresJournalIDs(db *gorm.DB) (map[string]struct{}, error) {
@@ -171,7 +163,7 @@ func removeOrphanDocuments(collectionName string, validIDs map[string]struct{}) 
 	perPage := 250
 
 	for {
-		result, err := tsClient.Collection(collectionName).Documents().Search(context.Background(), &api.SearchCollectionParams{
+		result, err := TsClient.Collection(collectionName).Documents().Search(context.Background(), &api.SearchCollectionParams{
 			Q:       "*",
 			Page:    &page,
 			PerPage: &perPage,
@@ -203,7 +195,7 @@ func removeOrphanDocuments(collectionName string, validIDs map[string]struct{}) 
 				continue
 			}
 
-			if _, err := tsClient.Collection(collectionName).Document(idStr).Delete(context.Background()); err != nil {
+			if _, err := TsClient.Collection(collectionName).Document(idStr).Delete(context.Background()); err != nil {
 				if strings.Contains(err.Error(), "404") {
 					log.Printf("Dokumen %s (%s) tidak ditemukan, skip hapus", idStr, collectionName)
 				} else {

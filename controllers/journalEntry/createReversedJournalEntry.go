@@ -4,7 +4,7 @@ import (
 	"ayana/db"
 	"ayana/dto"
 	"ayana/models"
-	"ayana/service"
+	journalEntry "ayana/service/journalEntry"
 	"ayana/utils/helper"
 	"net/http"
 
@@ -86,7 +86,7 @@ func CreateReversedJournalEntry(c *gin.Context) {
 
 	// ✅ Hanya create kalau ada newEntries
 	if len(newEntries) > 0 {
-		result, err := service.ProcessMultipleJournalEntries(newEntries)
+		result, err := journalEntry.ProcessMultipleJournalEntries(newEntries)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"status":  "error",

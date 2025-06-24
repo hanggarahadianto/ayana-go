@@ -3,7 +3,7 @@ package controller
 import (
 	"ayana/db"
 	"ayana/models"
-	"ayana/service"
+	service "ayana/service/journalEntry"
 
 	"net/http"
 

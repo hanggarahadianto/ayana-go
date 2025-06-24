@@ -3,7 +3,9 @@ package service
 import (
 	"ayana/db"
 	"ayana/dto"
+	parse "ayana/lib"
 	"ayana/models"
+	tsClient "ayana/service"
 	"context"
 	"fmt"
 	"log"
@@ -45,7 +47,7 @@ func indexSingleCustomer(customer models.Customer) error {
 		document["home_id"] = customer.HomeID.String()
 	}
 
-	_, err := tsClient.Collection("customers").Documents().Create(context.Background(), document)
+	_, err := tsClient.TsClient.Collection("customers").Documents().Create(context.Background(), document)
 	if err != nil {
 		return fmt.Errorf("gagal index customer ID %s: %w", customer.ID.String(), err)
 	}
@@ -74,7 +76,7 @@ func updateCustomerInTypesense(customer models.Customer) error {
 	}
 
 	// Langsung upsert
-	_, err := tsClient.Collection("customers").Documents().Upsert(ctx, document)
+	_, err := tsClient.TsClient.Collection("customers").Documents().Upsert(ctx, document)
 	if err != nil {
 		return fmt.Errorf("failed to upsert typesense document: %w", err)
 	}
@@ -84,7 +86,7 @@ func updateCustomerInTypesense(customer models.Customer) error {
 
 func DeleteCustomerFromTypesense(ctx context.Context, customerIDs ...string) error {
 	for _, id := range customerIDs {
-		_, err := tsClient.Collection("customers").Document(id).Delete(ctx)
+		_, err := tsClient.TsClient.Collection("customers").Document(id).Delete(ctx)
 		if err != nil {
 			if strings.Contains(err.Error(), "Not Found") {
 				log.Printf("Typesense document not found for customer ID %s. Skipping.", id)
@@ -112,12 +114,12 @@ func SearchCustomers(query, companyID string, startDate, endDate *time.Time, pag
 	searchParams := &api.SearchCollectionParams{
 		Q:        query,
 		QueryBy:  "name,address,phone,status,marketer,bank_name",
-		FilterBy: ptrString(strings.Join(filters, " && ")),
-		Page:     ptrInt(page),
-		PerPage:  ptrInt(perPage),
+		FilterBy: parse.PtrString(strings.Join(filters, " && ")),
+		Page:     parse.PtrInt(page),
+		PerPage:  parse.PtrInt(perPage),
 	}
 
-	searchResult, err := tsClient.Collection("customers").Documents().Search(context.Background(), searchParams)
+	searchResult, err := tsClient.TsClient.Collection("customers").Documents().Search(context.Background(), searchParams)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -133,22 +135,22 @@ func SearchCustomers(query, companyID string, startDate, endDate *time.Time, pag
 		}
 		m := *doc
 
-		homeID := getStr(m, "home_id")
+		homeID := parse.GetString(m, "home_id")
 		homeIDs = append(homeIDs, homeID)
 
 		results = append(results, dto.CustomerResponse{
-			ID:            getStr(m, "id"),
-			Name:          getStr(m, "name"),
-			Address:       getStr(m, "address"),
-			Phone:         getStr(m, "phone"),
-			Status:        getStr(m, "status"),
-			Marketer:      getStr(m, "marketer"),
-			Amount:        getInt64(m, "amount"),
-			PaymentMethod: getStr(m, "payment_method"),
-			DateInputed:   getTimePtr(m, "date_inputed"),
+			ID:            parse.GetString(m, "id"),
+			Name:          parse.GetString(m, "name"),
+			Address:       parse.GetString(m, "address"),
+			Phone:         parse.GetString(m, "phone"),
+			Status:        parse.GetString(m, "status"),
+			Marketer:      parse.GetString(m, "marketer"),
+			Amount:        parse.GetInt64(m, "amount"),
+			PaymentMethod: parse.GetString(m, "payment_method"),
+			DateInputed:   parse.GetTimePtr(m, "date_inputed"),
 			HomeID:        homeID,
-			ProductUnit:   getStr(m, "product_unit"),
-			BankName:      getStr(m, "bank_name"),
+			ProductUnit:   parse.GetString(m, "product_unit"),
+			BankName:      parse.GetString(m, "bank_name"),
 		})
 	}
 
@@ -198,25 +200,3 @@ func SearchCustomers(query, companyID string, startDate, endDate *time.Time, pag
 }
 
 // 🔸 Helpers
-
-func getStr(m map[string]interface{}, key string) string {
-	if v, ok := m[key].(string); ok {
-		return v
-	}
-	return ""
-}
-
-func getInt64(m map[string]interface{}, key string) int64 {
-	if v, ok := m[key].(float64); ok {
-		return int64(v)
-	}
-	return 0
-}
-
-func getTimePtr(m map[string]interface{}, key string) *time.Time {
-	if v, ok := m[key].(float64); ok && v > 0 {
-		t := time.Unix(int64(v), 0)
-		return &t
-	}
-	return nil
-}

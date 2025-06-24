@@ -3,7 +3,7 @@ package controller
 import (
 	"ayana/dto"
 	"ayana/models"
-	"ayana/service"
+	journalEntry "ayana/service/journalEntry"
 	"encoding/json"
 	"net/http"
 
@@ -26,7 +26,7 @@ func CreateJournalEntry(c *gin.Context) {
 			return
 		}
 
-		results, err := service.ProcessMultipleJournalEntries(inputMultiple)
+		results, err := journalEntry.ProcessMultipleJournalEntries(inputMultiple)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "Failed to process entries", "details": err.Error()})
 			return
@@ -44,7 +44,7 @@ func CreateJournalEntry(c *gin.Context) {
 		return
 	}
 
-	result, err := service.ProcessSingleJournalEntry(inputSingle)
+	result, err := journalEntry.ProcessSingleJournalEntry(inputSingle)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "Failed to process entry", "details": err.Error()})
 		return

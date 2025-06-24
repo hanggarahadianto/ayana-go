@@ -3,7 +3,7 @@ package controller
 import (
 	"ayana/dto"
 	"ayana/models"
-	"ayana/service"
+	journalEntry "ayana/service/journalEntry"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -21,7 +21,7 @@ func UpdateJournalEntry(c *gin.Context) {
 		return
 	}
 
-	updatedJournal, err := service.UpdateSingleJournalEntry(input)
+	updatedJournal, err := journalEntry.UpdateSingleJournalEntry(input)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",

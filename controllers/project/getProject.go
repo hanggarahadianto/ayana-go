@@ -2,8 +2,8 @@ package controllers
 
 import (
 	lib "ayana/lib"
-	"ayana/service"
 
+	project "ayana/service/Project"
 	"ayana/utils/helper"
 	"net/http"
 
@@ -28,14 +28,14 @@ func GetProject(c *gin.Context) {
 
 	search := c.Query("search") // optional kalau kamu pakai
 
-	params := service.ProjectFilterParams{
+	params := project.ProjectFilterParams{
 		CompanyID:  companyID.String(),
 		Pagination: pagination,
 		DateFilter: dateFilter,
 		Search:     search,
 	}
 
-	projects, totalProject, total, err := service.GetProjects(params)
+	projects, totalProject, total, err := project.GetProjects(params)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "error",

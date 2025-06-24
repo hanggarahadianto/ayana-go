@@ -2,7 +2,7 @@ package controller
 
 import (
 	lib "ayana/lib"
-	"ayana/service"
+	asset "ayana/service/finance/asset"
 	"ayana/utils/helper"
 	"log"
 	"net/http"
@@ -38,7 +38,7 @@ func GetAssetSummary(c *gin.Context) {
 	assetType := c.DefaultQuery("asset_type", "")
 	transactionType := c.DefaultQuery("transaction_type", "")
 	pagination := lib.GetPagination(c)
-	params := service.AssetFilterParams{
+	params := asset.AssetFilterParams{
 		CompanyID:       companyID.String(),
 		Pagination:      pagination,
 		DateFilter:      dateFilter,
@@ -52,7 +52,7 @@ func GetAssetSummary(c *gin.Context) {
 		SortOrder:       sortOrder,
 	}
 
-	data, totalAsset, total, err := service.GetAssetsFromJournalLines(params)
+	data, totalAsset, total, err := asset.GetAssetsFromJournalLines(params)
 	if err != nil {
 		log.Printf("GetAssetsFromJournalLines error: %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil data aset"})

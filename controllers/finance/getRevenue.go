@@ -2,7 +2,7 @@ package controller
 
 import (
 	lib "ayana/lib"
-	"ayana/service"
+	revenue "ayana/service/finance/revenue"
 	"ayana/utils/helper"
 	"log"
 	"net/http"
@@ -33,14 +33,14 @@ func GetRevenueSummary(c *gin.Context) {
 		return
 	}
 
-	revenueType := c.DefaultQuery("revenue_type", "")
+	revenueStatus := c.DefaultQuery("revenue_type", "")
 	transactionType := c.DefaultQuery("transaction_type", "")
 	pagination := lib.GetPagination(c)
-	params := service.RevenueFilterParams{
+	params := revenue.RevenueFilterParams{
 		CompanyID:       companyID.String(),
 		Pagination:      pagination,
 		DateFilter:      dateFilter,
-		RevenueType:     revenueType,
+		Status:          revenueStatus,
 		TransactionType: transactionType,
 		SummaryOnly:     summaryOnly,
 		DebitCategory:   debitCategory,
@@ -48,7 +48,7 @@ func GetRevenueSummary(c *gin.Context) {
 		Search:          search,
 	}
 
-	data, totalRevenue, total, err := service.GetRevenueFromJournalLines(params)
+	data, totalRevenue, total, err := revenue.GetRevenueFromJournalLines(params)
 	if err != nil {
 		log.Printf("GetRevenueFromJournalLines error: %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil data aset"})
