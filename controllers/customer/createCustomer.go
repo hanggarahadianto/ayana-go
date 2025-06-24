@@ -2,8 +2,9 @@ package controllers
 
 import (
 	"ayana/models"
-	customer "ayana/service/customer"
 	"net/http"
+
+	customer "ayana/service/customer"
 
 	"github.com/gin-gonic/gin"
 )
