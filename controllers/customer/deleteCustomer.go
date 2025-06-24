@@ -3,7 +3,7 @@ package controllers
 import (
 	"ayana/db"
 	"ayana/models"
-	typesense "ayana/service/Customer"
+	typesense "ayana/service/customer"
 	"context"
 	"log"
 	"net/http"

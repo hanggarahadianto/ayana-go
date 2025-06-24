@@ -32,6 +32,8 @@ func GetExpensesSummary(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Format tanggal tidak valid. Gunakan format YYYY-MM-DD."})
 		return
 	}
+	sortBy := c.DefaultQuery("sort_by", "date_inputed") // default: date_inputed
+	sortOrder := c.DefaultQuery("sort_order", "asc")    // default: asc
 
 	pagination := lib.GetPagination(c)
 
@@ -44,6 +46,8 @@ func GetExpensesSummary(c *gin.Context) {
 		DebitCategory:  debitCategory,
 		CreditCategory: creditCategory,
 		Search:         search,
+		SortBy:         sortBy,
+		SortOrder:      sortOrder,
 	}
 
 	data, totalexpense, total, err := expense.GetExpensesFromJournalLines(params)

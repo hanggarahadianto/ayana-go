@@ -21,9 +21,6 @@ func GetAssetSummary(c *gin.Context) {
 	debitCategory := c.Query("debit_category")
 	creditCategory := c.Query("credit_category")
 	search := c.Query("search")
-	sortBy := c.DefaultQuery("sort_by", "date_inputed") // default: date_inputed
-	sortOrder := c.DefaultQuery("sort_order", "asc")    // default: asc
-
 	if summaryOnlyStr != "true" && summaryOnlyStr != "false" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Parameter summary_only harus 'true' atau 'false'."})
 		return
@@ -34,6 +31,8 @@ func GetAssetSummary(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Format tanggal tidak valid. Gunakan format YYYY-MM-DD."})
 		return
 	}
+	sortBy := c.DefaultQuery("sort_by", "date_inputed") // default: date_inputed
+	sortOrder := c.DefaultQuery("sort_order", "asc")    // default: asc
 
 	assetType := c.DefaultQuery("asset_type", "")
 	transactionType := c.DefaultQuery("transaction_type", "")

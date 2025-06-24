@@ -32,6 +32,8 @@ func GetRevenueSummary(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Format tanggal tidak valid. Gunakan format YYYY-MM-DD."})
 		return
 	}
+	sortBy := c.DefaultQuery("sort_by", "date_inputed") // default: date_inputed
+	sortOrder := c.DefaultQuery("sort_order", "asc")    // default: asc
 
 	revenueStatus := c.DefaultQuery("revenue_type", "")
 	transactionType := c.DefaultQuery("transaction_type", "")
@@ -46,6 +48,8 @@ func GetRevenueSummary(c *gin.Context) {
 		DebitCategory:   debitCategory,
 		CreditCategory:  creditCategory,
 		Search:          search,
+		SortBy:          sortBy,
+		SortOrder:       sortOrder,
 	}
 
 	data, totalRevenue, total, err := revenue.GetRevenueFromJournalLines(params)

@@ -31,6 +31,8 @@ func GetEquitySummary(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Format tanggal tidak valid. Gunakan format YYYY-MM-DD."})
 		return
 	}
+	sortBy := c.DefaultQuery("sort_by", "date_inputed") // default: date_inputed
+	sortOrder := c.DefaultQuery("sort_order", "asc")    // default: asc
 
 	equityType := c.DefaultQuery("equity_type", "")
 	transactionType := c.DefaultQuery("transaction_type", "")
@@ -45,6 +47,8 @@ func GetEquitySummary(c *gin.Context) {
 		DebitCategory:   debitCategory,
 		CreditCategory:  creditCategory,
 		Search:          search,
+		SortBy:          sortBy,
+		SortOrder:       sortOrder,
 	}
 
 	data, totalEquity, total, err := equity.GetEquityFromJournalLines(params)
