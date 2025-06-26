@@ -16,6 +16,7 @@ func GetRevenueSummary(c *gin.Context) {
 	if !valid {
 		return
 	}
+	accountType := "revenue" // Default account type for revenue
 	summaryOnlyStr := c.DefaultQuery("summary_only", "false")
 	summaryOnly := summaryOnlyStr == "true"
 	debitCategory := c.Query("debit_category")
@@ -42,6 +43,7 @@ func GetRevenueSummary(c *gin.Context) {
 		CompanyID:       companyID.String(),
 		Pagination:      pagination,
 		DateFilter:      dateFilter,
+		AccountType:     accountType,
 		Status:          revenueStatus,
 		TransactionType: transactionType,
 		SummaryOnly:     summaryOnly,

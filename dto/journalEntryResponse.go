@@ -1,7 +1,9 @@
 package dto
 
 import (
+	lib "ayana/lib"
 	"ayana/models"
+	"math"
 	"time"
 )
 
@@ -69,4 +71,40 @@ func MapToJournalEntryResponses(entries []models.JournalEntry) []JournalEntryRes
 		responses[i] = MapToJournalEntryResponse(entry)
 	}
 	return responses
+}
+
+func MapJournalLinesToResponse(lines []models.JournalLine, status string, now time.Time) []JournalEntryResponse {
+	var response []JournalEntryResponse
+
+	for _, line := range lines {
+		note, color := lib.HitungPaymentNote(status, line.Journal.DueDate, line.Journal.RepaymentDate, now)
+
+		response = append(response, JournalEntryResponse{
+			ID:                      line.JournalID.String(),
+			Invoice:                 line.Journal.Invoice,
+			TransactionID:           line.Journal.Transaction_ID,
+			TransactionCategoryID:   line.Journal.TransactionCategoryID.String(),
+			TransactionCategoryName: line.Journal.TransactionCategory.Name,
+			DebitCategory:           line.Journal.TransactionCategory.DebitCategory,
+			CreditCategory:          line.Journal.TransactionCategory.CreditCategory,
+			Description:             line.Journal.Description,
+			Partner:                 line.Journal.Partner,
+			Amount:                  int64(math.Abs(float64(line.Debit - line.Credit))),
+			TransactionType:         string(line.TransactionType),
+			DebitAccountType:        line.DebitAccountType,
+			CreditAccountType:       line.CreditAccountType,
+			Status:                  string(line.Journal.Status),
+			CompanyID:               line.CompanyID.String(),
+			DateInputed:             line.Journal.DateInputed,
+			DueDate:                 lib.SafeDueDate(line.Journal.DueDate),
+			RepaymentDate:           line.Journal.RepaymentDate, // bisa nil
+			IsRepaid:                line.Journal.IsRepaid,
+			Installment:             line.Journal.Installment,
+			Note:                    line.Journal.Note,
+			PaymentNote:             note,
+			PaymentNoteColor:        color,
+		})
+	}
+
+	return response
 }

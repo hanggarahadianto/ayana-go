@@ -15,6 +15,7 @@ func GetOutstandingDebts(c *gin.Context) {
 	if !valid {
 		return
 	}
+	accountType := "debt" // Default account type for debts
 	debtStatus := c.DefaultQuery("status", "")
 	summaryOnlyStr := c.DefaultQuery("summary_only", "false")
 	summaryOnly := summaryOnlyStr == "true"
@@ -40,6 +41,7 @@ func GetOutstandingDebts(c *gin.Context) {
 		CompanyID:      companyID.String(),
 		Pagination:     pagination,
 		DateFilter:     dateFilter,
+		AccountType:    accountType,
 		Status:         debtStatus,
 		SummaryOnly:    summaryOnly,
 		DebitCategory:  debitCategory,

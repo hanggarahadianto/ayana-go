@@ -16,6 +16,7 @@ func GetAssetSummary(c *gin.Context) {
 	if !valid {
 		return
 	}
+	accountType := "asset"
 	summaryOnlyStr := c.DefaultQuery("summary_only", "false")
 	summaryOnly := summaryOnlyStr == "true"
 	debitCategory := c.Query("debit_category")
@@ -41,8 +42,9 @@ func GetAssetSummary(c *gin.Context) {
 		CompanyID:       companyID.String(),
 		Pagination:      pagination,
 		DateFilter:      dateFilter,
-		AssetType:       assetType,
+		AccountType:     accountType,
 		TransactionType: transactionType,
+		AssetType:       assetType,
 		SummaryOnly:     summaryOnly,
 		DebitCategory:   debitCategory,
 		CreditCategory:  creditCategory,

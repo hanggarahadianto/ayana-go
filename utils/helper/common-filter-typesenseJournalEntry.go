@@ -8,11 +8,11 @@ import (
 
 func BuildTypesenseFilter(
 	companyID string,
+	accountType string,
 	debitCategory string,
 	creditCategory string,
 	startDate, endDate *time.Time,
-	status *string,
-	assetType *string,
+	Type *string,
 ) string {
 	var filters []string
 
@@ -22,15 +22,19 @@ func BuildTypesenseFilter(
 	}
 
 	// Asset type filter
-	if assetType != nil {
-		if f := BuildTypesenseAssetTypeFilter(*assetType); f != "" {
-			filters = append(filters, f)
-		}
-	}
+	if Type != nil {
+		fmt.Println("🔥 Triggered type =", *Type)
 
-	// Status filter
-	if status != nil && *status != "" {
-		filters = append(filters, fmt.Sprintf("status:=%q", *status))
+		switch *Type {
+		case "Asset":
+			if f := BuildTypesenseAssetTypeFilter(*Type); f != "" {
+				filters = append(filters, f)
+			}
+		case "Expense":
+			if f := BuildTypesenseExpenseTypeFilter(*Type); f != "" {
+				filters = append(filters, f)
+			}
+		}
 	}
 
 	// Kategori debit dan kredit

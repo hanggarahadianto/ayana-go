@@ -15,12 +15,14 @@ func GetExpensesSummary(c *gin.Context) {
 	if !valid {
 		return
 	}
-	expenseStatus := c.DefaultQuery("status", "")
+	accountType := "expense"
 	summaryOnlyStr := c.DefaultQuery("summary_only", "false")
 	summaryOnly := summaryOnlyStr == "true"
 	debitCategory := c.Query("debit_category")
 	creditCategory := c.Query("credit_category")
 	search := c.Query("search")
+	transactionType := c.DefaultQuery("transaction_type", "")
+	expenseType := c.DefaultQuery("expense_type", "")
 
 	if summaryOnlyStr != "true" && summaryOnlyStr != "false" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Parameter summary_only harus 'true' atau 'false'."})
@@ -38,16 +40,18 @@ func GetExpensesSummary(c *gin.Context) {
 	pagination := lib.GetPagination(c)
 
 	params := expense.ExpenseFilterParams{
-		CompanyID:      companyID.String(),
-		Pagination:     pagination,
-		DateFilter:     dateFilter,
-		Status:         expenseStatus,
-		SummaryOnly:    summaryOnly,
-		DebitCategory:  debitCategory,
-		CreditCategory: creditCategory,
-		Search:         search,
-		SortBy:         sortBy,
-		SortOrder:      sortOrder,
+		CompanyID:       companyID.String(),
+		Pagination:      pagination,
+		DateFilter:      dateFilter,
+		AccountType:     accountType,
+		TransactionType: transactionType,
+		ExpenseType:     expenseType,
+		SummaryOnly:     summaryOnly,
+		DebitCategory:   debitCategory,
+		CreditCategory:  creditCategory,
+		Search:          search,
+		SortBy:          sortBy,
+		SortOrder:       sortOrder,
 	}
 
 	data, totalexpense, total, err := expense.GetExpensesFromJournalLines(params)

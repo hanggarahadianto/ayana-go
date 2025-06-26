@@ -5,12 +5,11 @@ import (
 	"ayana/dto"
 	lib "ayana/lib"
 	"ayana/models"
-
 	service "ayana/service/journalEntry"
 	"ayana/utils/helper"
 	"fmt"
 	"log"
-	"math"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -19,6 +18,7 @@ type RevenueFilterParams struct {
 	CompanyID       string
 	Pagination      lib.Pagination
 	DateFilter      lib.DateFilter
+	AccountType     string // ⬅️ Tambahkan ini
 	SummaryOnly     bool
 	Status          string
 	TransactionType string
@@ -30,20 +30,25 @@ type RevenueFilterParams struct {
 }
 
 func GetRevenueFromJournalLines(params RevenueFilterParams) ([]dto.JournalEntryResponse, int64, int64, error) {
-	var lines []models.JournalLine
-	var total int64
-	var totalRevenue int64
+	var (
+		lines        []models.JournalLine
+		total        int64
+		totalRevenue int64
+		response     []dto.JournalEntryResponse
+		now          = time.Now()
+	)
 
 	if params.Search != "" {
 		results, found, err := service.SearchJournalLines(
 			params.Search,
 			params.CompanyID,
+			params.AccountType,
 			params.DebitCategory,
 			params.CreditCategory,
 			params.DateFilter.StartDate,
 			params.DateFilter.EndDate,
 			nil,
-			nil,
+
 			params.Pagination.Page,
 			params.Pagination.Limit,
 		)
@@ -113,32 +118,8 @@ func GetRevenueFromJournalLines(params RevenueFilterParams) ([]dto.JournalEntryR
 		return nil, 0, 0, err
 	}
 
-	var response []dto.JournalEntryResponse
-	for _, line := range lines {
-
-		response = append(response, dto.JournalEntryResponse{
-			ID:                      line.JournalID.String(),
-			Invoice:                 line.Journal.Invoice,
-			TransactionID:           line.Journal.Transaction_ID,
-			TransactionCategoryID:   line.Journal.TransactionCategoryID.String(),
-			TransactionCategoryName: line.Journal.TransactionCategory.Name,
-			DebitCategory:           line.Journal.TransactionCategory.DebitCategory,
-			CreditCategory:          line.Journal.TransactionCategory.CreditCategory,
-			Description:             line.Journal.Description,
-			Partner:                 line.Journal.Partner,
-			Amount:                  int64(math.Abs(float64(line.Debit - line.Credit))),
-			TransactionType:         string(line.TransactionType),
-			DebitAccountType:        line.DebitAccountType,
-			CreditAccountType:       line.CreditAccountType,
-			Status:                  string(line.Journal.Status),
-			CompanyID:               line.CompanyID.String(),
-			DateInputed:             line.Journal.DateInputed,
-			DueDate:                 lib.SafeDueDate(line.Journal.DueDate),
-			IsRepaid:                line.Journal.IsRepaid,
-			Installment:             line.Journal.Installment,
-			Note:                    line.Journal.Note,
-		})
-	}
+	// 🧾 Mapping response
+	response = dto.MapJournalLinesToResponse(lines, params.Status, now)
 
 	return response, totalRevenue, total, nil
 }

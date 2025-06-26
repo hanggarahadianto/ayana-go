@@ -7,43 +7,50 @@ import (
 	"ayana/models"
 	service "ayana/service/journalEntry"
 	"ayana/utils/helper"
+	"time"
 
 	// ts "ayana/utils/helper/typesense" // Removed to fix import cycle
 	"fmt"
 	"log"
-	"math"
 
 	"gorm.io/gorm"
 )
 
 type ExpenseFilterParams struct {
-	CompanyID      string
-	Pagination     lib.Pagination
-	DateFilter     lib.DateFilter
-	SummaryOnly    bool
-	Status         string
-	DebitCategory  string
-	CreditCategory string
-	Search         string // ⬅️ Tambahkan ini
-	SortBy         string
-	SortOrder      string
+	CompanyID       string
+	Pagination      lib.Pagination
+	DateFilter      lib.DateFilter
+	AccountType     string // ⬅️ Tambahkan ini
+	TransactionType string
+	ExpenseType     string // ⬅️ Tambahkan ini
+	SummaryOnly     bool
+	DebitCategory   string
+	CreditCategory  string
+	Search          string // ⬅️ Tambahkan ini
+	SortBy          string
+	SortOrder       string
 }
 
 func GetExpensesFromJournalLines(params ExpenseFilterParams) ([]dto.JournalEntryResponse, int64, int64, error) {
-	var lines []models.JournalLine
-	var total int64
-	var totalExpense int64
+
+	var (
+		lines        []models.JournalLine
+		total        int64
+		totalExpense int64
+		response     []dto.JournalEntryResponse
+		now          = time.Now()
+	)
 
 	if params.Search != "" {
 		results, found, err := service.SearchJournalLines(
 			params.Search,
 			params.CompanyID,
+			params.AccountType,
 			params.DebitCategory,
 			params.CreditCategory,
 			params.DateFilter.StartDate,
 			params.DateFilter.EndDate,
-			nil,
-			nil,
+			&params.ExpenseType,
 			params.Pagination.Page,
 			params.Pagination.Limit,
 		)
@@ -74,12 +81,11 @@ func GetExpensesFromJournalLines(params ExpenseFilterParams) ([]dto.JournalEntry
 	baseQuery := db.DB.Model(&models.JournalLine{}).
 		Joins("JOIN journal_entries ON journal_entries.id = journal_lines.journal_id").
 		Joins("LEFT JOIN transaction_categories ON journal_entries.transaction_category_id = transaction_categories.id").
-		Where("journal_entries.company_id = ?", params.CompanyID).
-		Where("journal_lines.debit_account_type = ?", "Expense")
+		Where("journal_entries.company_id = ?", params.CompanyID)
 
 	// Filter expense type
 
-	baseQuery = ApplyExpenseTypeFilterToGorm(baseQuery, params.Status)
+	baseQuery = ApplyExpenseTypeFilterToGorm(baseQuery, params.ExpenseType)
 
 	filteredQuery, sortBy, sortOrder := helper.ApplyCommonJournalEntryFiltersToGorm(
 		baseQuery,
@@ -119,32 +125,7 @@ func GetExpensesFromJournalLines(params ExpenseFilterParams) ([]dto.JournalEntry
 		return nil, 0, 0, err
 	}
 
-	var response []dto.JournalEntryResponse
-	for _, line := range lines {
-
-		response = append(response, dto.JournalEntryResponse{
-			ID:                      line.JournalID.String(),
-			Invoice:                 line.Journal.Invoice,
-			TransactionID:           line.Journal.Transaction_ID,
-			TransactionCategoryID:   line.Journal.TransactionCategoryID.String(),
-			TransactionCategoryName: line.Journal.TransactionCategory.Name,
-			DebitCategory:           line.Journal.TransactionCategory.DebitCategory,
-			CreditCategory:          line.Journal.TransactionCategory.CreditCategory,
-			Description:             line.Journal.Description,
-			Partner:                 line.Journal.Partner,
-			Amount:                  int64(math.Abs(float64(line.Debit - line.Credit))),
-			TransactionType:         string(line.TransactionType),
-			DebitAccountType:        line.DebitAccountType,
-			CreditAccountType:       line.CreditAccountType,
-			Status:                  string(line.Journal.Status),
-			CompanyID:               line.CompanyID.String(),
-			DateInputed:             line.Journal.DateInputed,
-			DueDate:                 lib.SafeDueDate(line.Journal.DueDate),
-			IsRepaid:                line.Journal.IsRepaid,
-			Installment:             line.Journal.Installment,
-			Note:                    line.Journal.Note,
-		})
-	}
+	response = dto.MapJournalLinesToResponse(lines, params.ExpenseType, now)
 
 	return response, totalExpense, total, nil
 }

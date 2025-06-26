@@ -11,7 +11,6 @@ import (
 	"ayana/models"
 	"fmt"
 	"log"
-	"math"
 	"time"
 
 	"gorm.io/gorm"
@@ -21,6 +20,7 @@ type DebtFilterParams struct {
 	CompanyID      string
 	Pagination     lib.Pagination
 	DateFilter     lib.DateFilter
+	AccountType    string // ⬅️ Tambahkan ini
 	SummaryOnly    bool
 	Status         string
 	DebitCategory  string
@@ -44,12 +44,12 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalEntryRespon
 		results, found, err := service.SearchJournalLines(
 			params.Search,
 			params.CompanyID,
+			params.AccountType,
 			params.DebitCategory,
 			params.CreditCategory,
 			params.DateFilter.StartDate,
 			params.DateFilter.EndDate,
 			nil, // assetType
-			&params.Status,
 			params.Pagination.Page,
 			params.Pagination.Limit,
 		)
@@ -129,35 +129,7 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalEntryRespon
 	}
 
 	// 🧾 Mapping response
-	for _, line := range lines {
-		note, color := lib.HitungPaymentNote(params.Status, line.Journal.DueDate, line.Journal.RepaymentDate, now)
-
-		response = append(response, dto.JournalEntryResponse{
-			ID:                      line.JournalID.String(),
-			Invoice:                 line.Journal.Invoice,
-			TransactionID:           line.Journal.Transaction_ID,
-			TransactionCategoryID:   line.Journal.TransactionCategoryID.String(),
-			TransactionCategoryName: line.Journal.TransactionCategory.Name,
-			DebitCategory:           line.Journal.TransactionCategory.DebitCategory,
-			CreditCategory:          line.Journal.TransactionCategory.CreditCategory,
-			Description:             line.Journal.Description,
-			Partner:                 line.Journal.Partner,
-			Amount:                  int64(math.Abs(float64(line.Debit - line.Credit))),
-			TransactionType:         string(line.TransactionType),
-			DebitAccountType:        line.DebitAccountType,
-			CreditAccountType:       line.CreditAccountType,
-			Status:                  string(line.Journal.Status),
-			CompanyID:               line.CompanyID.String(),
-			DateInputed:             line.Journal.DateInputed,
-			DueDate:                 lib.SafeDueDate(line.Journal.DueDate),
-			RepaymentDate:           line.Journal.RepaymentDate,
-			IsRepaid:                line.Journal.IsRepaid,
-			Installment:             line.Journal.Installment,
-			Note:                    line.Journal.Note,
-			PaymentNote:             note,
-			PaymentNoteColor:        color,
-		})
-	}
+	response = dto.MapJournalLinesToResponse(lines, params.Status, now)
 
 	return response, totalDebt, total, nil
 }
