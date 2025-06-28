@@ -33,18 +33,23 @@ func UpdateTransactionCategory(c *gin.Context) {
 	}
 
 	// Update field yang diizinkan
-	existing.CompanyID = input.CompanyID
+	existing.Name = input.Name
 	existing.TransactionType = input.TransactionType
+
+	existing.DebitAccountID = input.DebitAccountID
+	existing.CreditAccountID = input.CreditAccountID
+
+	existing.DebitAccountType = input.DebitAccountType
+	existing.CreditAccountType = input.CreditAccountType
+
 	existing.DebitCategory = input.DebitCategory
 	existing.CreditCategory = input.CreditCategory
-	existing.Name = input.Name
-	existing.Status = input.Status
+
 	existing.TransactionLabel = input.TransactionLabel
-	existing.DebitAccountID = input.DebitAccountID
-	existing.DebitAccountType = input.DebitAccountType
-	existing.CreditAccountID = input.CreditAccountID
-	existing.CreditAccountType = input.CreditAccountType
+
 	existing.Description = input.Description
+	existing.Status = input.Status
+	existing.CompanyID = input.CompanyID
 
 	// Simpan perubahan
 	if err := db.DB.Save(&existing).Error; err != nil {
