@@ -2,8 +2,7 @@ package controllers
 
 import (
 	lib "ayana/lib"
-
-	project "ayana/service/Project"
+	project "ayana/service/project"
 	"ayana/utils/helper"
 	"net/http"
 
