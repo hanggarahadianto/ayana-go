@@ -15,7 +15,7 @@ func GetExpensesSummary(c *gin.Context) {
 	if !valid {
 		return
 	}
-	accountType := "expense"
+	accountType := "Expense"
 	summaryOnlyStr := c.DefaultQuery("summary_only", "false")
 	summaryOnly := summaryOnlyStr == "true"
 	debitCategory := c.Query("debit_category")

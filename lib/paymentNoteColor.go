@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func HitungPaymentNote(assetOrDebtStatus string, due *time.Time, repayment *time.Time, now time.Time) (string, string) {
+func HitungPaymentNote(due *time.Time, repayment *time.Time, assetOrDebtStatus string, now time.Time) (string, string) {
 	if due == nil || due.IsZero() {
 		return "", ""
 	}

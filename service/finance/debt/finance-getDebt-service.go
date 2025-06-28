@@ -17,17 +17,18 @@ import (
 )
 
 type DebtFilterParams struct {
-	CompanyID      string
-	Pagination     lib.Pagination
-	DateFilter     lib.DateFilter
-	AccountType    string // ⬅️ Tambahkan ini
-	SummaryOnly    bool
-	Status         string
-	DebitCategory  string
-	CreditCategory string
-	Search         string
-	SortBy         string
-	SortOrder      string
+	CompanyID       string
+	Pagination      lib.Pagination
+	DateFilter      lib.DateFilter
+	AccountType     string // ⬅️ Tambahkan ini
+	TransactionType string
+	DebtType        string // ⬅️ Tambahkan ini
+	DebitCategory   string
+	CreditCategory  string
+	SummaryOnly     bool
+	Search          string
+	SortBy          string
+	SortOrder       string
 }
 
 func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalEntryResponse, int64, int64, error) {
@@ -44,12 +45,13 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalEntryRespon
 		results, found, err := service.SearchJournalLines(
 			params.Search,
 			params.CompanyID,
-			params.AccountType,
-			params.DebitCategory,
-			params.CreditCategory,
 			params.DateFilter.StartDate,
 			params.DateFilter.EndDate,
-			nil, // assetType
+			params.AccountType,
+			params.TransactionType,
+			params.DebtType,
+			params.DebitCategory,
+			params.CreditCategory,
 			params.Pagination.Page,
 			params.Pagination.Limit,
 		)
@@ -60,7 +62,7 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalEntryRespon
 		}
 
 		for i, line := range results {
-			note, color := lib.HitungPaymentNote(params.Status, line.DueDate, line.RepaymentDate, now)
+			note, color := lib.HitungPaymentNote(line.DueDate, line.RepaymentDate, params.DebtType, now)
 			results[i].PaymentNote = note
 			results[i].PaymentNoteColor = color
 			totalDebt += int64(line.Amount)
@@ -83,7 +85,7 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalEntryRespon
 		Where("journal_entries.company_id = ?", params.CompanyID)
 
 	// 📦 Filter khusus hutang
-	baseQuery = ApplyDebtTypeFilterToGorm(baseQuery, params.Status)
+	baseQuery = ApplyDebtTypeFilterToGorm(baseQuery, params.DebtType)
 
 	// 🎛️ Filter umum (tanpa sorting dulu)
 	filteredQuery, sortBy, sortOrder := helper.ApplyCommonJournalEntryFiltersToGorm(
@@ -129,7 +131,7 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalEntryRespon
 	}
 
 	// 🧾 Mapping response
-	response = dto.MapJournalLinesToResponse(lines, params.Status, now)
+	response = dto.MapJournalLinesToResponse(lines, params.DebtType, now)
 
 	return response, totalDebt, total, nil
 }

@@ -8,11 +8,12 @@ import (
 
 func BuildTypesenseFilter(
 	companyID string,
+	startDate, endDate *time.Time,
 	accountType string,
+	transactionType *string,
+	Type *string,
 	debitCategory string,
 	creditCategory string,
-	startDate, endDate *time.Time,
-	Type *string,
 ) string {
 	var filters []string
 
@@ -25,7 +26,7 @@ func BuildTypesenseFilter(
 	if Type != nil {
 		fmt.Println("🔥 Triggered type =", *Type)
 
-		switch *Type {
+		switch accountType {
 		case "Asset":
 			if f := BuildTypesenseAssetTypeFilter(*Type); f != "" {
 				filters = append(filters, f)
@@ -34,7 +35,14 @@ func BuildTypesenseFilter(
 			if f := BuildTypesenseExpenseTypeFilter(*Type); f != "" {
 				filters = append(filters, f)
 			}
+		case "Debt":
+			if f := BuildTypesenseDebtTypeFilter(*Type); f != "" {
+				filters = append(filters, f)
+			}
 		}
+	}
+	if *transactionType != "" {
+		filters = append(filters, fmt.Sprintf("transaction__type:=%q", *transactionType))
 	}
 
 	// Kategori debit dan kredit

@@ -2,9 +2,9 @@ package service
 
 import "gorm.io/gorm"
 
-func ApplyDebtTypeFilterToGorm(query *gorm.DB, Status string) *gorm.DB {
+func ApplyDebtTypeFilterToGorm(query *gorm.DB, debtType string) *gorm.DB {
 
-	switch Status {
+	switch debtType {
 	case "going":
 		return query.
 			Where("journal_lines.credit > 0").

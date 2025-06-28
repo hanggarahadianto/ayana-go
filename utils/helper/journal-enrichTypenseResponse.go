@@ -6,9 +6,9 @@ import (
 	"time"
 )
 
-func EnrichJournalEntryResponses(responses []dto.JournalEntryResponse, status string, now time.Time) []dto.JournalEntryResponse {
+func EnrichJournalEntryResponses(responses []dto.JournalEntryResponse, entryType string, now time.Time) []dto.JournalEntryResponse {
 	for i, line := range responses {
-		note, color := lib.HitungPaymentNote(status, line.DueDate, line.RepaymentDate, now)
+		note, color := lib.HitungPaymentNote(line.DueDate, line.RepaymentDate, entryType, now)
 		responses[i].PaymentNote = note
 		responses[i].PaymentNoteColor = color
 	}

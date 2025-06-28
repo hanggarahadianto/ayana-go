@@ -123,17 +123,18 @@ func DeleteJournalEntryFromTypesense(ctx context.Context, journalEntryIDs ...str
 func SearchJournalLines(
 	query string,
 	companyID string,
+	startDate, endDate *time.Time,
 	accountType string,
+	transactionType string,
+	Type string,
 	debitCategory string,
 	creditCategory string,
-	startDate, endDate *time.Time,
-	Type *string,
 	page, perPage int,
 ) ([]dto.JournalEntryResponse, int, error) {
 	log.Printf("🔍 Searching journal lines: query=%s, companyID=%s,AccountType=%v,Type=%v,page=%d, perPage=%d", query, companyID, accountType, Type, page, perPage)
 
 	// ✅ Gunakan lib refactor untuk filter
-	filterBy := helper.BuildTypesenseFilter(companyID, accountType, debitCategory, creditCategory, startDate, endDate, Type)
+	filterBy := helper.BuildTypesenseFilter(companyID, startDate, endDate, accountType, &transactionType, &Type, debitCategory, creditCategory)
 
 	// 🔧 Setup search params
 	searchParams := &api.SearchCollectionParams{

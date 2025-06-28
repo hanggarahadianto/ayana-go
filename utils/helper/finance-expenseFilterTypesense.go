@@ -5,12 +5,11 @@ import (
 	"strings"
 )
 
-func BuildTypesenseExpenseTypeFilter(status string) string {
+func BuildTypesenseExpenseTypeFilter(expenseType string) string {
 	var filters []string
-	fmt.Println("🔥 Triggered BuildTypesenseExpenseTypeFilter with status = base")
 
-	switch status {
-	case "base":
+	if expenseType == "base" {
+		fmt.Println("🔥 Triggered BuildTypesenseExpenseTypeFilter with status = base")
 		filters = append(filters,
 			"transaction_type:=payout",
 			"debit_account_type:=Expense",

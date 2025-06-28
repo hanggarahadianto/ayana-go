@@ -15,8 +15,7 @@ func GetOutstandingDebts(c *gin.Context) {
 	if !valid {
 		return
 	}
-	accountType := "debt" // Default account type for debts
-	debtStatus := c.DefaultQuery("status", "")
+	accountType := "Debt" // Default account type for debts
 	summaryOnlyStr := c.DefaultQuery("summary_only", "false")
 	summaryOnly := summaryOnlyStr == "true"
 	if summaryOnlyStr != "true" && summaryOnlyStr != "false" {
@@ -26,6 +25,9 @@ func GetOutstandingDebts(c *gin.Context) {
 	debitCategory := c.Query("debit_category")
 	creditCategory := c.Query("credit_category")
 	search := c.Query("search")
+
+	debtType := c.DefaultQuery("debt_type", "")
+	transactionType := c.DefaultQuery("transaction_type", "")
 
 	dateFilter, err := lib.GetDateFilter(c)
 	if err != nil {
@@ -38,17 +40,18 @@ func GetOutstandingDebts(c *gin.Context) {
 	pagination := lib.GetPagination(c)
 
 	params := debt.DebtFilterParams{
-		CompanyID:      companyID.String(),
-		Pagination:     pagination,
-		DateFilter:     dateFilter,
-		AccountType:    accountType,
-		Status:         debtStatus,
-		SummaryOnly:    summaryOnly,
-		DebitCategory:  debitCategory,
-		CreditCategory: creditCategory,
-		Search:         search,
-		SortBy:         sortBy,
-		SortOrder:      sortOrder,
+		CompanyID:       companyID.String(),
+		Pagination:      pagination,
+		DateFilter:      dateFilter,
+		AccountType:     accountType,
+		TransactionType: transactionType,
+		DebtType:        debtType,
+		SummaryOnly:     summaryOnly,
+		DebitCategory:   debitCategory,
+		CreditCategory:  creditCategory,
+		Search:          search,
+		SortBy:          sortBy,
+		SortOrder:       sortOrder,
 	}
 
 	data, totalDebt, total, err := debt.GetDebtsFromJournalLines(params)

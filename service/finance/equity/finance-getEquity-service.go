@@ -19,11 +19,11 @@ type EquityFilterParams struct {
 	Pagination      lib.Pagination
 	DateFilter      lib.DateFilter
 	AccountType     string // ⬅️ Tambahkan ini
-	SummaryOnly     bool
-	EquityType      string
 	TransactionType string
+	EquityType      string
 	DebitCategory   string
 	CreditCategory  string
+	SummaryOnly     bool
 	Search          string // ⬅️ Tambahkan ini
 	SortBy          string
 	SortOrder       string
@@ -41,14 +41,14 @@ func GetEquityFromJournalLines(params EquityFilterParams) ([]dto.JournalEntryRes
 	if params.Search != "" {
 		results, found, err := service.SearchJournalLines(
 			params.Search,
-
 			params.CompanyID,
-			params.AccountType,
-			params.DebitCategory,
-			params.CreditCategory,
 			params.DateFilter.StartDate,
 			params.DateFilter.EndDate,
-			nil,
+			params.AccountType,
+			params.TransactionType,
+			params.EquityType,
+			params.DebitCategory,
+			params.CreditCategory,
 			params.Pagination.Page,
 			params.Pagination.Limit,
 		)

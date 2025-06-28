@@ -45,12 +45,13 @@ func GetExpensesFromJournalLines(params ExpenseFilterParams) ([]dto.JournalEntry
 		results, found, err := service.SearchJournalLines(
 			params.Search,
 			params.CompanyID,
-			params.AccountType,
-			params.DebitCategory,
-			params.CreditCategory,
 			params.DateFilter.StartDate,
 			params.DateFilter.EndDate,
-			&params.ExpenseType,
+			params.AccountType,
+			params.TransactionType,
+			params.ExpenseType,
+			params.DebitCategory,
+			params.CreditCategory,
 			params.Pagination.Page,
 			params.Pagination.Limit,
 		)

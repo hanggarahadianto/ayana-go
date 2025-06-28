@@ -16,18 +16,16 @@ func GetRevenueSummary(c *gin.Context) {
 	if !valid {
 		return
 	}
-	accountType := "revenue" // Default account type for revenue
+	accountType := "Revenue" // Default account type for revenue
 	summaryOnlyStr := c.DefaultQuery("summary_only", "false")
 	summaryOnly := summaryOnlyStr == "true"
 	debitCategory := c.Query("debit_category")
 	creditCategory := c.Query("credit_category")
 	search := c.Query("search")
-
 	if summaryOnlyStr != "true" && summaryOnlyStr != "false" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Parameter summary_only harus 'true' atau 'false'."})
 		return
 	}
-
 	dateFilter, err := lib.GetDateFilter(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Format tanggal tidak valid. Gunakan format YYYY-MM-DD."})
@@ -36,7 +34,7 @@ func GetRevenueSummary(c *gin.Context) {
 	sortBy := c.DefaultQuery("sort_by", "date_inputed") // default: date_inputed
 	sortOrder := c.DefaultQuery("sort_order", "asc")    // default: asc
 
-	revenueStatus := c.DefaultQuery("revenue_type", "")
+	revenueType := c.DefaultQuery("revenue_type", "")
 	transactionType := c.DefaultQuery("transaction_type", "")
 	pagination := lib.GetPagination(c)
 	params := revenue.RevenueFilterParams{
@@ -44,8 +42,8 @@ func GetRevenueSummary(c *gin.Context) {
 		Pagination:      pagination,
 		DateFilter:      dateFilter,
 		AccountType:     accountType,
-		Status:          revenueStatus,
 		TransactionType: transactionType,
+		RevenueType:     revenueType,
 		SummaryOnly:     summaryOnly,
 		DebitCategory:   debitCategory,
 		CreditCategory:  creditCategory,

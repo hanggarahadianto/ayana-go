@@ -3,8 +3,11 @@ package dto
 import (
 	lib "ayana/lib"
 	"ayana/models"
+	"fmt"
 	"math"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type JournalEntryResponse struct {
@@ -73,20 +76,38 @@ func MapToJournalEntryResponses(entries []models.JournalEntry) []JournalEntryRes
 	return responses
 }
 
-func MapJournalLinesToResponse(lines []models.JournalLine, status string, now time.Time) []JournalEntryResponse {
+func MapJournalLinesToResponse(lines []models.JournalLine, Type string, now time.Time) []JournalEntryResponse {
 	var response []JournalEntryResponse
 
 	for _, line := range lines {
-		note, color := lib.HitungPaymentNote(status, line.Journal.DueDate, line.Journal.RepaymentDate, now)
+		// Handle kemungkinan TransactionCategory nil
+		tc := line.Journal.TransactionCategory
+		tcID := ""
+		tcName := ""
+		tcDebitCat := ""
+		tcCreditCat := ""
+
+		if tc.ID != uuid.Nil {
+			tcID = tc.ID.String()
+			tcName = tc.Name
+			tcDebitCat = tc.DebitCategory
+			tcCreditCat = tc.CreditCategory
+		}
+
+		// ✅ Hitung catatan pembayaran & warna
+		note, color := lib.HitungPaymentNote(line.Journal.DueDate, line.Journal.RepaymentDate, Type, now)
+
+		// ✅ Console log bukti fungsi ter-trigger
+		fmt.Printf("🔥 HitungPaymentNote triggered — Type: %s, Note: %s, Color: %s\n", Type, note, color)
 
 		response = append(response, JournalEntryResponse{
 			ID:                      line.JournalID.String(),
 			Invoice:                 line.Journal.Invoice,
 			TransactionID:           line.Journal.Transaction_ID,
-			TransactionCategoryID:   line.Journal.TransactionCategoryID.String(),
-			TransactionCategoryName: line.Journal.TransactionCategory.Name,
-			DebitCategory:           line.Journal.TransactionCategory.DebitCategory,
-			CreditCategory:          line.Journal.TransactionCategory.CreditCategory,
+			TransactionCategoryID:   tcID,
+			TransactionCategoryName: tcName,
+			DebitCategory:           tcDebitCat,
+			CreditCategory:          tcCreditCat,
 			Description:             line.Journal.Description,
 			Partner:                 line.Journal.Partner,
 			Amount:                  int64(math.Abs(float64(line.Debit - line.Credit))),
@@ -97,7 +118,7 @@ func MapJournalLinesToResponse(lines []models.JournalLine, status string, now ti
 			CompanyID:               line.CompanyID.String(),
 			DateInputed:             line.Journal.DateInputed,
 			DueDate:                 lib.SafeDueDate(line.Journal.DueDate),
-			RepaymentDate:           line.Journal.RepaymentDate, // bisa nil
+			RepaymentDate:           line.Journal.RepaymentDate,
 			IsRepaid:                line.Journal.IsRepaid,
 			Installment:             line.Journal.Installment,
 			Note:                    line.Journal.Note,

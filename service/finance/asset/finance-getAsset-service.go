@@ -19,10 +19,9 @@ type AssetFilterParams struct {
 	Pagination      lib.Pagination
 	DateFilter      lib.DateFilter
 	AccountType     string // ⬅️ Tambahkan ini
-	SummaryOnly     bool
-	AssetType       string
-	Status          string
 	TransactionType string
+	AssetType       string
+	SummaryOnly     bool
 	DebitCategory   string
 	CreditCategory  string
 	Search          string
@@ -43,12 +42,13 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalEntryResp
 		results, found, err := service.SearchJournalLines(
 			params.Search,
 			params.CompanyID,
-			params.AccountType,
-			params.DebitCategory,
-			params.CreditCategory,
 			params.DateFilter.StartDate,
 			params.DateFilter.EndDate,
-			&params.AssetType,
+			params.AccountType,
+			params.TransactionType,
+			params.AssetType,
+			params.DebitCategory,
+			params.CreditCategory,
 			params.Pagination.Page,
 			params.Pagination.Limit,
 		)
@@ -56,7 +56,7 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalEntryResp
 			return nil, 0, 0, fmt.Errorf("gagal mengambil data aset: %w", err)
 		}
 
-		results = helper.EnrichJournalEntryResponses(results, params.Status, now)
+		results = helper.EnrichJournalEntryResponses(results, params.AssetType, now)
 
 		// Hitung totalAsset dari hasil search
 		for _, line := range results {
@@ -120,7 +120,7 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalEntryResp
 	}
 
 	// 🧾 Mapping response
-	response = dto.MapJournalLinesToResponse(lines, params.Status, now)
+	response = dto.MapJournalLinesToResponse(lines, params.AssetType, now)
 
 	return response, totalAsset, total, nil
 }

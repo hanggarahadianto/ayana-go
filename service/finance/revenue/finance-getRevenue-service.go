@@ -19,11 +19,11 @@ type RevenueFilterParams struct {
 	Pagination      lib.Pagination
 	DateFilter      lib.DateFilter
 	AccountType     string // ⬅️ Tambahkan ini
-	SummaryOnly     bool
-	Status          string
 	TransactionType string
+	RevenueType     string
 	DebitCategory   string
 	CreditCategory  string
+	SummaryOnly     bool
 	Search          string // ⬅️ Tambahkan ini
 	SortBy          string
 	SortOrder       string
@@ -42,13 +42,13 @@ func GetRevenueFromJournalLines(params RevenueFilterParams) ([]dto.JournalEntryR
 		results, found, err := service.SearchJournalLines(
 			params.Search,
 			params.CompanyID,
-			params.AccountType,
-			params.DebitCategory,
-			params.CreditCategory,
 			params.DateFilter.StartDate,
 			params.DateFilter.EndDate,
-			nil,
-
+			params.AccountType,
+			params.TransactionType,
+			params.RevenueType,
+			params.DebitCategory,
+			params.CreditCategory,
 			params.Pagination.Page,
 			params.Pagination.Limit,
 		)
@@ -80,7 +80,7 @@ func GetRevenueFromJournalLines(params RevenueFilterParams) ([]dto.JournalEntryR
 		Joins("LEFT JOIN transaction_categories ON journal_entries.transaction_category_id = transaction_categories.id").
 		Where("journal_entries.company_id = ?", params.CompanyID)
 
-	baseQuery = ApplyRevenueTypeFilterToGorm(baseQuery, params.Status)
+	baseQuery = ApplyRevenueTypeFilterToGorm(baseQuery, params.RevenueType)
 	filteredQuery, sortBy, sortOrder := helper.ApplyCommonJournalEntryFiltersToGorm(
 		baseQuery,
 		helper.JournalEntryFilterParams{
@@ -119,7 +119,7 @@ func GetRevenueFromJournalLines(params RevenueFilterParams) ([]dto.JournalEntryR
 	}
 
 	// 🧾 Mapping response
-	response = dto.MapJournalLinesToResponse(lines, params.Status, now)
+	response = dto.MapJournalLinesToResponse(lines, params.RevenueType, now)
 
 	return response, totalRevenue, total, nil
 }
