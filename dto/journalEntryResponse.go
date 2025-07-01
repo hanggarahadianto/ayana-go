@@ -3,7 +3,6 @@ package dto
 import (
 	lib "ayana/lib"
 	"ayana/models"
-	"fmt"
 	"math"
 	"time"
 
@@ -98,7 +97,7 @@ func MapJournalLinesToResponse(lines []models.JournalLine, Type string, now time
 		note, color := lib.HitungPaymentNote(line.Journal.DueDate, line.Journal.RepaymentDate, Type, now)
 
 		// ✅ Console log bukti fungsi ter-trigger
-		fmt.Printf("🔥 HitungPaymentNote triggered — Type: %s, Note: %s, Color: %s\n", Type, note, color)
+		// fmt.Printf("🔥 HitungPaymentNote triggered — Type: %s, Note: %s, Color: %s\n", Type, note, color)
 
 		response = append(response, JournalEntryResponse{
 			ID:                      line.JournalID.String(),

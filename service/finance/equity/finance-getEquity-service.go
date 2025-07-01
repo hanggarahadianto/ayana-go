@@ -39,7 +39,7 @@ func GetEquityFromJournalLines(params EquityFilterParams) ([]dto.JournalEntryRes
 	)
 
 	if params.Search != "" {
-		results, found, err := service.SearchJournalLines(
+		results, _, found, err := service.SearchJournalLines(
 			params.Search,
 			params.CompanyID,
 			params.DateFilter.StartDate,
@@ -54,7 +54,7 @@ func GetEquityFromJournalLines(params EquityFilterParams) ([]dto.JournalEntryRes
 		)
 
 		if err != nil {
-			log.Println("Error saat search ke Typesense:", err)
+			log.Println("Error saat search ke Typesense:")
 			return nil, 0, 0, fmt.Errorf("gagal mengambil data aset: %w", err)
 		}
 

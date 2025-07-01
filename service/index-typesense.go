@@ -80,6 +80,7 @@ func CreateCollectionIfNotExist() error {
 			{Name: "is_repaid", Type: "bool"},
 			{Name: "status", Type: "string", Facet: &facetTrue},
 			{Name: "installment", Type: "int32"},
+			{Name: "note", Type: "string", Optional: boolPtr(true)},
 			{Name: "payment_note", Type: "string", Optional: boolPtr(true)},
 			{Name: "payment_note_color", Type: "string", Optional: boolPtr(true)},
 		},

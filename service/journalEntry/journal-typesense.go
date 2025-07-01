@@ -6,6 +6,7 @@ import (
 	"ayana/models"
 	tsClient "ayana/service"
 	"ayana/utils/helper"
+
 	"context"
 	"fmt"
 	"log"
@@ -130,48 +131,38 @@ func SearchJournalLines(
 	debitCategory string,
 	creditCategory string,
 	page, perPage int,
-) ([]dto.JournalEntryResponse, int, error) {
+) ([]dto.JournalEntryResponse, []string, int, error) {
 	log.Printf("🔍 Searching journal lines: query=%s, companyID=%s,AccountType=%v,Type=%v,page=%d, perPage=%d", query, companyID, accountType, Type, page, perPage)
 
-	// ✅ Gunakan lib refactor untuk filter
 	filterBy := helper.BuildTypesenseFilter(companyID, startDate, endDate, accountType, &transactionType, &Type, debitCategory, creditCategory)
 
-	// 🔧 Setup search params
 	searchParams := &api.SearchCollectionParams{
 		Q:        query,
-		QueryBy:  "transaction_id,invoice,description,partner,debit_category,credit_category",
+		QueryBy:  "transaction_id,invoice,description,partner,debit_category,credit_category,note",
 		FilterBy: &filterBy,
 		Page:     &page,
 		PerPage:  &perPage,
 		SortBy:   lib.PtrString("date_inputed:desc"),
 	}
 
-	// 🧪 Debug log
-	log.Println("🔥 Typesense Search Params:")
-	log.Printf("Q         : %s\n", searchParams.Q)
-	log.Printf("QueryBy   : %s\n", searchParams.QueryBy)
-	log.Printf("FilterBy  : %s\n", *searchParams.FilterBy)
-	log.Printf("Page      : %d\n", *searchParams.Page)
-	log.Printf("PerPage   : %d\n", *searchParams.PerPage)
-	log.Printf("SortBy    : %s\n", *searchParams.SortBy)
-
-	// 🚀 Perform search
 	searchResult, err := tsClient.TsClient.Collection("journal_entries").Documents().Search(context.Background(), searchParams)
 	if err != nil {
-		return nil, 0, err
+		return nil, nil, 0, err
 	}
 
-	// 🧾 Parse results
 	var results []dto.JournalEntryResponse
+	var ids []string
 	for _, hit := range *searchResult.Hits {
 		doc := hit.Document
 		if doc == nil {
 			continue
 		}
 		m := *doc
+		id := lib.GetString(m, "id")
+		ids = append(ids, id)
 
 		results = append(results, dto.JournalEntryResponse{
-			ID:                      lib.GetString(m, "id"),
+			ID:                      id,
 			TransactionID:           lib.GetString(m, "transaction_id"),
 			TransactionCategoryID:   lib.GetString(m, "transaction_category_id"),
 			TransactionCategoryName: lib.GetString(m, "transaction_category_name"),
@@ -204,5 +195,5 @@ func SearchJournalLines(
 	if searchResult.Found != nil {
 		found = *searchResult.Found
 	}
-	return results, found, nil
+	return results, ids, found, nil
 }

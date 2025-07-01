@@ -39,7 +39,7 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalEntryResp
 	)
 
 	if params.Search != "" {
-		results, found, err := service.SearchJournalLines(
+		results, _, found, err := service.SearchJournalLines(
 			params.Search,
 			params.CompanyID,
 			params.DateFilter.StartDate,
@@ -56,17 +56,14 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalEntryResp
 			return nil, 0, 0, fmt.Errorf("gagal mengambil data aset: %w", err)
 		}
 
+		// ✅ Hitung totalAsset langsung dari hasil search
+		var totalAsset int64
+		for _, r := range results {
+			totalAsset += int64(r.Amount)
+		}
+
 		results = helper.EnrichJournalEntryResponses(results, params.AssetType, now)
-
-		// Hitung totalAsset dari hasil search
-		for _, line := range results {
-			totalAsset += int64(line.Amount)
-		}
-		if params.SummaryOnly {
-			return nil, totalAsset, int64(found), nil
-		}
 		return results, totalAsset, int64(found), nil
-
 	}
 
 	// ✅ Build base query

@@ -39,7 +39,7 @@ func GetRevenueFromJournalLines(params RevenueFilterParams) ([]dto.JournalEntryR
 	)
 
 	if params.Search != "" {
-		results, found, err := service.SearchJournalLines(
+		results, _, found, err := service.SearchJournalLines(
 			params.Search,
 			params.CompanyID,
 			params.DateFilter.StartDate,
