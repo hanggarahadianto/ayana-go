@@ -16,6 +16,7 @@ type Employee struct {
 	EmployeeEducation    string     `gorm:"type:text;not null" json:"employee_education" form:"employee_education"` // pendidikan terakhir
 	Department           string     `gorm:"type:text;not null" json:"department" form:"address"`
 	Gender               string     `gorm:"type:text;not null" json:"gender" form:"gender"`
+	Religion             string     `gorm:"type:text;not null" json:"religion" form:"religion"` // contoh: "Islam", "Kristen", etc
 	Position             string     `gorm:"type:text;not null" json:"position" form:"position"`
 	EmployeeStatus       string     `gorm:"type:varchar(100);not null" json:"employee_status" form:"employee_status"`               // contoh: "active", "inactive", etc
 	EmployeeContractType string     `gorm:"type:varchar(100);not null" json:"employee_contract_type" form:"employee_contract_type"` // contoh: "permanent", "contract", etc
