@@ -107,8 +107,20 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalEntryResp
 	// ✅ Apply pagination dan sorting
 	dataQuery := filteredQuery.
 		Preload("Journal").
-		Preload("Journal.TransactionCategory").
-		Order(fmt.Sprintf("journal_entries.%s %s", sortBy, sortOrder)).
+		Preload("Journal.TransactionCategory")
+
+	// ✅ Lalu tambahkan sorting setelah itu, berdasarkan kondisi
+	if sortBy == "date_inputed" {
+		dataQuery = dataQuery.
+			Order(fmt.Sprintf("journal_entries.date_inputed %s", sortOrder)).
+			Order("journal_entries.invoice DESC")
+	} else {
+		dataQuery = dataQuery.
+			Order(fmt.Sprintf("journal_entries.%s %s", sortBy, sortOrder))
+	}
+
+	// ✅ Tambahkan limit dan offset di luar if
+	dataQuery = dataQuery.
 		Limit(params.Pagination.Limit).
 		Offset(params.Pagination.Offset)
 

@@ -7,11 +7,9 @@ import (
 	"ayana/models"
 	service "ayana/service/journalEntry"
 	"ayana/utils/helper"
-	"time"
-
-	// ts "ayana/utils/helper/typesense" // Removed to fix import cycle
 	"fmt"
 	"log"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -114,11 +112,21 @@ func GetExpensesFromJournalLines(params ExpenseFilterParams) ([]dto.JournalEntry
 	if params.SummaryOnly {
 		return nil, totalExpense, total, nil
 	}
-
 	dataQuery := filteredQuery.
 		Preload("Journal").
-		Preload("Journal.TransactionCategory").
-		Order(fmt.Sprintf("journal_entries.%s %s", sortBy, sortOrder)).
+		Preload("Journal.TransactionCategory")
+
+	// ✨ Sorting bertingkat jika sortBy = "date_inputed"
+	if sortBy == "date_inputed" {
+		dataQuery = dataQuery.
+			Order(fmt.Sprintf("journal_entries.date_inputed %s", sortOrder)).
+			Order("journal_entries.invoice DESC")
+	} else {
+		dataQuery = dataQuery.
+			Order(fmt.Sprintf("journal_entries.%s %s", sortBy, sortOrder))
+	}
+
+	dataQuery = dataQuery.
 		Limit(params.Pagination.Limit).
 		Offset(params.Pagination.Offset)
 

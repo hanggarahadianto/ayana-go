@@ -109,8 +109,18 @@ func GetRevenueFromJournalLines(params RevenueFilterParams) ([]dto.JournalEntryR
 
 	dataQuery := filteredQuery.
 		Preload("Journal").
-		Preload("Journal.TransactionCategory").
-		Order(fmt.Sprintf("journal_entries.%s %s", sortBy, sortOrder)).
+		Preload("Journal.TransactionCategory")
+
+	if sortBy == "date_inputed" {
+		dataQuery = dataQuery.
+			Order(fmt.Sprintf("journal_entries.date_inputed %s", sortOrder)).
+			Order("journal_entries.invoice DESC")
+	} else {
+		dataQuery = dataQuery.
+			Order(fmt.Sprintf("journal_entries.%s %s", sortBy, sortOrder))
+	}
+
+	dataQuery = dataQuery.
 		Limit(params.Pagination.Limit).
 		Offset(params.Pagination.Offset)
 

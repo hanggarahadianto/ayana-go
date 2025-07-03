@@ -38,6 +38,7 @@ func GetJournalEntriesByCategory(c *gin.Context) {
 		Preload("TransactionCategory").
 		Where("company_id = ?", companyID).
 		Order("date_inputed DESC").
+		Order("invoice DESC").
 		Limit(pagination.Limit).
 		Offset(pagination.Offset).
 		Find(&journalEntries).Error
