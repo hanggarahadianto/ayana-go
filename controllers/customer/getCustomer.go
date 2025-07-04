@@ -1,7 +1,9 @@
 package controllers
 
 import (
+	"ayana/db"
 	lib "ayana/lib"
+	"ayana/models"
 	customer "ayana/service/customer"
 
 	"log"
@@ -25,6 +27,7 @@ func GetCustomers(c *gin.Context) {
 
 	search := c.Query("search")
 	summaryOnlyStr := c.DefaultQuery("summary_only", "false")
+	status := c.Query("status") // ➕ Tambah ini
 	summaryOnly := summaryOnlyStr == "true"
 	sortBy := c.DefaultQuery("sort_by", "date_inputed")
 	sortOrder := c.DefaultQuery("sort_order", "asc")
@@ -35,10 +38,28 @@ func GetCustomers(c *gin.Context) {
 		return
 	}
 
+	selectStatus := c.Query("select_status")
+	if selectStatus == "true" {
+		var statuses []string
+		if err := db.DB.Model(&models.Customer{}).
+			Distinct("status").
+			Pluck("status", &statuses).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil status"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"data":   statuses,
+			"status": "success",
+		})
+		return
+	}
+
 	params := customer.CustomerFilterParams{
 		CompanyID:   companyID,
 		Pagination:  pagination,
 		Search:      search,
+		Status:      status, // ➕ Ini juga
 		SummaryOnly: summaryOnly,
 		DateFilter:  dateFilter,
 		SortBy:      sortBy,

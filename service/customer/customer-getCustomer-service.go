@@ -17,6 +17,7 @@ type CustomerFilterParams struct {
 	DateFilter  lib.DateFilter
 	SummaryOnly bool
 	Search      string
+	Status      string // ➕ Tambah ini
 	SortBy      string
 	SortOrder   string
 }
@@ -67,6 +68,10 @@ func GetCustomersWithSearch(params CustomerFilterParams) ([]dto.CustomerResponse
 		countQuery = countQuery.Where("date_inputed <= ?", params.DateFilter.EndDate)
 	}
 
+	if params.Status != "" {
+		countQuery = countQuery.Where("status = ?", params.Status)
+	}
+
 	if err := countQuery.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
@@ -86,6 +91,10 @@ func GetCustomersWithSearch(params CustomerFilterParams) ([]dto.CustomerResponse
 		dataQuery = dataQuery.Where("date_inputed >= ?", params.DateFilter.StartDate)
 	} else if params.DateFilter.EndDate != nil {
 		dataQuery = dataQuery.Where("date_inputed <= ?", params.DateFilter.EndDate)
+	}
+
+	if params.Status != "" {
+		dataQuery = dataQuery.Where("status = ?", params.Status)
 	}
 
 	if err := dataQuery.Find(&customers).Error; err != nil {
