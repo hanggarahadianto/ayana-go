@@ -106,7 +106,8 @@ func CreateCollectionIfNotExist() error {
 			{Name: "address", Type: "string"},
 			{Name: "phone", Type: "string"},
 			{Name: "status", Type: "string", Facet: &facetTrue},
-			{Name: "marketer", Type: "string"},
+			{Name: "marketer_id", Type: "string", Facet: &facetTrue},
+			{Name: "marketer_name", Type: "string"},
 			{Name: "amount", Type: "float"},
 			{Name: "payment_method", Type: "string"},
 			{Name: "date_inputed", Type: "int64"}, // ⛔️ Jangan optional

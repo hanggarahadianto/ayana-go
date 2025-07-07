@@ -14,7 +14,13 @@ func UpdateCustomerService(id string, input models.Customer) (*models.Customer, 
 		return nil, fmt.Errorf("customer not found: %w", err)
 	}
 
-	// Update data customer
+	// ✅ Ambil nama marketer baru
+	var marketer models.Employee
+	if err := db.DB.First(&marketer, "id = ?", input.MarketerID).Error; err != nil {
+		return nil, fmt.Errorf("marketer not found: %w", err)
+	}
+
+	// Update field customer
 	customer.Name = input.Name
 	customer.Address = input.Address
 	customer.Phone = input.Phone
@@ -22,7 +28,8 @@ func UpdateCustomerService(id string, input models.Customer) (*models.Customer, 
 	customer.PaymentMethod = input.PaymentMethod
 	customer.Amount = input.Amount
 	customer.DateInputed = input.DateInputed
-	customer.Marketer = input.Marketer
+	customer.MarketerID = input.MarketerID
+	customer.MarketerName = marketer.Name // ✅ penting!
 	customer.HomeID = input.HomeID
 	customer.ProductUnit = input.ProductUnit
 	customer.BankName = input.BankName

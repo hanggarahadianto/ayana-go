@@ -31,12 +31,15 @@ func indexSingleCustomer(customer models.Customer) error {
 		"address":        customer.Address,
 		"phone":          customer.Phone,
 		"status":         customer.Status,
-		"marketer":       customer.Marketer,
 		"amount":         customer.Amount,
 		"payment_method": customer.PaymentMethod,
 		"product_unit":   customer.ProductUnit,
 		"bank_name":      customer.BankName,
 		"company_id":     customer.CompanyID.String(), // ✅ Tambahkan company_id
+	}
+
+	if customer.Marketer != nil {
+		document["marketer"] = customer.Marketer.Name
 	}
 
 	if customer.DateInputed != nil {
@@ -71,8 +74,12 @@ func updateCustomerInTypesense(customer models.Customer) error {
 		"company_id":     customer.CompanyID.String(),
 		"home_id":        customer.HomeID.String(),
 		"product_unit":   customer.ProductUnit,
-		"marketer":       customer.Marketer,
-		"date_inputed":   customer.DateInputed.Unix(),
+
+		"date_inputed": customer.DateInputed.Unix(),
+	}
+
+	if customer.Marketer != nil {
+		document["marketer"] = customer.Marketer.Name
 	}
 
 	// Langsung upsert
@@ -144,7 +151,8 @@ func SearchCustomers(query, companyID string, startDate, endDate *time.Time, pag
 			Address:       parse.GetString(m, "address"),
 			Phone:         parse.GetString(m, "phone"),
 			Status:        parse.GetString(m, "status"),
-			Marketer:      parse.GetString(m, "marketer"),
+			MarketerID:    parse.GetString(m, "marketer_id"),
+			MarketerName:  parse.GetString(m, "marketer_name"),
 			Amount:        parse.GetInt64(m, "amount"),
 			PaymentMethod: parse.GetString(m, "payment_method"),
 			DateInputed:   parse.GetTimePtr(m, "date_inputed"),

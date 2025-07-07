@@ -82,7 +82,8 @@ func GetCustomersWithSearch(params CustomerFilterParams) ([]dto.CustomerResponse
 		Order(fmt.Sprintf("%s %s", params.SortBy, params.SortOrder)).
 		Limit(params.Pagination.Limit).
 		Offset(params.Pagination.Offset).
-		Preload("Home")
+		Preload("Home").
+		Preload("Marketer")
 
 	// 🔹 Filter tanggal di dataQuery juga
 	if params.DateFilter.StartDate != nil && params.DateFilter.EndDate != nil {
@@ -122,14 +123,14 @@ func GetCustomersWithSearch(params CustomerFilterParams) ([]dto.CustomerResponse
 				StartPrice: int64(c.Home.StartPrice),
 			}
 		}
-
 		response = append(response, dto.CustomerResponse{
 			ID:            c.ID.String(),
 			Name:          c.Name,
 			Address:       c.Address,
 			Phone:         c.Phone,
 			Status:        c.Status,
-			Marketer:      c.Marketer,
+			MarketerID:    c.MarketerID.String(),
+			MarketerName:  c.MarketerName, // ✅ Langsung pakai dari field tabel
 			Amount:        c.Amount,
 			PaymentMethod: c.PaymentMethod,
 			DateInputed:   c.DateInputed,
@@ -138,6 +139,7 @@ func GetCustomersWithSearch(params CustomerFilterParams) ([]dto.CustomerResponse
 			BankName:      c.BankName,
 			Home:          home,
 		})
+
 	}
 
 	return response, total, nil

@@ -10,7 +10,8 @@ type CustomerResponse struct {
 	Address       string        `json:"address"`
 	Phone         string        `json:"phone"`
 	Status        string        `json:"status"`
-	Marketer      string        `json:"marketer"`
+	MarketerID    string        `json:"marketer_id"` // UUID
+	MarketerName  string        `json:"marketer_name"`
 	Amount        int64         `json:"amount"`
 	PaymentMethod string        `json:"payment_method"`
 	DateInputed   *time.Time    `json:"date_inputed"`
