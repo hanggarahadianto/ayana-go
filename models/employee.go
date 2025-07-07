@@ -20,7 +20,10 @@ type Employee struct {
 	Position             string     `gorm:"type:text;not null" json:"position" form:"position"`
 	EmployeeStatus       string     `gorm:"type:varchar(100);not null" json:"employee_status" form:"employee_status"`               // contoh: "active", "inactive", etc
 	EmployeeContractType string     `gorm:"type:varchar(100);not null" json:"employee_contract_type" form:"employee_contract_type"` // contoh: "permanent", "contract", etc
-	CompanyID            uuid.UUID  `gorm:"type:uuid;not null" json:"company_id"`
+
+	IsAgent bool `gorm:"default:false" json:"is_agent" form:"is_agent"`
+
+	CompanyID uuid.UUID `gorm:"type:uuid;not null" json:"company_id"`
 
 	CreatedAt time.Time `gorm:"not null" json:"created_at"`
 	UpdatedAt time.Time `gorm:"not null" json:"updated_at"`

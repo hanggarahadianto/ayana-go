@@ -49,6 +49,7 @@ func UpdateEmployee(c *gin.Context) {
 	existingEmployee.Position = input.Position
 	existingEmployee.EmployeeStatus = input.EmployeeStatus
 	existingEmployee.EmployeeContractType = input.EmployeeContractType
+	existingEmployee.IsAgent = input.IsAgent
 	existingEmployee.CompanyID = input.CompanyID
 
 	if err := db.DB.Save(&existingEmployee).Error; err != nil {

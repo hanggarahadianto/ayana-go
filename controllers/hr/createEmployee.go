@@ -39,6 +39,7 @@ func CreateEmployee(c *gin.Context) {
 		Position:             input.Position,
 		EmployeeStatus:       input.EmployeeStatus,
 		EmployeeContractType: input.EmployeeContractType,
+		IsAgent:              input.IsAgent,
 		CompanyID:            input.CompanyID,
 	}
 
