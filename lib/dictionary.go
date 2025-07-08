@@ -24,6 +24,7 @@ var ValidCategories = map[string][]string{
 		"Penjualan",
 		"Jasa",
 		"Pendapatan Dari Bunga",
+		"Pencairan",
 	},
 
 	"Expense": {
