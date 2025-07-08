@@ -26,7 +26,7 @@ func GetCustomersWithSearch(params CustomerFilterParams) ([]dto.CustomerResponse
 	var customers []models.Customer
 	var total int64
 
-	// 🔍 Search via Typesense
+	// 🔍 Gunakan Typesense jika ada search
 	if params.Search != "" {
 		results, found, err := SearchCustomers(
 			params.Search,
@@ -36,77 +36,61 @@ func GetCustomersWithSearch(params CustomerFilterParams) ([]dto.CustomerResponse
 			params.Pagination.Page,
 			params.Pagination.Limit,
 		)
-
 		if err != nil {
 			log.Println("🔴 Error search Typesense:", err)
 			return nil, 0, fmt.Errorf("gagal search customer")
 		}
 		if params.SummaryOnly {
-			return nil, int64(found), nil
+			return nil, found, nil
 		}
-		return results, int64(found), nil
+		return results, found, nil
 	}
 
-	// Validasi sort_by dan sort_order
-	validSortBy := map[string]bool{
-		"date_inputed": true,
-	}
-	if !validSortBy[params.SortBy] {
+	// ✅ Validasi sortBy & sortOrder
+	if params.SortBy != "date_inputed" {
 		params.SortBy = "date_inputed"
 	}
 	if params.SortOrder != "asc" && params.SortOrder != "desc" {
 		params.SortOrder = "asc"
 	}
 
-	// 🔹 Query untuk menghitung total
-	countQuery := db.DB.Model(&models.Customer{}).Where("company_id = ?", params.CompanyID)
-	if params.DateFilter.StartDate != nil && params.DateFilter.EndDate != nil {
-		countQuery = countQuery.Where("date_inputed BETWEEN ? AND ?", params.DateFilter.StartDate, params.DateFilter.EndDate)
-	} else if params.DateFilter.StartDate != nil {
-		countQuery = countQuery.Where("date_inputed >= ?", params.DateFilter.StartDate)
-	} else if params.DateFilter.EndDate != nil {
-		countQuery = countQuery.Where("date_inputed <= ?", params.DateFilter.EndDate)
+	// 🧱 Bangun base query untuk count dan fetch data
+	baseQuery := db.DB.Model(&models.Customer{}).Where("company_id = ?", params.CompanyID)
+
+	// 🔘 Filter tanggal
+	if params.DateFilter.StartDate != nil {
+		baseQuery = baseQuery.Where("date_inputed >= ?", params.DateFilter.StartDate)
+	}
+	if params.DateFilter.EndDate != nil {
+		baseQuery = baseQuery.Where("date_inputed <= ?", params.DateFilter.EndDate)
 	}
 
+	// 🔘 Filter status
 	if params.Status != "" {
-		countQuery = countQuery.Where("status = ?", params.Status)
+		baseQuery = baseQuery.Where("status = ?", params.Status)
 	}
 
-	if err := countQuery.Count(&total).Error; err != nil {
+	// 🔢 Hitung total
+	if err := baseQuery.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
-	// 🔹 Query untuk ambil data (HARUS query baru)
-	dataQuery := db.DB.Model(&models.Customer{}).
-		Where("company_id = ?", params.CompanyID).
+	// 📦 Ambil data customer
+	if err := baseQuery.
+		Preload("Home").
+		Preload("Marketer").
 		Order(fmt.Sprintf("%s %s", params.SortBy, params.SortOrder)).
 		Limit(params.Pagination.Limit).
 		Offset(params.Pagination.Offset).
-		Preload("Home").
-		Preload("Marketer")
-
-	// 🔹 Filter tanggal di dataQuery juga
-	if params.DateFilter.StartDate != nil && params.DateFilter.EndDate != nil {
-		dataQuery = dataQuery.Where("date_inputed BETWEEN ? AND ?", params.DateFilter.StartDate, params.DateFilter.EndDate)
-	} else if params.DateFilter.StartDate != nil {
-		dataQuery = dataQuery.Where("date_inputed >= ?", params.DateFilter.StartDate)
-	} else if params.DateFilter.EndDate != nil {
-		dataQuery = dataQuery.Where("date_inputed <= ?", params.DateFilter.EndDate)
-	}
-
-	if params.Status != "" {
-		dataQuery = dataQuery.Where("status = ?", params.Status)
-	}
-
-	if err := dataQuery.Find(&customers).Error; err != nil {
+		Find(&customers).Error; err != nil {
 		return nil, 0, err
 	}
 
-	// 🔹 Konversi ke DTO
-	var response []dto.CustomerResponse
+	// 🔁 Mapping ke DTO
+	response := make([]dto.CustomerResponse, 0, len(customers))
 	for _, c := range customers {
 		var home *dto.HomeResponse
-		if c.Home.ID != uuid.Nil {
+		if c.Home != nil && c.Home.ID != uuid.Nil {
 			home = &dto.HomeResponse{
 				ID:         c.Home.ID.String(),
 				ClusterID:  c.Home.ClusterID.String(),
@@ -123,14 +107,28 @@ func GetCustomersWithSearch(params CustomerFilterParams) ([]dto.CustomerResponse
 				StartPrice: int64(c.Home.StartPrice),
 			}
 		}
+
+		var marketer *dto.MarketerResponse
+		if c.Marketer != nil {
+			marketer = &dto.MarketerResponse{
+				ID:      c.Marketer.ID.String(),
+				Name:    c.Marketer.Name,
+				IsAgent: c.Marketer.IsAgent,
+			}
+		} else {
+			marketer = &dto.MarketerResponse{
+				ID:      c.MarketerID.String(),
+				Name:    "", // ✅ Hindari akses ke c.Marketer.Name karena nil
+				IsAgent: false,
+			}
+		}
+
 		response = append(response, dto.CustomerResponse{
 			ID:            c.ID.String(),
 			Name:          c.Name,
 			Address:       c.Address,
 			Phone:         c.Phone,
 			Status:        c.Status,
-			MarketerID:    c.MarketerID.String(),
-			MarketerName:  c.MarketerName, // ✅ Langsung pakai dari field tabel
 			Amount:        c.Amount,
 			PaymentMethod: c.PaymentMethod,
 			DateInputed:   c.DateInputed,
@@ -138,8 +136,8 @@ func GetCustomersWithSearch(params CustomerFilterParams) ([]dto.CustomerResponse
 			ProductUnit:   c.ProductUnit,
 			BankName:      c.BankName,
 			Home:          home,
+			Marketer:      marketer,
 		})
-
 	}
 
 	return response, total, nil

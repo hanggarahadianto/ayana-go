@@ -12,19 +12,20 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/typesense/typesense-go/typesense/api"
 )
 
 func IndexCustomers(customers ...models.Customer) error {
 	for _, customer := range customers {
-		if err := indexSingleCustomer(customer); err != nil {
+		if err := IndexSingleCustomer(customer); err != nil {
 			return fmt.Errorf("indexing failed for customer %s: %w", customer.ID, err)
 		}
 	}
 	return nil
 }
 
-func indexSingleCustomer(customer models.Customer) error {
+func IndexSingleCustomer(customer models.Customer) error {
 	document := map[string]interface{}{
 		"id":             customer.ID.String(),
 		"name":           customer.Name,
@@ -35,11 +36,7 @@ func indexSingleCustomer(customer models.Customer) error {
 		"payment_method": customer.PaymentMethod,
 		"product_unit":   customer.ProductUnit,
 		"bank_name":      customer.BankName,
-		"company_id":     customer.CompanyID.String(), // ✅ Tambahkan company_id
-	}
-
-	if customer.Marketer != nil {
-		document["marketer"] = customer.Marketer.Name
+		"company_id":     customer.CompanyID.String(),
 	}
 
 	if customer.DateInputed != nil {
@@ -50,6 +47,14 @@ func indexSingleCustomer(customer models.Customer) error {
 		document["home_id"] = customer.HomeID.String()
 	}
 
+	// ✅ Tambahkan marketer_name (WAJIB karena ada di schema)
+	document["marketer_name"] = customer.MarketerName
+
+	// ✅ Tambahkan marketer_id jika ada
+	if customer.MarketerID != uuid.Nil {
+		document["marketer_id"] = customer.MarketerID.String()
+	}
+
 	_, err := tsClient.TsClient.Collection("customers").Documents().Create(context.Background(), document)
 	if err != nil {
 		return fmt.Errorf("gagal index customer ID %s: %w", customer.ID.String(), err)
@@ -57,7 +62,7 @@ func indexSingleCustomer(customer models.Customer) error {
 	return nil
 }
 
-func updateCustomerInTypesense(customer models.Customer) error {
+func UpdateCustomerInTypesense(customer models.Customer) error {
 	ctx := context.Background()
 
 	docID := customer.ID.String()
@@ -74,14 +79,15 @@ func updateCustomerInTypesense(customer models.Customer) error {
 		"company_id":     customer.CompanyID.String(),
 		"home_id":        customer.HomeID.String(),
 		"product_unit":   customer.ProductUnit,
-
-		"date_inputed": customer.DateInputed.Unix(),
+		"marketer_name":  customer.MarketerName,
+		"marketer_id":    customer.MarketerID.String(),
+		"date_inputed":   customer.DateInputed.Unix(),
 	}
 
-	if customer.Marketer != nil {
-		document["marketer"] = customer.Marketer.Name
-	}
-
+	// if customer.Marketer != nil {
+	// 	document["marketer_name"] = customer.Marketer.Name
+	// 	document["marketer_id"] = customer.Marketer.ID.String()
+	// }
 	// Langsung upsert
 	_, err := tsClient.TsClient.Collection("customers").Documents().Upsert(ctx, document)
 	if err != nil {
@@ -106,11 +112,10 @@ func DeleteCustomerFromTypesense(ctx context.Context, customerIDs ...string) err
 }
 
 func SearchCustomers(query, companyID string, startDate, endDate *time.Time, page, perPage int) ([]dto.CustomerResponse, int64, error) {
-
 	log.Printf("🔍 Searching customers: query=%s, companyID=%s, page=%d, perPage=%d", query, companyID, page, perPage)
 
+	// Build filter
 	filters := []string{"company_id:=" + companyID}
-
 	if startDate != nil {
 		filters = append(filters, fmt.Sprintf("date_inputed:>=%d", startDate.Unix()))
 	}
@@ -120,7 +125,7 @@ func SearchCustomers(query, companyID string, startDate, endDate *time.Time, pag
 
 	searchParams := &api.SearchCollectionParams{
 		Q:        query,
-		QueryBy:  "name,address,phone,status,marketer,bank_name",
+		QueryBy:  "name,address,phone,status,marketer_name,bank_name",
 		FilterBy: parse.PtrString(strings.Join(filters, " && ")),
 		Page:     parse.PtrInt(page),
 		PerPage:  parse.PtrInt(perPage),
@@ -128,13 +133,16 @@ func SearchCustomers(query, companyID string, startDate, endDate *time.Time, pag
 
 	searchResult, err := tsClient.TsClient.Collection("customers").Documents().Search(context.Background(), searchParams)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("failed to search in Typesense: %w", err)
 	}
+	log.Printf("🟢 Typesense search result:\nFound: %v\nSearchResult: %+v",
+		searchResult.Found, searchResult)
 
 	var results []dto.CustomerResponse
 	var homeIDs []string
+	var marketerIDs []string // 🔸 Tambah ini
 
-	// Step 1: Parse basic customer fields from Typesense
+	// Map search hits to response
 	for _, hit := range *searchResult.Hits {
 		doc := hit.Document
 		if doc == nil {
@@ -151,27 +159,36 @@ func SearchCustomers(query, companyID string, startDate, endDate *time.Time, pag
 			Address:       parse.GetString(m, "address"),
 			Phone:         parse.GetString(m, "phone"),
 			Status:        parse.GetString(m, "status"),
-			MarketerID:    parse.GetString(m, "marketer_id"),
-			MarketerName:  parse.GetString(m, "marketer_name"),
 			Amount:        parse.GetInt64(m, "amount"),
 			PaymentMethod: parse.GetString(m, "payment_method"),
 			DateInputed:   parse.GetTimePtr(m, "date_inputed"),
 			HomeID:        homeID,
 			ProductUnit:   parse.GetString(m, "product_unit"),
 			BankName:      parse.GetString(m, "bank_name"),
+			Marketer: &dto.MarketerResponse{
+				ID:      parse.GetString(m, "marketer_id"),
+				Name:    parse.GetString(m, "marketer_name"),
+				IsAgent: parse.GetBool(m, "is_agent"),
+			},
 		})
 	}
 
-	// Step 2: Ambil data Home dari database
+	// Ambil data home dari DB
 	var homes []models.Home
 	if len(homeIDs) > 0 {
-		err := db.DB.Where("id IN ?", homeIDs).Find(&homes).Error
-		if err != nil {
+		if err := db.DB.Where("id IN ?", homeIDs).Find(&homes).Error; err != nil {
 			return nil, 0, fmt.Errorf("gagal mengambil data home: %w", err)
 		}
 	}
+	// Ambil data marketer dari DB
+	var marketers []models.Employee
+	if len(marketerIDs) > 0 {
+		if err := db.DB.Where("id IN ?", marketerIDs).Find(&marketers).Error; err != nil {
+			return nil, 0, fmt.Errorf("gagal mengambil data marketer: %w", err)
+		}
+	}
 
-	// Step 3: Map homeID → HomeResponse
+	// Mapping home_id ke DTO
 	homeMap := make(map[string]*dto.HomeResponse)
 	for _, h := range homes {
 		homeMap[h.ID.String()] = &dto.HomeResponse{
@@ -191,14 +208,13 @@ func SearchCustomers(query, companyID string, startDate, endDate *time.Time, pag
 		}
 	}
 
-	// Step 4: Lengkapi setiap CustomerResponse dengan Home
-	for i, customer := range results {
-		if home, ok := homeMap[customer.HomeID]; ok {
+	for i, c := range results {
+		if home, ok := homeMap[c.HomeID]; ok {
 			results[i].Home = home
 		}
+
 	}
 
-	// Total data ditemukan
 	var found int64
 	if searchResult.Found != nil {
 		found = int64(*searchResult.Found)

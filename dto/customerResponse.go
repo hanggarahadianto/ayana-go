@@ -5,20 +5,25 @@ import (
 )
 
 type CustomerResponse struct {
-	ID            string        `json:"id"`
-	Name          string        `json:"name"`
-	Address       string        `json:"address"`
-	Phone         string        `json:"phone"`
-	Status        string        `json:"status"`
-	MarketerID    string        `json:"marketer_id"` // UUID
-	MarketerName  string        `json:"marketer_name"`
-	Amount        int64         `json:"amount"`
-	PaymentMethod string        `json:"payment_method"`
-	DateInputed   *time.Time    `json:"date_inputed"`
-	HomeID        string        `json:"home_id"`
-	ProductUnit   string        `json:"product_unit"`
-	BankName      string        `json:"bank_name"`
-	Home          *HomeResponse `json:"home"` // gunakan pointer biar null-safe
+	ID            string            `json:"id"`
+	Name          string            `json:"name"`
+	Address       string            `json:"address"`
+	Phone         string            `json:"phone"`
+	Status        string            `json:"status"`
+	Amount        int64             `json:"amount"`
+	PaymentMethod string            `json:"payment_method"`
+	DateInputed   *time.Time        `json:"date_inputed"`
+	HomeID        string            `json:"home_id"`
+	ProductUnit   string            `json:"product_unit"`
+	BankName      string            `json:"bank_name"`
+	Home          *HomeResponse     `json:"home,omitempty"`
+	Marketer      *MarketerResponse `json:"marketer,omitempty"` // ✅ object
+}
+
+type MarketerResponse struct {
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	IsAgent bool   `json:"is_agent,omitempty"`
 }
 
 type HomeResponse struct {

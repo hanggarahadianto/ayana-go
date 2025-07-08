@@ -19,29 +19,30 @@ func CreateCustomer(input models.Customer) (models.Customer, error) {
 		if err := tx.First(&marketer, "id = ?", input.MarketerID).Error; err != nil {
 			return fmt.Errorf("marketer not found: %w", err)
 		}
-		input.MarketerName = marketer.Name
 
 		// Set UUID dan timestamps
 		input.ID = uuid.New()
 		input.CreatedAt = time.Now()
 		input.UpdatedAt = time.Now()
+		input.MarketerName = marketer.Name
 
 		// ✅ Simpan ke DB
 		if err := tx.Create(&input).Error; err != nil {
 			return fmt.Errorf("failed to save to database: %w", err)
 		}
 
-		// ✅ Index ke Typesense
-		if err := IndexCustomers(input); err != nil {
-			return fmt.Errorf("indexing failed after DB commit: %w", err)
-		}
-
+		// simpan hasil sementara
 		created = input
 		return nil
 	})
 
 	if err != nil {
 		return models.Customer{}, err
+	}
+
+	// ✅ Index ke Typesense setelah DB sukses
+	if err := IndexCustomers(created); err != nil {
+		return models.Customer{}, fmt.Errorf("indexing failed: %w", err)
 	}
 
 	return created, nil

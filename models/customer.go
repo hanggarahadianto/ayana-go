@@ -14,8 +14,8 @@ type Customer struct {
 
 	Status       string    `gorm:"type:varchar(100);not null" json:"status" form:"status"`   // contoh: "pending", "deal", etc
 	MarketerID   uuid.UUID `gorm:"type:uuid;not null" json:"marketer_id" form:"marketer_id"` // FK ke Employee
+	Marketer     *Employee `gorm:"foreignKey:MarketerID" json:"marketer"`                    // ⬅️ ubah json tag agar tidak konflik
 	MarketerName string    `gorm:"type:varchar(100);not null" json:"marketer_name" form:"marketer_name"`
-	Marketer     *Employee `gorm:"foreignKey:MarketerID" json:"marketer"` // ⬅️ ubah json tag agar tidak konflik
 
 	Amount        int64      `gorm:"not null" json:"amount"`
 	PaymentMethod string     `gorm:"type:varchar(20);not null" json:"payment_method"`
