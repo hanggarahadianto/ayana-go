@@ -75,6 +75,7 @@ func InitializeDb(config *utilsEnv.Config) {
 		&models.HomeImage{},
 		&models.Customer{},
 		&models.Employee{},
+		&models.Presence{},
 	}
 
 	for _, model := range modelsToMigrate {

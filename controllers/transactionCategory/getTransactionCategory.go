@@ -2,8 +2,7 @@ package controller
 
 import (
 	lib "ayana/lib"
-	"ayana/service"
-
+	transactionCategory "ayana/service/transactionCategory"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -16,7 +15,7 @@ func GetTransactionCategory(c *gin.Context) {
 	selectOnly := c.Query("select") == "true"
 	selectByCategory := c.Query("select_by_category") == "true" // ✅ Tambahan
 
-	filterParams := service.TransactionCategoryFilterParams{
+	filterParams := transactionCategory.TransactionCategoryFilterParams{
 		CompanyID:         c.Query("company_id"),
 		TransactionType:   c.Query("transaction_type"),
 		DebitCategory:     c.Query("debit_category"),
@@ -35,7 +34,7 @@ func GetTransactionCategory(c *gin.Context) {
 	var err error
 
 	if all {
-		data, err = service.GetTransactionCategoriesAll()
+		data, err = transactionCategory.GetTransactionCategoriesAll()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch all transaction categories"})
 			return
@@ -50,7 +49,7 @@ func GetTransactionCategory(c *gin.Context) {
 			return
 		}
 
-		data, message, err := service.GetUniqueCategories(filterParams)
+		data, message, err := transactionCategory.GetUniqueCategories(filterParams)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch unique categories"})
 			return
@@ -69,7 +68,7 @@ func GetTransactionCategory(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "company_id filter is required for select=true"})
 			return
 		}
-		data, err = service.GetTransactionCategoriesForSelect(filterParams)
+		data, err = transactionCategory.GetTransactionCategoriesForSelect(filterParams)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch transaction categories for select"})
 			return
@@ -79,7 +78,7 @@ func GetTransactionCategory(c *gin.Context) {
 	}
 
 	// Default: paginasi dengan filter
-	data, total, err = service.GetTransactionCategoriesWithPagination(filterParams)
+	data, total, err = transactionCategory.GetTransactionCategoriesWithPagination(filterParams)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch transaction categories"})
 		return
