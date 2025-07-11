@@ -16,6 +16,8 @@ type Presence struct {
 	ScanTime string    `json:"scan_time"`
 	RawDate  string    `json:"raw_date"`
 
+	Day string `gorm:"type:varchar(16)" json:"day"`
+
 	CreatedAt time.Time
 	UpdatedAt time.Time
 
