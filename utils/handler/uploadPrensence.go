@@ -116,12 +116,15 @@ func processPresenceRows(rows [][]string) (total int, sukses int, gagal int) {
 			continue
 		}
 
+		dayName := strings.ToLower(tanggalScan.Weekday().String())
+
 		presence := models.Presence{
 			EmployeeID: employee.ID,
 			CompanyID:  employee.CompanyID,
 			ScanDate:   tanggalScan,
 			ScanTime:   jam,
 			RawDate:    rawTanggal,
+			Day:        dayName,
 		}
 
 		if err := db.DB.Create(&presence).Error; err != nil {

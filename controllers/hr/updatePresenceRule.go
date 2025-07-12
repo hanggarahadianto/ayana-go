@@ -13,8 +13,11 @@ import (
 
 // UpdatePresenceRule handles PUT /presence-rules/:id
 func UpdatePresenceRule(c *gin.Context) {
-	id := c.Param("id")
-	ruleID, err := uuid.Parse(id)
+
+	var input models.PresenceRule
+
+	idParam := c.Param("id")
+	ruleID, err := uuid.Parse(idParam)
 	if err != nil {
 		log.Println("🔴 Invalid UUID:", err)
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -23,7 +26,6 @@ func UpdatePresenceRule(c *gin.Context) {
 		return
 	}
 
-	var input models.PresenceRule
 	if err := c.ShouldBindJSON(&input); err != nil {
 		log.Println("🔴 Bind JSON error:", err)
 		c.JSON(http.StatusBadRequest, gin.H{
