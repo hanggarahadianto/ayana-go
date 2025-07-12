@@ -13,9 +13,7 @@ import (
 
 // UpdatePresenceRule handles PUT /presence-rules/:id
 func UpdatePresenceRule(c *gin.Context) {
-
-	var input models.PresenceRule
-
+	// Ambil ID dari path param
 	idParam := c.Param("id")
 	ruleID, err := uuid.Parse(idParam)
 	if err != nil {
@@ -26,6 +24,9 @@ func UpdatePresenceRule(c *gin.Context) {
 		return
 	}
 
+	var input models.PresenceRule
+
+	// Bind body JSON ke struct
 	if err := c.ShouldBindJSON(&input); err != nil {
 		log.Println("🔴 Bind JSON error:", err)
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -42,9 +43,9 @@ func UpdatePresenceRule(c *gin.Context) {
 		return
 	}
 
-	// Cek apakah rule-nya ada
+	// Cek apakah rule dengan ID tersebut ada
 	var existing models.PresenceRule
-	if err := db.DB.First(&existing, "id = ?", ruleID).Error; err != nil {
+	if err := db.DB.Where("id = ?", ruleID).First(&existing).Error; err != nil {
 		log.Println("🔴 Rule tidak ditemukan:", err)
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": "Aturan presensi tidak ditemukan.",
@@ -52,7 +53,7 @@ func UpdatePresenceRule(c *gin.Context) {
 		return
 	}
 
-	// Update data
+	// Update data dari input
 	existing.Day = strings.ToLower(input.Day)
 	existing.CompanyID = input.CompanyID
 	existing.IsHoliday = input.IsHoliday
@@ -62,6 +63,7 @@ func UpdatePresenceRule(c *gin.Context) {
 	existing.ArrivalTolerances = input.ArrivalTolerances
 	existing.DepartureTolerances = input.DepartureTolerances
 
+	// Simpan ke DB
 	if err := db.DB.Save(&existing).Error; err != nil {
 		log.Println("🔴 Gagal update:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -70,6 +72,7 @@ func UpdatePresenceRule(c *gin.Context) {
 		return
 	}
 
+	// Sukses
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Aturan presensi berhasil diperbarui.",
 		"data":    existing,

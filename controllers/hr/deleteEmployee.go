@@ -14,7 +14,7 @@ func DeleteEmployee(c *gin.Context) {
 	employeeIDParam := c.Param("id")
 	employeeID, err := uuid.Parse(employeeIDParam)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "ID karyawan tidak valid"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID karyawan tidak valid ya guys"})
 		return
 	}
 
