@@ -25,6 +25,8 @@ type Employee struct {
 
 	CompanyID uuid.UUID `gorm:"type:uuid;not null" json:"company_id"`
 
+	Customers []Customer `gorm:"foreignKey:MarketerID" json:"customers"`
+
 	CreatedAt time.Time `gorm:"not null" json:"created_at"`
 	UpdatedAt time.Time `gorm:"not null" json:"updated_at"`
 }

@@ -34,12 +34,12 @@ func GetPresenceService(c *gin.Context) (map[string]interface{}, error) {
 	query := db.DB.
 		Model(&models.Presence{}).
 		Preload("Employee").
-		Where("company_id = ?", companyID)
+		Where("presences.company_id = ?", companyID)
 
-	// 🔍 Filter nama pegawai
+		// 🔍 Filter nama pegawai
 	if search != "" {
-		query = query.Joins("JOIN employees ON employees.id = presences.employee_id").
-			Where("employees.name ILIKE ?", "%"+search+"%")
+		query = query.Joins("JOIN employees ON employees.id = presences.employee_id")
+		query = query.Where("LOWER(employees.name) LIKE LOWER(?)", "%"+search+"%")
 	}
 
 	// 📅 Filter tanggal
