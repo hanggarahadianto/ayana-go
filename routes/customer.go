@@ -14,11 +14,10 @@ func SetupCustomerRouter(r *gin.Engine) {
 		customer.PUT("/update/:id", customerController.UpdateCustomer)
 		customer.DELETE("/delete/:id", customerController.DeleteCustomer)
 
-		// cluster.PUT("/update/:id", clusterController.UpdateCluster)
-		// cluster.GET("/getById/:id", clusterController.GetClusterByID)
-		// cluster.DELETE("deleteById/:id", clusterController.DeleteCluster)
+		customer.GET("testimony/get", customerController.GetAllTestimonies)
+		customer.POST("testimony/post", customerController.CreateCustomerTestimony)
+		// customer.PUT("testimony/update/:id", customerController.UpdateTestimony)
+		customer.DELETE("testimony/delete/:id", customerController.DeleteTestimony)
 
-		// home.POST("/:homeId/images", homeController.UploadProductImage)
-		// home.GET("/:homeId/images", homeController.GetHomeImages)
 	}
 }

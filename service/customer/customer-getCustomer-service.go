@@ -12,14 +12,15 @@ import (
 )
 
 type CustomerFilterParams struct {
-	CompanyID   string
-	Pagination  lib.Pagination
-	DateFilter  lib.DateFilter
-	SummaryOnly bool
-	Search      string
-	Status      string // ➕ Tambah ini
-	SortBy      string
-	SortOrder   string
+	CompanyID    string
+	Pagination   lib.Pagination
+	DateFilter   lib.DateFilter
+	SummaryOnly  bool
+	Search       string
+	Status       string // ➕ Tambah ini
+	HasTestimony *bool  //
+	SortBy       string
+	SortOrder    string
 }
 
 func GetCustomersWithSearch(params CustomerFilterParams) ([]dto.CustomerResponse, int64, error) {
@@ -55,7 +56,20 @@ func GetCustomersWithSearch(params CustomerFilterParams) ([]dto.CustomerResponse
 	}
 
 	// 🧱 Bangun base query untuk count dan fetch data
-	baseQuery := db.DB.Model(&models.Customer{}).Where("company_id = ?", params.CompanyID)
+	baseQuery := db.DB.Model(&models.Customer{}).Where("customers.company_id = ?", params.CompanyID)
+
+	if params.HasTestimony != nil {
+		if *params.HasTestimony {
+			baseQuery = baseQuery.
+				Joins("JOIN testimonies ON testimonies.customer_id = customers.id").
+				Where("testimonies.customer_id IS NOT NULL")
+		} else {
+			// LEFT JOIN dan IS NULL untuk customer yang tidak punya testimony
+			baseQuery = baseQuery.
+				Joins("LEFT JOIN testimonies ON testimonies.customer_id = customers.id").
+				Where("testimonies.customer_id IS NULL")
+		}
+	}
 
 	// 🔘 Filter tanggal
 	if params.DateFilter.StartDate != nil {

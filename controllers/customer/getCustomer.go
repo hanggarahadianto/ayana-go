@@ -55,15 +55,23 @@ func GetCustomers(c *gin.Context) {
 		return
 	}
 
+	hasTestimonyStr := c.Query("has_testimony")
+	var hasTestimony *bool
+	if hasTestimonyStr != "" {
+		v := hasTestimonyStr == "true"
+		hasTestimony = &v
+	}
+
 	params := customer.CustomerFilterParams{
-		CompanyID:   companyID,
-		Pagination:  pagination,
-		Search:      search,
-		Status:      status, // ➕ Ini juga
-		SummaryOnly: summaryOnly,
-		DateFilter:  dateFilter,
-		SortBy:      sortBy,
-		SortOrder:   sortOrder,
+		CompanyID:    companyID,
+		Pagination:   pagination,
+		Search:       search,
+		Status:       status, // ➕ Ini juga
+		SummaryOnly:  summaryOnly,
+		HasTestimony: hasTestimony,
+		DateFilter:   dateFilter,
+		SortBy:       sortBy,
+		SortOrder:    sortOrder,
 	}
 
 	data, total, err := customer.GetCustomersWithSearch(params)
