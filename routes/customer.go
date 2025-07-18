@@ -16,7 +16,7 @@ func SetupCustomerRouter(r *gin.Engine) {
 
 		customer.GET("testimony/get", customerController.GetAllTestimonies)
 		customer.POST("testimony/post", customerController.CreateCustomerTestimony)
-		// customer.PUT("testimony/update/:id", customerController.UpdateTestimony)
+		customer.PUT("testimony/update/:id", customerController.UpdateCustomerTestimony)
 		customer.DELETE("testimony/delete/:id", customerController.DeleteTestimony)
 
 	}
