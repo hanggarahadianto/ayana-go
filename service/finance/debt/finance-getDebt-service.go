@@ -6,7 +6,6 @@ import (
 	lib "ayana/lib"
 	service "ayana/service/journalEntry"
 	"ayana/utils/helper"
-	"encoding/json"
 
 	"ayana/models"
 	"fmt"
@@ -75,8 +74,8 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalEntryRespon
 		return results, totalDebt, int64(found), nil
 	}
 
-	paramBytes, _ := json.MarshalIndent(params, "", "  ")
-	log.Println("📥 DebtFilterParams:\n", string(paramBytes))
+	// paramBytes, _ := json.MarshalIndent(params, "", "  ")
+	// log.Println("📥 DebtFilterParams:\n", string(paramBytes))
 
 	// 🏗️ Build base query
 	baseQuery := db.DB.Model(&models.JournalLine{}).

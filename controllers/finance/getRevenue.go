@@ -11,6 +11,7 @@ import (
 )
 
 func GetRevenueSummary(c *gin.Context) {
+
 	companyIDStr := c.Query("company_id")
 	companyID, valid := helper.ValidateAndParseCompanyID(companyIDStr, c)
 	if !valid {
@@ -22,6 +23,9 @@ func GetRevenueSummary(c *gin.Context) {
 	debitCategory := c.Query("debit_category")
 	creditCategory := c.Query("credit_category")
 	search := c.Query("search")
+	transactionType := c.DefaultQuery("transaction_type", "")
+	revenueType := c.DefaultQuery("revenue_type", "")
+
 	if summaryOnlyStr != "true" && summaryOnlyStr != "false" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Parameter summary_only harus 'true' atau 'false'."})
 		return
@@ -34,9 +38,8 @@ func GetRevenueSummary(c *gin.Context) {
 	sortBy := c.DefaultQuery("sort_by", "date_inputed") // default: date_inputed
 	sortOrder := c.DefaultQuery("sort_order", "asc")    // default: asc
 
-	revenueType := c.DefaultQuery("revenue_type", "")
-	transactionType := c.DefaultQuery("transaction_type", "")
 	pagination := lib.GetPagination(c)
+
 	params := revenue.RevenueFilterParams{
 		CompanyID:       companyID.String(),
 		Pagination:      pagination,
@@ -51,6 +54,9 @@ func GetRevenueSummary(c *gin.Context) {
 		SortBy:          sortBy,
 		SortOrder:       sortOrder,
 	}
+
+	// b, _ := json.MarshalIndent(params, "", "  ")
+	// log.Println("Params:", string(b))
 
 	data, totalRevenue, total, err := revenue.GetRevenueFromJournalLines(params)
 	if err != nil {

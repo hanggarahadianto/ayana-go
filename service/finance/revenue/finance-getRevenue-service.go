@@ -7,6 +7,7 @@ import (
 	"ayana/models"
 	service "ayana/service/journalEntry"
 	"ayana/utils/helper"
+	"encoding/json"
 	"fmt"
 	"log"
 	"time"
@@ -21,15 +22,16 @@ type RevenueFilterParams struct {
 	AccountType     string // ⬅️ Tambahkan ini
 	TransactionType string
 	RevenueType     string
+	SummaryOnly     bool
 	DebitCategory   string
 	CreditCategory  string
-	SummaryOnly     bool
 	Search          string // ⬅️ Tambahkan ini
 	SortBy          string
 	SortOrder       string
 }
 
 func GetRevenueFromJournalLines(params RevenueFilterParams) ([]dto.JournalEntryResponse, int64, int64, error) {
+
 	var (
 		lines        []models.JournalLine
 		total        int64
@@ -37,6 +39,9 @@ func GetRevenueFromJournalLines(params RevenueFilterParams) ([]dto.JournalEntryR
 		response     []dto.JournalEntryResponse
 		now          = time.Now()
 	)
+
+	// b, _ := json.MarshalIndent(params, "", "  ")
+	// log.Println("GetRevenueFromJournalLines params:", string(b))
 
 	if params.Search != "" {
 		results, _, found, err := service.SearchJournalLines(
@@ -74,6 +79,9 @@ func GetRevenueFromJournalLines(params RevenueFilterParams) ([]dto.JournalEntryR
 
 		return results, totalRevenue, int64(found), nil
 	}
+
+	paramBytes, _ := json.MarshalIndent(params, "", "  ")
+	log.Println("📥 RevenueFilterParams:\n", string(paramBytes))
 
 	baseQuery := db.DB.Model(&models.JournalLine{}).
 		Joins("JOIN journal_entries ON journal_entries.id = journal_lines.journal_id").

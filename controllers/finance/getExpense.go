@@ -10,6 +10,7 @@ import (
 )
 
 func GetExpensesSummary(c *gin.Context) {
+
 	companyIDStr := c.Query("company_id")
 	companyID, valid := helper.ValidateAndParseCompanyID(companyIDStr, c)
 	if !valid {
@@ -53,6 +54,9 @@ func GetExpensesSummary(c *gin.Context) {
 		SortBy:          sortBy,
 		SortOrder:       sortOrder,
 	}
+
+	// b, _ := json.MarshalIndent(params, "", "  ")
+	// log.Println("Params:", string(b))
 
 	data, totalexpense, total, err := expense.GetExpensesFromJournalLines(params)
 	if err != nil {

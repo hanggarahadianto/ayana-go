@@ -132,9 +132,14 @@ func SearchJournalLines(
 	creditCategory string,
 	page, perPage int,
 ) ([]dto.JournalEntryResponse, []string, int, error) {
+
+	log.Println("🐛 [DEBUG] MASUK SearchJournalLines")
+
 	log.Printf("🔍 Searching journal lines: query=%s, companyID=%s,AccountType=%v,Type=%v,page=%d, perPage=%d", query, companyID, accountType, Type, page, perPage)
 
 	filterBy := helper.BuildTypesenseFilter(companyID, startDate, endDate, accountType, &transactionType, &Type, debitCategory, creditCategory)
+
+	log.Printf("📦 Filter dengan: %s", filterBy)
 
 	searchParams := &api.SearchCollectionParams{
 		Q:        query,

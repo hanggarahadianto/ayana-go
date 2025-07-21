@@ -7,6 +7,8 @@ import (
 	"ayana/models"
 	service "ayana/service/journalEntry"
 	"ayana/utils/helper"
+	"encoding/json"
+	"log"
 
 	"fmt"
 	"time"
@@ -39,6 +41,8 @@ func GetAssetsFromJournalLines(params AssetFilterParams) ([]dto.JournalEntryResp
 	)
 
 	if params.Search != "" {
+		paramBytes, _ := json.MarshalIndent(params.Search, "", "  ")
+		log.Println("📥 Params Searchs:\n", string(paramBytes))
 		results, _, found, err := service.SearchJournalLines(
 			params.Search,
 			params.CompanyID,

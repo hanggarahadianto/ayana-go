@@ -15,6 +15,7 @@ func GetEquitySummary(c *gin.Context) {
 	if !valid {
 		return
 	}
+	accountType := "Equity"
 	summaryOnlyStr := c.DefaultQuery("summary_only", "false")
 	summaryOnly := summaryOnlyStr == "true"
 	debitCategory := c.Query("debit_category")
@@ -41,6 +42,7 @@ func GetEquitySummary(c *gin.Context) {
 		CompanyID:       companyID.String(),
 		Pagination:      pagination,
 		DateFilter:      dateFilter,
+		AccountType:     accountType,
 		EquityType:      equityType,
 		TransactionType: transactionType,
 		SummaryOnly:     summaryOnly,

@@ -38,6 +38,15 @@ func BuildTypesenseFilter(
 		case "Debt":
 			if f := BuildTypesenseDebtTypeFilter(*Type); f != "" {
 				filters = append(filters, f)
+
+			}
+		case "Revenue":
+			if f := BuildTypesenseRevenueTypeFilter(*Type); f != "" {
+				filters = append(filters, f)
+			}
+		case "Equity":
+			if f := BuildTypesenseEquityTypeFilter(*Type); f != "" {
+				filters = append(filters, f)
 			}
 		}
 	}
