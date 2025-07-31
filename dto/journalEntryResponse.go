@@ -93,8 +93,11 @@ func MapJournalLinesToResponse(lines []models.JournalLine, Type string, now time
 			tcCreditCat = tc.CreditCategory
 		}
 
-		// ✅ Hitung catatan pembayaran & warna
-		note, color := lib.HitungPaymentNote(line.Journal.DueDate, line.Journal.RepaymentDate, Type, now)
+		assetStatus := "going"
+		if line.Journal.IsRepaid {
+			assetStatus = "done"
+		}
+		note, color := lib.HitungPaymentNote(line.Journal.DueDate, line.Journal.RepaymentDate, assetStatus, now)
 
 		// ✅ Console log bukti fungsi ter-trigger
 		// fmt.Printf("🔥 HitungPaymentNote triggered — Type: %s, Note: %s, Color: %s\n", Type, note, color)

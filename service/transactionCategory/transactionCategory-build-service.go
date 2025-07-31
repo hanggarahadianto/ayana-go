@@ -93,37 +93,33 @@ func GetTransactionCategoriesWithPagination(params TransactionCategoryFilterPara
 
 	return dto.MapToTransactionCategoryDTO(categories), total, nil
 }
-
 func GetUniqueCategories(params TransactionCategoryFilterParams) ([]string, string, error) {
 	var categories []string
 
 	if params.DebitAccountType == "" && params.CreditAccountType == "" {
-		return []string{}, "Fill debit or credit account type", nil
+		return nil, "Please provide either debit_account_type or credit_account_type", nil
 	}
 
-	tx := db.DB.Model(&models.TransactionCategory{})
+	tx := db.DB.Table("journal_entries AS je").
+		Joins("JOIN transaction_categories AS tc ON tc.id = je.transaction_category_id").
+		Where("je.company_id = ?", params.CompanyID).
+		Where("je.transaction_type = ?", params.TransactionType)
 
-	if params.CompanyID != "" {
-		tx = tx.Where("company_id = ?", params.CompanyID)
-	}
-	if params.TransactionType != "" {
-		tx = tx.Where("transaction_type = ?", params.TransactionType)
+	if params.Status != "" {
+		tx = tx.Where("je.status = ?", params.Status)
 	}
 	if params.DebitAccountType != "" {
-		tx = tx.Where("debit_account_type = ?", params.DebitAccountType)
+		tx = tx.Where("je.debit_account_type = ?", params.DebitAccountType)
 	}
 	if params.CreditAccountType != "" {
-		tx = tx.Where("credit_account_type = ?", params.CreditAccountType)
-	}
-	if params.Status != "" {
-		tx = tx.Where("status = ?", params.Status)
+		tx = tx.Where("je.credit_account_type = ?", params.CreditAccountType)
 	}
 
 	var categoryColumn string
 	if params.DebitAccountType != "" {
-		categoryColumn = "debit_category"
+		categoryColumn = "credit_category" // ambil lawan dari debit
 	} else {
-		categoryColumn = "credit_category"
+		categoryColumn = "debit_category" // ambil lawan dari kredit
 	}
 
 	if err := tx.Distinct(categoryColumn).Pluck(categoryColumn, &categories).Error; err != nil {

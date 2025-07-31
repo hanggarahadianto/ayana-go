@@ -22,7 +22,6 @@ func SetupEmployeeRouter(r *gin.Engine) {
 		employee.POST("/post-presence-rule", employeeController.CreatePresenceRules)
 		employee.GET("/get/presence-rule", employeeController.GetPresenceRules)
 		employee.PUT("/edit/presence-rule/:id", employeeController.UpdatePresenceRule)
-
 		employee.DELETE("/delete/presence-rule/:id", employeeController.DeletePresenceRule)
 
 	}

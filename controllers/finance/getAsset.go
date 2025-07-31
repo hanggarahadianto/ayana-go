@@ -26,6 +26,7 @@ func GetAssetSummary(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Parameter summary_only harus 'true' atau 'false'."})
 		return
 	}
+	assetType := c.DefaultQuery("asset_type", "")
 
 	dateFilter, err := lib.GetDateFilter(c)
 	if err != nil {
@@ -35,7 +36,6 @@ func GetAssetSummary(c *gin.Context) {
 	sortBy := c.DefaultQuery("sort_by", "date_inputed") // default: date_inputed
 	sortOrder := c.DefaultQuery("sort_order", "asc")    // default: asc
 
-	assetType := c.DefaultQuery("asset_type", "")
 	transactionType := c.DefaultQuery("transaction_type", "")
 	pagination := lib.GetPagination(c)
 	params := asset.AssetFilterParams{
