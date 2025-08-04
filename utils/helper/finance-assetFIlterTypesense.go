@@ -27,7 +27,18 @@ func BuildTypesenseAssetTypeFilter(assetType string) string {
 		filters = append(filters,
 			"transaction_type:=payout",
 			"debit_account_type:=Asset",
-			"credit_account_type:=Asset",
+			"debit_category:=Aset Tetap",
+			"credit_account_type:=[Asset,Liability]",
+			"status:=[paid,done]",
+			"is_repaid:=true",
+		)
+
+	case "inventory":
+		filters = append(filters,
+			"transaction_type:=payout",
+			"debit_account_type:=Asset",
+			"debit_category:=Barang Dagangan",
+			"credit_account_type:=[Asset,Liability]",
 			"status:=[paid,done]",
 			"is_repaid:=true",
 		)

@@ -15,6 +15,8 @@ type Company struct {
 	HasProject  bool `gorm:"default:false" json:"has_project" form:"has_project"`
 	HasCustomer bool `gorm:"default:false" json:"has_customer" form:"has_customer"`
 
+	IsRetail bool `gorm:"default:false" json:"is_retail" form:"is_retail"`
+
 	CreatedAt time.Time `gorm:"type:timestamp;default:now()" json:"created_at"`
 	UpdatedAt time.Time `gorm:"type:timestamp;default:now()" json:"updated_at"`
 }

@@ -22,9 +22,20 @@ func ApplyAssetTypeFilterToGorm(query *gorm.DB, assetType string) *gorm.DB {
 	case "fixed_asset":
 		return query.
 			Where("journal_lines.debit > 0").
-			Where("journal_lines.debit_account_type = ?", "Asset").
-			Where("journal_lines.credit_account_type = ?", "Asset").
-			Where("journal_entries.transaction_type = ?", "payout").
+			Where("transaction_categories.debit_account_type = ?", "Asset").
+			Where("transaction_categories.debit_category = ?", "Aset Tetap").
+			Where("transaction_categories.credit_account_type IN ?", []string{"Asset", "Liability"}).
+			Where("transaction_categories.transaction_type = ?", "payout").
+			Where("journal_entries.is_repaid = ?", true).
+			Where("journal_entries.status IN ?", []string{"paid", "done"})
+
+	case "inventory":
+		return query.
+			Where("journal_lines.debit > 0").
+			Where("transaction_categories.debit_account_type = ?", "Asset").
+			Where("transaction_categories.debit_category = ?", "Barang Dagangan").
+			Where("transaction_categories.credit_account_type IN ?", []string{"Asset", "Liability"}).
+			Where("transaction_categories.transaction_type = ?", "payout").
 			Where("journal_entries.is_repaid = ?", true).
 			Where("journal_entries.status IN ?", []string{"paid", "done"})
 

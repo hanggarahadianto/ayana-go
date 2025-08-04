@@ -23,7 +23,7 @@ type JournalLine struct {
 	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 
-	Account Account `gorm:"foreignKey:AccountID" json:"account"`
+	Account Account `gorm:"foreignKey:AccountID;constraint:OnDelete:CASCADE;" json:"account"`
 
 	Journal JournalEntry `gorm:"foreignKey:JournalID;constraint:OnDelete:CASCADE;"`
 }

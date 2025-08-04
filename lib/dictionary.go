@@ -5,7 +5,6 @@ var ValidCategories = map[string][]string{
 		"Kas & Bank",
 		"Barang Dagangan",
 		"Piutang",
-		"Perlengkapan",
 		"Aset Tetap",
 	},
 	"Liability": {
