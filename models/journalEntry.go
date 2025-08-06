@@ -48,5 +48,5 @@ type JournalEntry struct {
 
 	Lines []JournalLine `gorm:"foreignKey:JournalID;constraint:OnDelete:CASCADE;" json:"lines"`
 
-	TransactionCategory TransactionCategory `gorm:"foreignKey:TransactionCategoryID" json:"transaction_category"` // optional relasi
+	TransactionCategory TransactionCategory `gorm:"foreignKey:TransactionCategoryID;constraint:OnDelete:CASCADE;" json:"transaction_category"`
 }
