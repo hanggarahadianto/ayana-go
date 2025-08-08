@@ -2,12 +2,14 @@ package routes
 
 import (
 	financeController "ayana/controllers/finance"
+	middlewares "ayana/middlewares/auth"
 
 	"github.com/gin-gonic/gin"
 )
 
 func SetupFinanceRouter(r *gin.Engine) {
-	finance := r.Group("/finance")
+
+	finance := r.Group("/finance", middlewares.AuthMiddleware())
 	{
 		finance.GET("/get-outstanding-debt", financeController.GetOutstandingDebts)
 		finance.GET("/get-expense-summary", financeController.GetExpensesSummary)

@@ -17,6 +17,8 @@ type Company struct {
 
 	IsRetail bool `gorm:"default:false" json:"is_retail" form:"is_retail"`
 
+	Users []UserCompany `gorm:"foreignKey:CompanyID" json:"users"`
+
 	CreatedAt time.Time `gorm:"type:timestamp;default:now()" json:"created_at"`
 	UpdatedAt time.Time `gorm:"type:timestamp;default:now()" json:"updated_at"`
 }
