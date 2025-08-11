@@ -2,12 +2,13 @@ package routes
 
 import (
 	companyController "ayana/controllers/company"
+	middlewares "ayana/middlewares/auth"
 
 	"github.com/gin-gonic/gin"
 )
 
 func SetupCompanyRouter(r *gin.Engine) {
-	company := r.Group("/company")
+	company := r.Group("/company", middlewares.AuthMiddleware())
 	{
 		company.GET("/get", companyController.GetCompany)
 		company.GET("/get-by-user", companyController.GetCompaniesByUser)

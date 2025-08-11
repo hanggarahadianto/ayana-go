@@ -21,7 +21,7 @@ type User struct {
 type RegisterData struct {
 	Username        string `json:"username"`
 	Password        string `json:"password"`
-	PasswordConfirm string `json:"passwordConfirm"`
+	PasswordConfirm string `json:"password_confirm"`
 	Role            string `json:"role" form:"role"`
 }
 

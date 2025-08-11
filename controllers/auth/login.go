@@ -3,7 +3,6 @@ package controllers
 import (
 	"ayana/db"
 	"ayana/models"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -26,8 +25,6 @@ type Claims struct {
 
 func Login(c *gin.Context) {
 	var loginData LoginData
-
-	// Bind JSON input
 	if err := c.ShouldBindJSON(&loginData); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  false,
@@ -37,13 +34,8 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// Cetak username dan password ke console
-
-	// Cari user berdasarkan username
 	var user models.User
-	result := db.DB.First(&user, "username = ?", loginData.Username)
-	if result.Error != nil {
-		fmt.Println("User not found")
+	if err := db.DB.First(&user, "username = ?", loginData.Username).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"status":  false,
 			"message": "Username not found",
@@ -51,7 +43,6 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// Validasi password (sebaiknya gunakan bcrypt.CompareHashAndPassword di produksi)
 	if err := utilsAuth.VerifiedPassword(user.Password, loginData.Password); err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"status":  false,
@@ -59,7 +50,7 @@ func Login(c *gin.Context) {
 		})
 		return
 	}
-	// Buat token JWT
+
 	expirationTime := time.Now().Add(24 * time.Hour)
 	claims := &Claims{
 		Username: user.Username,
@@ -69,9 +60,6 @@ func Login(c *gin.Context) {
 	}
 
 	config, _ := utilsEnv.LoadConfig(".")
-
-	fmt.Println("JWT ENV", []byte(config.JWTSecret))
-
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString([]byte(config.JWTSecret))
 	if err != nil {
@@ -82,13 +70,14 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// Berikan token sebagai respons
+	// Simpan token di cookie (HttpOnly)
+	c.SetCookie("token", tokenString, 3600*24, "/", "", false, true)
+
 	c.JSON(http.StatusOK, gin.H{
 		"status":  true,
 		"message": "Login success",
 		"data": gin.H{
-			"user":  user,
-			"token": tokenString,
+			"user": user,
 		},
 	})
 }

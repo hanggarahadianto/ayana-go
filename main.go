@@ -53,6 +53,7 @@ func main() {
 	log.Println("📌 Setting up routes...")
 
 	routes.SetupAuthRouter(r)
+	routes.SetupUserRouter(r)
 	routes.SetupClusterRouter(r)
 	routes.SetupHomeRouter(r)
 	routes.SetupReservationRouter(r)

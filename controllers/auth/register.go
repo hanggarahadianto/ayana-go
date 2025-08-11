@@ -50,6 +50,8 @@ func Register(c *gin.Context) {
 		return
 	}
 
+	fmt.Println("✅ Password dan konfirmasi cocok")
+
 	now := time.Now()
 	newUser := models.User{
 		Username: registerData.Username,

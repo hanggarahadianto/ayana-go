@@ -4,21 +4,19 @@ import (
 	utilsEnv "ayana/utils/env"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Authorization header required"})
+		// Ambil token dari cookie
+		tokenStr, err := c.Cookie("token")
+		if err != nil || tokenStr == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token cookie required"})
 			return
 		}
-
-		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
 
 		config, _ := utilsEnv.LoadConfig(".")
 
@@ -32,6 +30,16 @@ func AuthMiddleware() gin.HandlerFunc {
 		if err != nil || !token.Valid {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
 			return
+		}
+
+		if claims, ok := token.Claims.(jwt.MapClaims); ok {
+			fmt.Printf("DEBUG - token claims: %#v\n", claims)
+			if username, ok := claims["username"].(string); ok {
+				fmt.Println("DEBUG - username dari token:", username)
+				c.Set("username", username)
+			} else {
+				fmt.Println("DEBUG - username di token tidak ditemukan atau bukan string")
+			}
 		}
 
 		c.Next()

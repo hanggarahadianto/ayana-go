@@ -8,9 +8,10 @@ import (
 )
 
 func Logout(c *gin.Context) {
-	// Bisa tambahkan logging user logout di sini kalau mau
+	// Set cookie kosong dengan expiry negatif → hapus cookie
+	c.SetCookie("token", "", -1, "/", "", false, true)
 	c.JSON(http.StatusOK, gin.H{
 		"status":  true,
-		"message": "Logout success. Token should be removed from the client.",
+		"message": "Logout success",
 	})
 }
