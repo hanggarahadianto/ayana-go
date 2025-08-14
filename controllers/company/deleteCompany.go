@@ -3,36 +3,35 @@ package controllers
 import (
 	"ayana/db"
 	"ayana/models"
-	typesense "ayana/service/customer"
-	"context"
-	"log"
+
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
-func DeleteCustomer(c *gin.Context) {
+func DeleteCompany(c *gin.Context) {
 	id := c.Param("id")
+	username, _ := c.Get("username")
+	if username != "superadmin" {
+		c.JSON(http.StatusForbidden, gin.H{
+			"message": "Hanya superadmin yang dapat mengakses data ini",
+			"status":  "error",
+		})
+		return
+	}
 
-	// Periksa apakah customer ada
-	var customer models.Customer
-	if err := db.DB.First(&customer, "id = ?", id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Customer not found"})
+	// Periksa apakah company ada
+	var company models.Company
+	if err := db.DB.First(&company, "id = ?", id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "company not found"})
 		return
 	}
 
 	// Hapus dari database
-	if err := db.DB.Delete(&customer).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete customer"})
+	if err := db.DB.Delete(&company).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete company"})
 		return
 	}
 
-	// Hapus dari Typesense
-	err := typesense.DeleteCustomerFromTypesense(context.Background(), id)
-	if err != nil {
-		// Tidak menghalangi response sukses, hanya log error
-		log.Printf("Gagal menghapus dokumen dari Typesense untuk ID %s: %v", id, err)
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Customer deleted successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "company deleted successfully"})
 }

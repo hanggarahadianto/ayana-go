@@ -126,11 +126,11 @@ func GetCompaniesByUser(c *gin.Context) {
 	// final response
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
-			"companyList":    companyList,
-			"total_customer": total, // kalau ini maksudnya jumlah user per company, harus dihitung terpisah
-			"page":           page,
-			"limit":          limit,
-			"total":          total,
+			"companyList":   companyList,
+			"total_company": total, // kalau ini maksudnya jumlah user per company, harus dihitung terpisah
+			"page":          page,
+			"limit":         limit,
+			"total":         total,
 		},
 		"message": "Data perusahaan berhasil diambil",
 		"status":  "sukses",

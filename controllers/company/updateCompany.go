@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func CreateCompany(c *gin.Context) {
+func UpdateCompany(c *gin.Context) {
 	var companyData models.Company
 	username, _ := c.Get("username")
 	if username != "superadmin" {
@@ -29,9 +29,20 @@ func CreateCompany(c *gin.Context) {
 		return
 	}
 
-	// Cek apakah CompanyCode sudah ada
+	// Pastikan company yang mau diupdate ada
 	var existingCompany models.Company
-	if err := db.DB.Where("company_code = ?", companyData.CompanyCode).First(&existingCompany).Error; err == nil {
+	if err := db.DB.First(&existingCompany, companyData.ID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"status":  "failed",
+			"message": "Company not found",
+		})
+		return
+	}
+
+	// Cek apakah company_code sudah dipakai oleh company lain
+	var companyWithSameCode models.Company
+	if err := db.DB.Where("company_code = ? AND id <> ?", companyData.CompanyCode, companyData.ID).
+		First(&companyWithSameCode).Error; err == nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "failed",
 			"message": "Code already exist",
@@ -39,16 +50,12 @@ func CreateCompany(c *gin.Context) {
 		return
 	}
 
-	// Buat record baru
-	now := time.Now()
-	newCompany := models.Company{
-		Title:       companyData.Title,
-		CompanyCode: companyData.CompanyCode,
-		CreatedAt:   now,
-		UpdatedAt:   now,
-	}
+	// Update data
+	existingCompany.Title = companyData.Title
+	existingCompany.CompanyCode = companyData.CompanyCode
+	existingCompany.UpdatedAt = time.Now()
 
-	if err := db.DB.Create(&newCompany).Error; err != nil {
+	if err := db.DB.Save(&existingCompany).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "failed",
 			"message": err.Error(),
@@ -58,6 +65,6 @@ func CreateCompany(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
-		"data":   newCompany,
+		"data":   existingCompany,
 	})
 }
