@@ -12,7 +12,7 @@ type User struct {
 	Password string    `json:"password" form:"password"`
 	Role     string    `json:"role" form:"role"`
 
-	Companies []UserCompany `gorm:"foreignKey:UserID" json:"companies"`
+	Companies []UserCompany `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;" json:"companies"`
 
 	CreatedAt time.Time `gorm:"not null" json:"created_at,omitempty"`
 	UpdatedAt time.Time `gorm:"not null" json:"updated_at,omitempty"`
