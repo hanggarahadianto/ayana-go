@@ -10,34 +10,42 @@ import (
 )
 
 func CreateProject(c *gin.Context) {
-
 	var projectData models.Project
 
+	// Bind JSON ke struct
 	if err := c.ShouldBindJSON(&projectData); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	now := time.Now()
+
+	// Generate project_name dari location + unit + type
+	projectName := projectData.Location + " - " + projectData.Unit + " - " + projectData.Type
+
 	newProject := models.Project{
-		ProjectName:   projectData.ProjectName,
+		ProjectName:   projectName,
+		Location:      projectData.Location,
+		Type:          projectData.Type,
+		Unit:          projectData.Unit,
 		ProjectLeader: projectData.ProjectLeader,
 		Investor:      projectData.Investor,
-		TotalCost:     projectData.TotalCost,
 		ProjectTime:   projectData.ProjectTime,
-		ProjectStart:  projectData.ProjectStart, // Set the ProjectStart value from the input
+		TotalCost:     projectData.TotalCost,
+		ProjectStart:  projectData.ProjectStart,
 		ProjectEnd:    projectData.ProjectEnd,
+		ProjectStatus: projectData.ProjectStatus,
 		Note:          projectData.Note,
 		CompanyID:     projectData.CompanyID,
 		CreatedAt:     now,
 		UpdatedAt:     now,
 	}
 
-	result := db.DB.Create(&newProject)
-	if result.Error != nil {
+	// Simpan ke database
+	if err := db.DB.Create(&newProject).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "failed",
-			"message": result.Error.Error(),
+			"message": err.Error(),
 		})
 		return
 	}
@@ -46,5 +54,4 @@ func CreateProject(c *gin.Context) {
 		"status": "success",
 		"data":   newProject,
 	})
-
 }

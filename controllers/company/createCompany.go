@@ -44,6 +44,10 @@ func CreateCompany(c *gin.Context) {
 	newCompany := models.Company{
 		Title:       companyData.Title,
 		CompanyCode: companyData.CompanyCode,
+		HasProduct:  companyData.HasProduct,
+		HasProject:  companyData.HasProject,
+		HasCustomer: companyData.HasCustomer,
+		IsRetail:    companyData.IsRetail,
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}

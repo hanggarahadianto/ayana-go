@@ -2,6 +2,7 @@ package controllers
 
 import (
 	lib "ayana/lib"
+	"ayana/models"
 	project "ayana/service/project"
 	"ayana/utils/helper"
 	"net/http"
@@ -43,9 +44,14 @@ func GetProject(c *gin.Context) {
 		return
 	}
 
+	var enriched []models.ProjectWithStatus
+	for _, proj := range projects {
+		enriched = append(enriched, project.EnrichProjectStatus(proj))
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
-			"projectList":   projects,
+			"projectList":   enriched,
 			"total_project": totalProject,
 			"page":          pagination.Page,
 			"limit":         pagination.Limit,
@@ -54,4 +60,5 @@ func GetProject(c *gin.Context) {
 		"message": "Data project berhasil diambil",
 		"status":  "sukses",
 	})
+
 }

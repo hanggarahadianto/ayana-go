@@ -4,6 +4,8 @@ import (
 	"ayana/db"
 	lib "ayana/lib"
 	"ayana/models"
+
+	"gorm.io/gorm"
 )
 
 type ProjectFilterParams struct {
@@ -20,13 +22,16 @@ func GetProjects(params ProjectFilterParams) ([]models.Project, int64, int64, er
 		filteredTotal int64
 	)
 
-	// Hitung semua project tanpa filter
-	if err := db.DB.Model(&models.Project{}).Count(&totalProject).Error; err != nil {
+	// Base query untuk filter company_id
+	baseQuery := db.DB.Model(&models.Project{}).Where("company_id = ?", params.CompanyID)
+
+	// Hitung total project (per company_id)
+	if err := baseQuery.Count(&totalProject).Error; err != nil {
 		return nil, 0, 0, err
 	}
 
-	// Base query dengan filter company_id
-	query := db.DB.Model(&models.Project{}).Where("company_id = ?", params.CompanyID)
+	// Copy query untuk filter tambahan
+	query := baseQuery.Session(&gorm.Session{})
 
 	// Filter pencarian nama
 	if params.Search != "" {
@@ -37,6 +42,9 @@ func GetProjects(params ProjectFilterParams) ([]models.Project, int64, int64, er
 			investor ILIKE ?`,
 			searchPattern, searchPattern, searchPattern)
 	}
+
+	orderBy := "project_start DESC"
+
 	// Filter berdasarkan rentang tanggal ProjectStart
 	if params.DateFilter.StartDate != nil && params.DateFilter.EndDate != nil {
 		query = query.Where("project_start BETWEEN ? AND ?", params.DateFilter.StartDate, params.DateFilter.EndDate)
@@ -46,14 +54,14 @@ func GetProjects(params ProjectFilterParams) ([]models.Project, int64, int64, er
 		query = query.Where("project_start <= ?", params.DateFilter.EndDate)
 	}
 
-	// Hitung total setelah filter (tanpa pagination)
+	// Hitung total setelah filter
 	if err := query.Count(&filteredTotal).Error; err != nil {
 		return nil, 0, 0, err
 	}
 
 	// Ambil data dengan pagination
 	if err := query.
-		Order("created_at desc, updated_at desc").
+		Order(orderBy).
 		Limit(params.Pagination.Limit).
 		Offset((params.Pagination.Page - 1) * params.Pagination.Limit).
 		Find(&projects).Error; err != nil {

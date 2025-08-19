@@ -52,6 +52,10 @@ func UpdateCompany(c *gin.Context) {
 
 	// Update data
 	existingCompany.Title = companyData.Title
+	existingCompany.HasProduct = companyData.HasProduct
+	existingCompany.HasCustomer = companyData.HasCustomer
+	existingCompany.HasProject = companyData.HasProject
+	existingCompany.IsRetail = companyData.IsRetail
 	existingCompany.CompanyCode = companyData.CompanyCode
 	existingCompany.UpdatedAt = time.Now()
 
