@@ -87,11 +87,21 @@ func GetDebtsFromJournalLines(params DebtFilterParams) ([]dto.JournalEntryRespon
 	baseQuery = ApplyDebtTypeFilterToGorm(baseQuery, params.DebtType)
 
 	// 🎛️ Filter umum (tanpa sorting dulu)
+	// Tentukan category filter berdasarkan debtType
+	var debitCategory, creditCategory string
+	if params.DebtType == "done" {
+		debitCategory = params.CreditCategory // mapping ke debit_category
+		creditCategory = ""
+	} else {
+		creditCategory = params.CreditCategory // default ke credit_category
+		debitCategory = params.DebitCategory
+	}
+
 	filteredQuery, sortBy, sortOrder := helper.ApplyCommonJournalEntryFiltersToGorm(
 		baseQuery,
 		helper.JournalEntryFilterParams{
-			DebitCategory:  params.DebitCategory,
-			CreditCategory: params.CreditCategory,
+			DebitCategory:  debitCategory,
+			CreditCategory: creditCategory,
 			DateFilter:     params.DateFilter,
 			SortBy:         params.SortBy,
 			SortOrder:      params.SortOrder,

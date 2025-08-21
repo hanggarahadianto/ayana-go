@@ -34,8 +34,8 @@ func GetOutstandingDebts(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Format tanggal tidak valid. Gunakan format YYYY-MM-DD."})
 		return
 	}
-	sortBy := c.DefaultQuery("sort_by", "date_inputed") // default: date_inputed
-	sortOrder := c.DefaultQuery("sort_order", "asc")    // default: asc
+	sortBy := c.DefaultQuery("sort_by", "due_date")  // default: date_inputed
+	sortOrder := c.DefaultQuery("sort_order", "asc") // default: asc
 
 	pagination := lib.GetPagination(c)
 
