@@ -128,6 +128,8 @@ func GetUniqueCategories(params TransactionCategoryFilterParams) ([]string, stri
 			categoryColumn = "credit_category"
 		case "Expense":
 			categoryColumn = "debit_category"
+		case "Liability":
+			categoryColumn = "debit_category"
 		default:
 			return nil, "Unsupported debit_account_type", nil
 		}
@@ -138,6 +140,8 @@ func GetUniqueCategories(params TransactionCategoryFilterParams) ([]string, stri
 		case "Expense":
 			categoryColumn = "credit_category"
 		case "Liability":
+			categoryColumn = "credit_category"
+		case "Revenue":
 			categoryColumn = "credit_category"
 		default:
 			return nil, "Unsupported credit_account_type", nil
