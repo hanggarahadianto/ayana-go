@@ -51,6 +51,33 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	// Ambil companies sesuai role
+	var companies []models.Company
+	if user.Role == "superadmin" {
+		// Superadmin bisa akses semua company
+		if err := db.DB.Find(&companies).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"status":  false,
+				"message": "Failed to fetch companies",
+			})
+			return
+		}
+	} else {
+		// User biasa: join ke tabel user_companies
+		var userCompanies []models.UserCompany
+		if err := db.DB.Preload("Company").Where("user_id = ?", user.ID).Find(&userCompanies).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"status":  false,
+				"message": "Failed to fetch user companies",
+			})
+			return
+		}
+		for _, uc := range userCompanies {
+			companies = append(companies, uc.Company)
+		}
+	}
+
+	// JWT
 	expirationTime := time.Now().Add(24 * time.Hour)
 	claims := &Claims{
 		Username: user.Username,
@@ -77,7 +104,9 @@ func Login(c *gin.Context) {
 		"status":  true,
 		"message": "Login success",
 		"data": gin.H{
-			"user": user,
+			"user":      user,
+			"companies": companies,
+			"token":     tokenString, // kalau mau kirim juga di body
 		},
 	})
 }
