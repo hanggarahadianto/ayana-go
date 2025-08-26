@@ -20,6 +20,8 @@ type Company struct {
 
 	Users []UserCompany `gorm:"foreignKey:CompanyID;constraint:OnDelete:CASCADE;" json:"users"`
 
+	UserCompanies []UserCompany `json:"-"`
+
 	CreatedAt time.Time `gorm:"type:timestamp;default:now()" json:"created_at"`
 	UpdatedAt time.Time `gorm:"type:timestamp;default:now()" json:"updated_at"`
 }
