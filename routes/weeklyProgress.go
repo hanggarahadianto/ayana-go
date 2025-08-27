@@ -14,9 +14,5 @@ func SetupWeeklyProgressRouter(r *gin.Engine) {
 		weeklyProgress.POST("/post", weeklyProgressController.CreateWeeklyProgress)
 		weeklyProgress.PUT("/edit", weeklyProgressController.EditWeeklyProgress)
 		weeklyProgress.DELETE("delete/:id", weeklyProgressController.DeleteWeeklyProgress)
-		//
-		// weeklyProgress.GET("getById/:id", weeklyProgress.HomeById)
-		// weeklyProgress.PUT("update/:id", weeklyProgress.UpdateHome)
-		// weeklyProgress.POST("/img", middlewares.FileUploadMiddleware(), weeklyProgress.AddImage)
 	}
 }
