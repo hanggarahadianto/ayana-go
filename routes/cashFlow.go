@@ -2,13 +2,13 @@ package routes
 
 import (
 	cashFlowController "ayana/controllers/cashFlow"
-	// "ayana/middlewares"
+	middlewares "ayana/middlewares/auth"
 
 	"github.com/gin-gonic/gin"
 )
 
 func SetupCashFlowRouter(r *gin.Engine) {
-	cashFlow := r.Group("/cashflow")
+	cashFlow := r.Group("/cashflow", middlewares.AuthMiddleware())
 	{
 		cashFlow.GET("/getByProjectId/:id", cashFlowController.GetCashFlowListByProjectId)
 		cashFlow.POST("/post", cashFlowController.CreateCashFlow)

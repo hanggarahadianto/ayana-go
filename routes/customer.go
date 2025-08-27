@@ -2,12 +2,13 @@ package routes
 
 import (
 	customerController "ayana/controllers/customer"
+	middlewares "ayana/middlewares/auth"
 
 	"github.com/gin-gonic/gin"
 )
 
 func SetupCustomerRouter(r *gin.Engine) {
-	customer := r.Group("/customer")
+	customer := r.Group("/customer", middlewares.AuthMiddleware())
 	{
 		customer.GET("/get", customerController.GetCustomers)
 		customer.POST("/post", customerController.CreateCustomer)

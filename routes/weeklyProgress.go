@@ -2,13 +2,13 @@ package routes
 
 import (
 	weeklyProgressController "ayana/controllers/weeklyProgress"
-	// "ayana/middlewares"
+	middlewares "ayana/middlewares/auth"
 
 	"github.com/gin-gonic/gin"
 )
 
 func SetupWeeklyProgressRouter(r *gin.Engine) {
-	weeklyProgress := r.Group("/weeklyprogress")
+	weeklyProgress := r.Group("/weeklyprogress", middlewares.AuthMiddleware())
 	{
 		weeklyProgress.GET("/getById/:id", weeklyProgressController.GetWeeklyProgressById)
 		weeklyProgress.POST("/post", weeklyProgressController.CreateWeeklyProgress)

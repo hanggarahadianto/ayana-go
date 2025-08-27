@@ -2,13 +2,14 @@ package routes
 
 import (
 	journalEntryController "ayana/controllers/journalEntry"
+	middlewares "ayana/middlewares/auth"
 	"ayana/utils/handler"
 
 	"github.com/gin-gonic/gin"
 )
 
 func SetupJournalEntryRouter(r *gin.Engine) {
-	journalEntry := r.Group("/journal-entry")
+	journalEntry := r.Group("/journal-entry", middlewares.AuthMiddleware())
 	{
 		journalEntry.GET("/get", journalEntryController.GetJournalEntriesByCategory)
 		journalEntry.POST("/post", journalEntryController.CreateJournalEntry)

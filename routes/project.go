@@ -2,12 +2,13 @@ package routes
 
 import (
 	projectController "ayana/controllers/project"
+	middlewares "ayana/middlewares/auth"
 
 	"github.com/gin-gonic/gin"
 )
 
 func SetupProjectRouter(r *gin.Engine) {
-	project := r.Group("/project")
+	project := r.Group("/project", middlewares.AuthMiddleware())
 	{
 		project.GET("/get", projectController.GetProject)
 		project.GET("/getById/:id", projectController.GetProjectById)

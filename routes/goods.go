@@ -2,13 +2,13 @@ package routes
 
 import (
 	goodController "ayana/controllers/good"
-	// "ayana/middlewares"
+	middlewares "ayana/middlewares/auth"
 
 	"github.com/gin-gonic/gin"
 )
 
 func SetupGoodRouter(r *gin.Engine) {
-	good := r.Group("/good")
+	good := r.Group("/good", middlewares.AuthMiddleware())
 	{
 		good.GET("/getByCashFlowId", goodController.GetGoodByCashFlowId)
 		good.POST("/post", goodController.CreateGood)

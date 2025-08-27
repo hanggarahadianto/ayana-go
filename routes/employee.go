@@ -2,13 +2,14 @@ package routes
 
 import (
 	employeeController "ayana/controllers/hr"
+	middlewares "ayana/middlewares/auth"
 	"ayana/utils/handler"
 
 	"github.com/gin-gonic/gin"
 )
 
 func SetupEmployeeRouter(r *gin.Engine) {
-	employee := r.Group("/employee")
+	employee := r.Group("/employee", middlewares.AuthMiddleware())
 	{
 		employee.GET("/get", employeeController.GetEmployees)
 		employee.POST("/post", employeeController.CreateEmployee)
